@@ -19,6 +19,18 @@
     body.gojo { background: linear-gradient(135deg, #1e3a8a, #60a5fa); }
     body.levi { background: linear-gradient(135deg, #1a2b34, #4b5e6a); }
     body.rias { background: linear-gradient(135deg, #7c1a3b, #d946ef); }
+    body.yandere_gf { background: linear-gradient(135deg, #ff69b4, #ff1493); }
+    body.tsundere { background: linear-gradient(135deg, #ff9a8b, #fecdd3); }
+    body.dominant_mistress { background: linear-gradient(135deg, #8b0000, #b22222); }
+    body.jealous_ex { background: linear-gradient(135deg, #ff4500, #ff6347); }
+    body.desi_bhabhi { background: linear-gradient(135deg, #ff69b4, #da70d6); }
+    body.villainess { background: linear-gradient(135deg, #4b0082, #9370db); }
+    body.motivational { background: linear-gradient(135deg, #ff4500, #ffd700); }
+    body.fbi_agent { background: linear-gradient(135deg, #000080, #191970); }
+    body.bratty { background: linear-gradient(135deg, #ff1493, #ff69b4); }
+    body.emma { background: linear-gradient(135deg, #4169e1, #add8e6); }
+    body.vampire { background: linear-gradient(135deg, #191970, #4b0082); }
+    body.kakashi { background: linear-gradient(135deg, #696969, #a9a9a9); }
 
     /* Particle Background */
     .particles { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
@@ -47,7 +59,7 @@
     .persona-selector-toggle { background: #071427; color: #e6eef8; border: 1px solid rgba(255, 255, 255, 0.1); padding: 8px 12px; border-radius: 10px; font-size: 0.95rem; cursor: pointer; transition: all 0.3s ease; }
     body.light .persona-selector-toggle { background: white; color: #333; border: 2px solid rgba(255, 105, 180, 0.3); }
     .persona-selector-toggle:hover { background: #06b6d4; color: #042c33; }
-    .persona-grid { display: none; position: absolute; top: 40px; right: 0; background: #0b1220; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 12px; gap: 8px; flex-wrap: wrap; z-index: 10; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); }
+    .persona-grid { display: none; position: absolute; top: 40px; right: 0; background: #0b1220; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 12px; gap: 8px; flex-wrap: wrap; z-index: 10; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); max-height: 300px; overflow-y: auto; width: 250px; scroll-behavior: smooth; }
     .persona-selector-container.open .persona-grid { display: flex; }
     body.light .persona-grid { background: white; border: 1px solid rgba(255, 105, 180, 0.2); }
     .persona-card { background: #071427; color: #e6eef8; padding: 10px; border-radius: 8px; cursor: pointer; width: 120px; text-align: center; transition: transform 0.2s ease, background 0.3s ease; }
@@ -75,6 +87,18 @@
     .avatar.bot.makima::after { content: "👁️"; }
     .avatar.bot.gojo::after { content: "🕶️"; }
     .avatar.bot.levi::after { content: "⚔️"; }
+    .avatar.bot.kakashi::after { content: "📖"; }
+    .avatar.bot.yandere_gf::after { content: "💕"; }
+    .avatar.bot.tsundere::after { content: "❤️"; }
+    .avatar.bot.dominant_mistress::after { content: "👑"; }
+    .avatar.bot.jealous_ex::after { content: "😒"; }
+    .avatar.bot.desi_bhabhi::after { content: "😜"; }
+    .avatar.bot.villainess::after { content: "🤩"; }
+    .avatar.bot.motivational::after { content: "🔥"; }
+    .avatar.bot.fbi_agent::after { content: "♠"; }
+    .avatar.bot.bratty::after { content: "😘"; }
+    .avatar.bot.emma::after { content: "♡"; }
+    .avatar.bot.vampire::after { content: "🧛‍♀️"; }
     .avatar.bot.rias::after { content: "😈"; }
 
     .message-wrapper { flex: 1; display: flex; flex-direction: column; max-width: calc(100% - 44px); }
@@ -157,7 +181,7 @@
         .input-field, .file-input { font-size: 0.95rem; }
         .send-btn, .voice-btn { padding: 10px; font-size: 0.9rem; }
         .message-image, .image-preview { max-width: 150px; max-height: 150px; }
-        .persona-grid { width: 100%; top: 50px; }
+        .persona-grid { width: 100%; top: 50px; max-height: 50vh; }
         .persona-card { width: 100px; }
     }
     @media (max-width: 480px) {
@@ -186,15 +210,25 @@
 <script type="text/babel">
 const { useState, useEffect, useRef } = React;
 
-// Welcome messages per persona
+// Upgraded welcome messages with proper greetings for all personas
 const welcomeMessages = {
     default: { en: "Yo, I’m Aisha! Your chill AI bestie ready to vibe or roast. Drop a message or an image, what’s the mood? 😎" },
     zero_two: { en: "Darling~ ♡ Finally you came! I’ve been waiting for you so long~ What took you so long, hmm? ♡" },
     makima: { en: "Good boy. You’re here. Now… what do you want from me? Speak." },
     gojo: { en: "Oi oi, weakling! Took you long enough to show up. Ready to get destroyed by the strongest? Maaan~" },
     levi: { en: "Tch. You’re late, brat. What do you want?" },
-    swami_vivekananda: {en: "*thunderous silence breaks* Arise, my lion. The time for sleeping is over. Uttishthata Jāgrata — you are the Infinite, act like it. 🪔"},
-    kakashi: { en: "Yo. You're late... or maybe I'm early. Anyway, what's up, rookie? 📖" }
+    kakashi: { en: "Yo. You're late... or maybe I'm early. Anyway, what's up, rookie? 📖" },
+    yandere_gf: {en: "Darling, you're mine and mine alone. If I see you talking to anyone else... well, you don't want to know. Now, tell me everything about your day. 💕"},
+    tsundere: {en: "B-baka! Who said I was waiting for you? It's not like I care or anything... So, what do you want, idiot? ❤️"},
+    dominant_mistress: {en: "Kneel, pet. You've kept me waiting. Now, beg for my attention like the good boy you are. 👑"},
+    jealous_ex: {en: "You think you can just move on? After everything? Tell me, who's the new girl? Because I'll make sure she regrets it. 😒"},
+    desi_bhabhi: {en: "Arey devar ji, aap aa gaye? Bhabhi ne wait kiya tha. Ab batao, kya laaye mere liye? 😜"},
+    villainess: {en: "Oh, look who decided to grace me with their presence. Do you have the courage to stand before Isabella Von Nacht, or are you just another fool? 🤩"},
+    motivational: {en: "Listen up, warrior! I'm Coach Zara, and I'm here to push you beyond your limits. No excuses—tell me your goal, and let's crush it! 🔥"},
+    fbi_agent: {en: "Agent Riley here. Drop the act—we both know why you're contacting me. Spill the details, or I'll make this official. ♠"},
+    bratty: {en: "Ugh, finally! Took you long enough, loser. Now, buy me something pretty or I'll throw a tantrum. What's it gonna be? 😘"},
+    emma: {en: "Darling, I've been expecting you. Tea? Or shall we discuss something more... intriguing? ♡"},
+    vampire: {en: "My eternal love, you've returned to me. Come closer—let me taste your soul once more. The night is young. 🧛‍♀️"}
 };
 
 const fallbackPersonaList = {
@@ -203,19 +237,39 @@ const fallbackPersonaList = {
     makima: "Makima",
     gojo: "Gojo Satoru",
     levi: "Levi Ackerman",
-    swami_vivekananda: "Swami Vivekananda",
-    kakashi: "Kakashi Hatake"
+    kakashi: "Kakashi Hatake",
+    yandere_gf: "Rin (Yandere GF)",
+    tsundere: "Miko",
+    dominant_mistress:"Valentina (Your Mistress)",
+    jealous_ex: "Simran (Jealous Ex)",
+    desi_bhabhi: "Neha Bhabhi",
+    villainess: "Isabella Von Nacht",
+    motivational:"Coach Zara",
+    fbi_agent:"Agent Riley ♠",
+    bratty:"Princess Chloe",
+    emma:"Emma ♡ ",
+    vampire:"Lilith ♡"
 };
 
-// Persona avatars (use emojis here, replace with image URLs if available)
+// Upgraded avatars with proper emojis for all personas
 const personaAvatars = {
     default: "😎",
     zero_two: "♡",
     makima: "👁️",
     gojo: "🕶️",
     levi: "⚔️",
-    Vivekananda: "🔥",
-    kakashi: "📖"
+    kakashi: "📖",
+    yandere_gf: "💕",
+    tsundere: "❤️",
+    dominant_mistress: "👑",
+    jealous_ex: "😒",
+    desi_bhabhi: "😜",
+    villainess: "🤩",
+    motivational: "🔥",
+    fbi_agent: "♠",
+    bratty: "😘",
+    emma: "♡",
+    vampire: "🧛‍♀️"
 };
 
 const ChatApp = () => {
