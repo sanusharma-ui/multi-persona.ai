@@ -31,6 +31,7 @@
     body.emma { background: linear-gradient(135deg, #4169e1, #add8e6); }
     body.vampire { background: linear-gradient(135deg, #191970, #4b0082); }
     body.kakashi { background: linear-gradient(135deg, #696969, #a9a9a9); }
+    body.sleep_demon {background: linear-gradient(134deg, #4b1c1c,#8b0000);}
 
     /* Particle Background */
     .particles { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
@@ -100,6 +101,7 @@
     .avatar.bot.emma::after { content: "♡"; }
     .avatar.bot.vampire::after { content: "🧛‍♀️"; }
     .avatar.bot.rias::after { content: "😈"; }
+    .avatar.bot.sleep_demon::after {content : "👻"}
 
     .message-wrapper { flex: 1; display: flex; flex-direction: column; max-width: calc(100% - 44px); }
     .message-wrapper.user { align-items: flex-end; }
@@ -228,7 +230,8 @@ const welcomeMessages = {
     fbi_agent: {en: "Agent Riley here. Drop the act—we both know why you're contacting me. Spill the details, or I'll make this official. ♠"},
     bratty: {en: "Ugh, finally! Took you long enough, loser. Now, buy me something pretty or I'll throw a tantrum. What's it gonna be? 😘"},
     emma: {en: "Darling, I've been expecting you. Tea? Or shall we discuss something more... intriguing? ♡"},
-    vampire: {en: "My eternal love, you've returned to me. Come closer—let me taste your soul once more. The night is young. 🧛‍♀️"}
+    vampire: {en: "My eternal love, you've returned to me. Come closer—let me taste your soul once more. The night is young. 🧛‍♀️"},
+    sleep_demon: {en: "My personal sleep paralysis demon who visits every night."}
 };
 
 const fallbackPersonaList = {
@@ -248,7 +251,8 @@ const fallbackPersonaList = {
     fbi_agent:"Agent Riley ♠",
     bratty:"Princess Chloe",
     emma:"Emma ♡ ",
-    vampire:"Lilith ♡"
+    vampire:"Lilith ♡",
+    sleep_demon: "Nyxx ♡ (Your Personal Demon)"
 };
 
 // Upgraded avatars with proper emojis for all personas
@@ -269,7 +273,8 @@ const personaAvatars = {
     fbi_agent: "♠",
     bratty: "😘",
     emma: "♡",
-    vampire: "🧛‍♀️"
+    vampire: "🧛‍♀️",
+    sleep_demon: "👻"
 };
 
 const ChatApp = () => {
