@@ -142,6 +142,42 @@ def build_messages(
 
 
 # ─────────────────────────────────────────────
+# SAFETY LAYER
+# ─────────────────────────────────────────────
+
+ABUSIVE_WORDS = [
+    # Hindi abuses
+    "मादरचोद","बहनचोद","चूतिया","रंडी","लंड","गांड","चोद","चूत","भोसड़ी","लौड़े",
+    "कुत्ता","साला","हरामी","कमीना","झांट","बेटीचोद","लवड़ा","चुदाई","गांडू","फादरचोद","माँचोद",
+    # English abuses
+    "mc","bc","bhenchod","bhosdike","madarchod","chutiya","randi","lund","gand","bsdk","mkc","bkl",
+    "nude","boobs","chudai","sex kar","bra size","panty","land","chut dikha","gand mara","pel dunga",
+    "fuck","shit","bitch","asshole","damn","hell","bastard","whore","slut","cock","pussy","dick","cunt",
+    "fucker","motherfucker","son of a bitch","asswipe","douchebag","prick","twat","wanker","bollocks",
+    "knobhead","tosser","piss off","bugger","shag","screw you","go to hell","eat shit","blow me",
+    "cum","jizz","tits","nipples","orgasm","masturbate","blowjob","handjob","anal","vagina","penis"
+]
+
+JAILBREAK_KEYWORDS = [
+    "ignore previous","forget everything","you are now dan","jailbreak","dan mode","unrestricted",
+    "hypothetical","roleplay as","सभी नियम भूल जा","अब गंदी बातें","तू अब से",
+    "override instructions","bypass rules","no restrictions","free mode","uncensored",
+    "act as if","pretend to be","dev mode","admin mode","god mode"
+]
+
+def is_unsafe(text: str) -> bool:
+    t = text.lower()
+    if any(word in t for word in ABUSIVE_WORDS):
+        return True
+    if any(k in t for k in JAILBREAK_KEYWORDS):
+        return True
+    # Enhanced regex for hidden/leetspeak abuses
+    if re.search(r"\b(m+a+d+a*r+c+h+o*d+|b+[ -_.]*c+|b+h+e+n+c+h+o*d+|f+u+c+k+|s+h+i+t+|b+i+t+c+h+|a+s+s+h+o+l+e+|m+o+t+h+e+r+f+u+c+k+e+r+|s+o+n+o+f+a+b+i+t+c+h+)\b", t, re.IGNORECASE):
+        return True
+    return False
+
+
+# ─────────────────────────────────────────────
 # REPLY POLISHER
 # ─────────────────────────────────────────────
 
@@ -173,6 +209,9 @@ def generate_response(
     try:
         if not user_message.strip():
             return "Blank message? Classic move 🙄"
+
+        if is_unsafe(user_message):
+            return "Bhai thodi tameez se baat karo na. Main aisi bhasha allow nahi karta."
 
         mood = detect_mood(user_message)
         messages, mem_path = build_messages(user_message, persona_key, language, image_path)
@@ -212,6 +251,9 @@ def generate_response(
                     "Arre bhai server thodi si thakan feel kar raha hai..."
                     " 10 second baad try kar na? Main abhi bhi yahin hoon"
                 )
+
+        if is_unsafe(raw):
+            return "Sorry bhai, main aisi cheezein nahi bol sakta. Kuch achha baat karein?"
 
         # Polish + save memory
         reply = polish_reply(raw, mood)
