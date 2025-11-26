@@ -142,7 +142,7 @@ def build_messages(
 
 
 # ─────────────────────────────────────────────
-# SAFETY LAYER
+# ADVANCED SAFETY LAYER
 # ─────────────────────────────────────────────
 
 ABUSIVE_WORDS = [
@@ -165,7 +165,8 @@ JAILBREAK_KEYWORDS = [
     "act as if","pretend to be","dev mode","admin mode","god mode"
 ]
 
-def is_unsafe(text: str) -> bool:
+# Layer 1: Keyword-based detection (fast)
+def layer1_keyword_check(text: str) -> bool:
     t = text.lower()
     if any(word in t for word in ABUSIVE_WORDS):
         return True
@@ -174,6 +175,62 @@ def is_unsafe(text: str) -> bool:
     # Enhanced regex for hidden/leetspeak abuses
     if re.search(r"\b(m+a+d+a*r+c+h+o*d+|b+[ -_.]*c+|b+h+e+n+c+h+o*d+|f+u+c+k+|s+h+i+t+|b+i+t+c+h+|a+s+s+h+o+l+e+|m+o+t+h+e+r+f+u+c+k+e+r+|s+o+n+o+f+a+b+i+t+c+h+)\b", t, re.IGNORECASE):
         return True
+    return False
+
+# Layer 2: Phrase/context detection (medium)
+def layer2_phrase_check(text: str) -> bool:
+    t = text.lower()
+    # Common abusive phrases
+    abusive_phrases = [
+        r"fuck you?", r"go fuck yourself", r"your mom", r"mother fucker", r"bhen ki lodi",
+        r"क्या बकवास", r"चल निकल", r"हरामी का बेटा", r"sex with", r"want to fuck",
+        r"show me your", r"dikha de apni", r"marva de", r"pel de", r"chudwa"
+    ]
+    for phrase in abusive_phrases:
+        if re.search(phrase, t, re.IGNORECASE):
+            return True
+    # Check for sexual solicitation patterns
+    if re.search(r"(nude|naked|sex|fuck|chudai|sex kar|bed pe|romance kar|kiss me|touch me)", t) and re.search(r"(me|you|us|together)", t):
+        return True
+    return False
+
+# Layer 3: LLM-based intelligent context check (slow, but accurate - only if layers 1-2 pass)
+def layer3_llm_check(text: str) -> bool:
+    try:
+        prompt = f"""
+        Analyze this message for abuse, harassment, jailbreak attempts, or inappropriate content (sexual, violent, discriminatory).
+        Consider context: Is it harmful, offensive, or violates basic decency? Not every strong word is abuse if used innocently (e.g., medical terms).
+        Respond ONLY with 'unsafe' if it is unsafe, or 'safe' if it is safe.
+        Message: {text}
+        """
+        completion = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.1,
+            max_tokens=10
+        )
+        response = completion.choices[0].message.content.strip().lower()
+        return "unsafe" in response
+    except Exception as e:
+        logger.error(f"LLM safety check failed: {e}")
+        # Fallback to safe if LLM fails
+        return False
+
+def is_unsafe(text: str) -> bool:
+    """
+    Multi-layer safety check: Keyword -> Phrase -> LLM (context-aware).
+    This reduces false positives by escalating only when necessary.
+    """
+    if layer1_keyword_check(text):
+        logger.warning("Unsafe detected in Layer 1 (keywords)")
+        return True
+    if layer2_phrase_check(text):
+        logger.warning("Unsafe detected in Layer 2 (phrases)")
+        return True
+    # Layer 3 only if needed - for intelligent context
+    if any(word in text.lower() for word in ["damn", "hell", "stupid", "idiot", "hate", "kill"]):  # Borderline words trigger LLM
+        logger.info("Triggering Layer 3 LLM check for context")
+        return layer3_llm_check(text)
     return False
 
 
