@@ -8,3 +8,5 @@ Pillow>=10.4.0,<11.0.0  # Image processing for uploads
 python-multipart>=0.0.12,<0.1.0  # Handle multipart form data (file uploads)
 gunicorn>=23.0.0,<24.0.0  # WSGI server for production deployment
 filetype>=1.2.0,<2.0.0  # Image type detection (alternative to imghdr for Python 3.13+)
+cryptography==42.0.5
+requests==2.31.0
