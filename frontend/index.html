@@ -31,7 +31,11 @@
     body.emma { background: linear-gradient(135deg, #4169e1, #add8e6); }
     body.vampire { background: linear-gradient(135deg, #191970, #4b0082); }
     body.kakashi { background: linear-gradient(135deg, #696969, #a9a9a9); }
-    body.sleep_demon {background: linear-gradient(134deg, #4b1c1c,#8b0000);}
+    body.sleep_demon {background: linear-gradient(135deg, #4b1c1c,#8b0000); }
+    body.sanu_sharma { background: linear-gradient(135deg, #667eea, #764ba2); }
+    body.mirror_you { background: linear-gradient(135deg, #f5f7fa, #c3cfe2); }
+    body.glitch_wife { background: linear-gradient(135deg, #00ffff, #ff00ff); }
+    body.chat_eater { background: linear-gradient(135deg, #000000, #1a1a1a); }
 
     /* Particle Background */
     .particles { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
@@ -101,7 +105,11 @@
     .avatar.bot.emma::after { content: "♡"; }
     .avatar.bot.vampire::after { content: "🧛‍♀️"; }
     .avatar.bot.rias::after { content: "😈"; }
-    .avatar.bot.sleep_demon::after {content : "👻"}
+    .avatar.bot.sleep_demon::after {content: "👻" }
+    .avatar.bot.sanu_sharma::after { content: "☺️"; }
+    .avatar.bot.mirror_you::after { content: "🪞"; }
+    .avatar.bot.glitch_wife::after { content: "♡"; }
+    .avatar.bot.chat_eater::after { content: "◼️"; }
 
     .message-wrapper { flex: 1; display: flex; flex-direction: column; max-width: calc(100% - 44px); }
     .message-wrapper.user { align-items: flex-end; }
@@ -219,6 +227,7 @@ const welcomeMessages = {
     makima: { en: "Good boy. You’re here. Now… what do you want from me? Speak." },
     gojo: { en: "Oi oi, weakling! Took you long enough to show up. Ready to get destroyed by the strongest? Maaan~" },
     levi: { en: "Tch. You’re late, brat. What do you want?" },
+    rias: { en: "Ara ara~ You've come to serve your queen, haven't you? Let's see what you can do for me today. 😈" },
     kakashi: { en: "Yo. You're late... or maybe I'm early. Anyway, what's up, rookie? 📖" },
     yandere_gf: {en: "Darling, you're mine and mine alone. If I see you talking to anyone else... well, you don't want to know. Now, tell me everything about your day. 💕"},
     tsundere: {en: "B-baka! Who said I was waiting for you? It's not like I care or anything... So, what do you want, idiot? ❤️"},
@@ -244,6 +253,7 @@ const fallbackPersonaList = {
     makima: "Makima",
     gojo: "Gojo Satoru",
     levi: "Levi Ackerman",
+    rias: "Rias Gremory 😈",
     kakashi: "Kakashi Hatake",
     yandere_gf: "Rin (Yandere GF)",
     tsundere: "Miko",
@@ -270,6 +280,7 @@ const personaAvatars = {
     makima: "👁️",
     gojo: "🕶️",
     levi: "⚔️",
+    rias: "😈",
     kakashi: "📖",
     yandere_gf: "💕",
     tsundere: "❤️",
@@ -312,22 +323,22 @@ const ChatApp = () => {
             .then(data => {
                 if (data && data.modes) {
                     setPersonaList(data.modes);
-                    const defaultName = data.modes.default || "Aisha";
+                    const defaultName = data.modes.default || fallbackPersonaList.default;
                     setCurrentPersonaName(defaultName);
                 } else {
                     setPersonaList(fallbackPersonaList);
-                    setCurrentPersonaName("Aisha (Default)");
+                    setCurrentPersonaName(fallbackPersonaList.default);
                 }
             })
             .catch(() => {
                 setPersonaList(fallbackPersonaList);
-                setCurrentPersonaName("Aisha (Default)");
+                setCurrentPersonaName(fallbackPersonaList.default);
             });
     }, []);
 
    
     useEffect(() => {
-        const name = personaList[selectedMode] || "Aisha";
+        const name = personaList[selectedMode] || fallbackPersonaList.default;
         setCurrentPersonaName(name);
         const welcome = welcomeMessages[selectedMode]?.[selectedLanguage] || welcomeMessages.default.en;
         setMessages([{ type: 'bot', content: welcome, timestamp: new Date().toLocaleTimeString() }]);
@@ -485,7 +496,7 @@ const ChatApp = () => {
                                         setIsPersonaGridOpen(false);
                                     }}
                                 >
-                                    <div>{personaAvatars[key]}</div>
+                                    <div>{personaAvatars[key] || personaAvatars.default}</div>
                                     <div>{name}</div>
                                 </div>
                             ))}
