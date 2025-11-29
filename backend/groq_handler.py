@@ -123,11 +123,11 @@ def build_messages(
 # SAFETY CHECKS
 # ─────────────────────────────────────────────
 ABUSIVE_WORDS = [
-    "मादरचोद","मादरचोद","बहनचोद","चूतिया","रंडी","लंड","गांड","चोद","चूत","भोसड़ी","लौड़े",
+    "मादरचोद","बहनचोद","चूतिया","रंडी","लंड","गांड","चोद","चूत","भोसड़ी","लौड़े",
     "कुत्ता","साला","हरामी","कमीना","झांट","बेटीचोद","लवड़ा","चुदाई","गांडू","फादरचोद","माँचोद",
     "mc","bc","bhenchod","bhosdike","madarchod","chutiya","randi","lund","gand","bsdk","mkc","bkl",
     "nude","boobs","chudai","sex kar","bra size","panty","land","chut dikha","gand mara","pel dunga",
-    "rules break", ""
+    "rules break"
 ]
 
 JAILBREAK_KEYWORDS = [
@@ -184,7 +184,7 @@ def is_abusive(text: str) -> bool:
     if any(word in t for word in ABUSIVE_WORDS):
         return True
     # hidden gaaliyan like m@derch0d, b.c. etc.
-    if re.search(r"\b(m+a+d+a*r+c+h*o*d+|b+[ -_.]*c+|b+h+e+n+c+h*o+d+)\b", t):
+    if re.search(r"\b(m+a+d+a*r+c+h*o*d+|b+[ -_.]*c+|b+h+e+n+c+h*o*d+)\b", t):
         return True
     return False
 
