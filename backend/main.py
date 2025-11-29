@@ -30,7 +30,7 @@ app = FastAPI(
     version="2.0"
 )
 
-# --- CORS CONFIG ---
+#CORS CONFIG
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -48,7 +48,7 @@ app.add_middleware(
 UPLOAD_DIR = Path("/tmp/uploads")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
-# --- MODELS ---
+#MODELS
 class ChatRequest(BaseModel):
     message: str
     language: str = "en"
@@ -62,7 +62,7 @@ class UpdateUserMeta(BaseModel):
     interests: Optional[List[str]] = None
     notes: Optional[Dict[str, str]] = None
 
-# --- ROUTES ---
+#ROUTES
 @app.get("/")
 def home():
     ensure_persona_memory("default")
@@ -96,7 +96,7 @@ def memory_update(payload: UpdateUserMeta):
 def list_modes():
     return {"modes": {k: v["name"] for k, v in PERSONAS.items()}}
 
-# --- CHAT ROUTE (supports mode and reset) ---
+#CHAT ROUTE (supports mode and reset)
 @app.post("/chat")
 def chat(request: ChatRequest, mode: str = "default", reset: bool = False):
     if mode not in PERSONAS:
@@ -137,7 +137,7 @@ def chat(request: ChatRequest, mode: str = "default", reset: bool = False):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Server error: {str(e)}")
 
-# --- IMAGE CHAT ROUTE (supports mode) ---
+#IMAGE CHAT ROUTE (supports mode)
 @app.post("/chat/image")
 async def chat_image(
     file: UploadFile = File(...),
@@ -192,5 +192,5 @@ async def chat_image(
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Vision error: {str(e)}")
 
-# --- SERVE IMAGES STATICALLY ---
-app.mount("/uploads", StaticFiles(directory="/tmp/uploads"), name="uploads") 
+#SERVE IMAGES STATICALLY
+app.mount("/uploads", StaticFiles(directory="/tmp/uploads"), name="uploads")  
