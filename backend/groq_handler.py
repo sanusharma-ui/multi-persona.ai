@@ -7,14 +7,14 @@ from typing import List, Dict, Any, Optional
 import base64
 from PIL import Image
 import io
-from backend.personas import PERSONAS
+from backend.personas import PERSONAS  # Assuming this file exists
 import logging
 import hashlib
 import time
 import random
 from functools import lru_cache
 from ratelimit import limits, sleep_and_retry  # pip install ratelimit
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type, wait_fixed
+from tenacity import retry, stop_after_attempt, wait_exponential, wait_fixed, wait_chain, retry_if_exception_type
 import redis  # pip install redis (optional for prod)
 
 # Setup logging
@@ -42,12 +42,12 @@ PERIOD = 60  # seconds
 
 # Updated MODEL_PRIORITY (verified available on Groq - Dec 2025)
 MODEL_PRIORITY = [
-    "llama-3.3-70b-versatile", # Tier-1: Best quality
-    "meta-llama/llama-4-scout-17b-16e-instruct", # Tier-2: Fast + cheap + very stable
-    "llama-3.1-8b-instant", # Tier-3: Viral traffic saver
-    "qwen/qwen3-32b", # Tier-4: Hindi + multilingual strong
-    "openai/gpt-oss-120b", # Tier-5: Heavy but optional
-    "moonshotai/kimi-k2-instruct-0905" # Tier-6: Long context + creative fallback
+    "llama-3.3-70b-versatile",  # Tier-1: Best quality
+    "meta-llama/llama-4-scout-17b-16e-instruct",  # Tier-2: Fast + cheap + very stable (preview)
+    "llama-3.1-8b-instant",  # Tier-3: Viral traffic saver
+    "qwen/qwen3-32b",  # Tier-4: Hindi + multilingual strong (preview)
+    "openai/gpt-oss-120b",  # Tier-5: Heavy but optional
+    "moonshotai/kimi-k2-instruct-0905"  # Tier-6: Long context + creative fallback (preview)
 ]
 
 # MEMORY HANDLING PER PERSONA
@@ -254,26 +254,31 @@ def set_cached_response(cache_key: str, response: str, ttl: int = 3600):  # 1 ho
         r.setex(f"cache:{cache_key}", ttl, response)
     # LRU auto-handles in-memory
 
-# Custom wait function for jitter
-def wait_with_jitter():
-    return wait_exponential(multiplier=1, min=4, max=10)() + wait_fixed(1 + random.uniform(0, 1))()
-
 # Retry decorator for Groq calls (handles 429 with backoff + jitter)
 @retry(
     stop=stop_after_attempt(3),
-    wait=wait_with_jitter,
+    wait=wait_chain(
+        wait_fixed(2),  # Initial fixed wait
+        wait_exponential(multiplier=1, min=4, max=10)  # Then exponential
+    ),
     retry=retry_if_exception_type(Exception)  # Retry on any error, incl. 429
 )
 def safe_groq_call(client, messages, model):
     completion = client.chat.completions.create(
         messages=messages,
         model=model,
-        temperature=1.1 if "70b" in model or "120b" in model else 1.0,
+        temperature=1.1 if any(large in model.lower() for large in ["70b", "120b", "32b"]) else 1.0,
         max_tokens=450,
         top_p=0.95
     )
-    # Rate limit info not directly available in SDK; skip logging for now
-    logger.info(f"Model {model}: Request completed")
+    # Safely check headers for rate limits (log for monitoring)
+    remaining_req = 'Unknown'
+    try:
+        if hasattr(completion, '_response') and completion._response and hasattr(completion._response, 'headers'):
+            remaining_req = completion._response.headers.get('x-ratelimit-remaining-requests', 'Unknown')
+    except Exception:
+        pass
+    logger.info(f"Model {model}: {remaining_req} req remaining")
     return completion.choices[0].message.content.strip()
 
 # Rate limiter decorator (global + per-user)
@@ -338,20 +343,23 @@ def generate_response_impl(
                 logger.info(f"Success with {model}")
                 break
             except Exception as e:
+                logger.error(f"Error with model {model}: {str(e)}")
                 if "429" in str(e):  # Specific 429 handling
                     # Extract retry-after if possible
                     retry_after = 10
                     if "retry-after" in str(e).lower():
                         parts = str(e).split("retry-after=")
                         if len(parts) > 1:
-                            retry_after = int(parts[1].split()[0])
-                    logger.warning(f"429 on {model}, waiting {retry_after}s")
+                            try:
+                                retry_after = int(parts[1].split()[0])
+                            except:
+                                pass
+                    logger.warning(f"429 on {model}, waiting {retry_after}s + jitter")
                     time.sleep(retry_after + random.uniform(0, 2))  # Extra jitter
-                else:
-                    logger.error(f"{model} failed: {e}")
-                continue
+                continue  # Try next model
         
         if raw is None:
+            logger.error("All models failed")
             return "Server full thakela hai aaj... 15 sec baad aa ja na babe 😘"
         
         # Safety + polish (existing)
@@ -378,7 +386,7 @@ def generate_response_impl(
         return reply
     
     except Exception as e:
-        logger.error(f"Global error: {e}")
+        logger.error(f"Global error in generate_response_impl: {e}")
         return "Server thak gaya re baba... 10 sec baad try kar 😴"
 
 # Wrapper for rate limiting (call this from API endpoint)
