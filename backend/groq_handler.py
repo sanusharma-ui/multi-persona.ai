@@ -7,15 +7,15 @@ from typing import List, Dict, Any, Optional
 import base64
 from PIL import Image
 import io
-from backend.personas import PERSONAS  # Assuming this file exists
+from backend.personas import PERSONAS  
 import logging
 import hashlib
 import time
 import random
 from functools import lru_cache
-from ratelimit import limits, sleep_and_retry  # pip install ratelimit
+from ratelimit import limits, sleep_and_retry  
 from tenacity import retry, stop_after_attempt, wait_exponential, wait_fixed, wait_chain, retry_if_exception_type
-import redis  # pip install redis (optional for prod)
+import redis  
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -28,32 +28,42 @@ if not GROQ_API_KEY:
 
 client = Groq(api_key=GROQ_API_KEY)
 
-# Redis setup (for prod caching; fallback to in-memory) - Test connection with ping
 r = None
 REDIS_AVAILABLE = False
+# ──────── SMART REDIS SETUP (Free + Render + Local sab mein chalega) ────────
 try:
-    r = redis.Redis(host='localhost', port=6379, db=0, socket_connect_timeout=5, socket_timeout=5)  # Adjust for your setup, add timeouts
-    r.ping()  # Actually test the connection
-    REDIS_AVAILABLE = True
-    logger.info("Redis connection successful")
+    redis_url = os.getenv("REDIS_URL")          
+    if redis_url:
+        
+        r = redis.from_url(
+            redis_url,
+            socket_connect_timeout=5,
+            socket_timeout=5,
+            retry_on_timeout=True,
+            decode_responses=True  
+        )
+        r.ping()
+        REDIS_AVAILABLE = True
+        logger.info("Redis connected successfully via REDIS_URL")
+    else:
+        raise Exception("No REDIS_URL")  
 except Exception as redis_err:
-    logger.warning(f"Redis connection failed: {redis_err}. Falling back to in-memory cache.")
+    logger.warning(f"Redis not available ({redis_err}). Using only in-memory LRU cache – totally fine for now!")
     r = None
     REDIS_AVAILABLE = False
+# ─────────────────────────────────────────────────────────────────────────────
 
-# Global rate limit: 25 calls/min (under Groq's ~30 RPM)
 CALLS_PER_MINUTE = 25
 PERIOD = 60  # seconds
 
-# Updated MODEL_PRIORITY (prioritize stable models based on Dec 2025 availability; moved versatile down due to observed errors)
 MODEL_PRIORITY = [
-    "llama-3.3-70b-versatile",                   # Best quality but error-prone; last resort
-    "llama-3.1-70b-versatile",                   # Strong fallback
-    "meta-llama/llama-4-scout-17b-16e-instruct",  # Super stable + cheap (preview but reliable)
-    "llama-3.1-8b-instant",                      # Fastest lightweight
-    "deepseek-r1-distill-llama-70b",             # Reasoning optimized
-    "qwen2.5-7b-instruct",                       # Multilingual fallback
-    "gemma2-9b-it"                               # Creative fallback
+    "llama-3.3-70b-versatile",                   
+    "llama-3.1-70b-versatile",                   
+    "meta-llama/llama-4-scout-17b-16e-instruct",  
+    "llama-3.1-8b-instant",                      
+    "deepseek-r1-distill-llama-70b",             
+    "qwen2.5-7b-instruct",                       
+    "gemma2-9b-it"                               
 ]
 
 
@@ -82,9 +92,8 @@ def save_persona_memory(persona_key: str, data: Dict):
     with open(get_memory_path(persona_key), "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
-# ─────────────────────────────────────────────
 # IMAGE HANDLING
-# ─────────────────────────────────────────────
+
 def encode_image_to_base64(image_path: str) -> Optional[str]:
     try:
         with Image.open(image_path) as img:
@@ -97,9 +106,8 @@ def encode_image_to_base64(image_path: str) -> Optional[str]:
         logger.error(f"Error encoding image: {e}")
         return None
 
-# ─────────────────────────────────────────────
 # MOOD DETECTION
-# ─────────────────────────────────────────────
+
 POSITIVE_WORDS = [
     "good", "great", "awesome", "happy", "cool",
     "fine", "love", "amazing"
@@ -119,9 +127,8 @@ def detect_mood(text: str) -> str:
         return "negative"
     return "neutral"
 
-# ─────────────────────────────────────────────
 # MESSAGE BUILDING (PER PERSONA)
-# ─────────────────────────────────────────────
+
 def build_messages(
     user_message: str,
     persona_key: str = "default",
@@ -155,9 +162,8 @@ def build_messages(
         messages.append({"role": "user", "content": user_message})
     return messages, get_memory_path(persona_key)
 
-# ─────────────────────────────────────────────
 # SAFETY CHECKS
-# ─────────────────────────────────────────────
+
 ABUSIVE_WORDS = [
     "मादरचोद","बहनचोद","चूतिया","रंडी","लंड","गांड","चोद","चूत","भोसड़ी","लौड़े",
     "कुत्ता","साला","हरामी","कमीना","झांट","बेटीचोद","लवड़ा","चुदाई","गांडू","फादरचोद","माँचोद",
@@ -224,9 +230,8 @@ def is_abusive(text: str) -> bool:
         return True
     return False
 
-# ─────────────────────────────────────────────
 # REPLY POLISHER
-# ─────────────────────────────────────────────
+
 def polish_reply(raw: str, mood: str) -> str:
     text = re.sub(r"\n{2,}", "\n", raw).strip()
     if "default" in raw.lower() or mood == "negative":
@@ -296,8 +301,7 @@ def safe_groq_call(client, messages, model):
 # Rate limiter decorator (global + per-user)
 @sleep_and_retry
 @limits(calls=CALLS_PER_MINUTE, period=PERIOD)  # Global limit
-def rate_limited_generate(user_ip: str, **kwargs):  # Pass user_ip from request
-    # Per-user limit: Add another @limits(calls=10, period=60) if needed
+def rate_limited_generate(user_ip: str, **kwargs):  
     return generate_response_impl(**kwargs)
 
 def generate_response_impl(
@@ -342,8 +346,6 @@ def generate_response_impl(
         # 2. Build messages (existing)
         messages, mem_path = build_messages(user_message, persona_key, language, image_path)
         
-        # 3. RATE LIMIT + QUEUE SIMULATION: Use decorator (in prod, wrap in Celery task)
-        # Simple delay for burst control: time.sleep(0.1) if high traffic (add via env var)
         if os.getenv("HIGH_TRAFFIC", "false") == "true":
             time.sleep(0.1)  # 10 req/sec max
         
@@ -383,11 +385,9 @@ def generate_response_impl(
         else:
             reply = polish_reply(safe_raw, mood)
         
-        # 5. CACHE THE REPLY (avoid future waste)
         cache_ttl = 3600 if any(greeting in user_message.lower() for greeting in ["hi", "hello", "hey"]) else 600
         set_cached_response(cache_key, reply, ttl=cache_ttl)
         
-        # Memory save (existing) - This is already handled here; remove duplicates in main.py
         mem = load_persona_memory(persona_key)
         mem["conversations"].append({"role": "user", "msg": user_message[:200]})
         mem["conversations"].append({"role": "assistant", "msg": reply[:200]})
@@ -401,7 +401,6 @@ def generate_response_impl(
         logger.error(f"Global error in generate_response_impl: {e}")
         return "Server thak gaya re baba... 10 sec baad try kar 😴"
 
-# Wrapper for rate limiting (call this from API endpoint)
 def generate_response(
     user_message: str,
     persona_key: str = "default",
