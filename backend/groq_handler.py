@@ -271,12 +271,13 @@ def set_cached_response(cache_key: str, response: str, ttl: int = 3600):  # 1 ho
 @retry(
     stop=stop_after_attempt(3),
     wait=wait_chain(
-        wait_fixed(2),  # Initial fixed wait
-        wait_exponential(multiplier=1, min=4, max=10)  # Then exponential
+        wait_fixed(2),
+        wait_exponential(multiplier=1, min=4, max=10)
     ),
-    retry=retry_if_exception_type(Exception)  # Retry on any error, incl. 429
+    retry=retry_if_exception_type(Exception)
 )
 def safe_groq_call(client, messages, model):
+
     completion = client.chat.completions.create(
         model=model,
         messages=messages
@@ -284,7 +285,11 @@ def safe_groq_call(client, messages, model):
 
     logger.info(f"Model {model}: call success")
 
+    # CORRECT extraction
     return completion.choices[0].message["content"].strip()
+    if content is None:
+        raise ValueError("No content in response")
+    return content.strip()
 
 # Rate limiter decorator (global + per-user)
 @sleep_and_retry
