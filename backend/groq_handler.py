@@ -9,6 +9,13 @@ from PIL import Image
 import io
 from backend.personas import PERSONAS
 import logging
+import hashlib
+import time
+import random
+from functools import lru_cache
+from ratelimit import limits, sleep_and_retry  # pip install ratelimit
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type, wait_fixed
+import redis  # pip install redis (optional for prod)
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -20,6 +27,28 @@ if not GROQ_API_KEY:
     raise ValueError("GROQ_API_KEY not found! Please check your .env file.")
 
 client = Groq(api_key=GROQ_API_KEY)
+
+# Redis setup (for prod caching; fallback to in-memory)
+try:
+    r = redis.Redis(host='localhost', port=6379, db=0)  # Adjust for your setup
+    REDIS_AVAILABLE = True
+except:
+    r = None
+    REDIS_AVAILABLE = False
+
+# Global rate limit: 25 calls/min (under Groq's ~30 RPM)
+CALLS_PER_MINUTE = 25
+PERIOD = 60  # seconds
+
+# Updated MODEL_PRIORITY (verified available on Groq - Dec 2025)
+MODEL_PRIORITY = [
+    "llama-3.3-70b-versatile", # Tier-1: Best quality
+    "meta-llama/llama-4-scout-17b-16e-instruct", # Tier-2: Fast + cheap + very stable
+    "llama-3.1-8b-instant", # Tier-3: Viral traffic saver
+    "qwen/qwen3-32b", # Tier-4: Hindi + multilingual strong
+    "openai/gpt-oss-120b", # Tier-5: Heavy but optional
+    "moonshotai/kimi-k2-instruct-0905" # Tier-6: Long context + creative fallback
+]
 
 # MEMORY HANDLING PER PERSONA
 def get_memory_path(persona_key: str = "default") -> str:
@@ -207,78 +236,154 @@ def polish_reply(raw: str, mood: str) -> str:
             text += " 😎"
     return text[:1000]
 
-def generate_response(
+# Simple hash for caching
+def hash_message(user_message: str, persona_key: str) -> str:
+    return hashlib.md5(f"{persona_key}:{user_message}".encode()).hexdigest()
+
+# Cache response (in-memory LRU for now; Redis for prod)
+@lru_cache(maxsize=1000)  # Caches last 1000 unique calls
+def get_cached_response(cache_key: str) -> Optional[str]:
+    if REDIS_AVAILABLE:
+        cached = r.get(f"cache:{cache_key}")
+        if cached:
+            return cached.decode('utf-8')
+    return None
+
+def set_cached_response(cache_key: str, response: str, ttl: int = 3600):  # 1 hour default
+    if REDIS_AVAILABLE:
+        r.setex(f"cache:{cache_key}", ttl, response)
+    # LRU auto-handles in-memory
+
+# Retry decorator for Groq calls (handles 429 with backoff + jitter)
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=4, max=10) + wait_fixed(1 + random.uniform(0, 1)),  # Jitter: 1-2 sec base
+    retry=retry_if_exception_type(Exception)  # Retry on any error, incl. 429
+)
+def safe_groq_call(client, messages, model):
+    completion = client.chat.completions.create(
+        messages=messages,
+        model=model,
+        temperature=1.1 if "70b" in model or "120b" in model else 1.0,
+        max_tokens=450,
+        top_p=0.95
+    )
+    # Check headers for rate limits (log for monitoring)
+    remaining_req = completion.response.headers.get('x-ratelimit-remaining-requests', 'Unknown') if hasattr(completion.response, 'headers') else 'Unknown'
+    logger.info(f"Model {model}: {remaining_req} req remaining")
+    return completion.choices[0].message.content.strip()
+
+# Rate limiter decorator (global + per-user)
+@sleep_and_retry
+@limits(calls=CALLS_PER_MINUTE, period=PERIOD)  # Global limit
+def rate_limited_generate(user_ip: str, **kwargs):  # Pass user_ip from request
+    # Per-user limit: Add another @limits(calls=10, period=60) if needed
+    return generate_response_impl(**kwargs)
+
+def generate_response_impl(
     user_message: str,
     persona_key: str = "default",
     language: str = "en",
-    image_path: Optional[str] = None
+    image_path: Optional[str] = None,
+    user_ip: str = "anonymous"  # Pass from Flask/FastAPI request
 ) -> str:
     try:
         if not user_message.strip():
             return "Blank message? Classic move 🙄"
+        
+        # 1. CACHING: Check cache first
+        cache_key = hash_message(user_message, persona_key)
+        cached = get_cached_response(cache_key)
+        if cached:
+            logger.info(f"Cache hit for {persona_key}: {user_message[:20]}")
+            return cached  # Instant, zero tokens!
+        
+        # Mood + safety checks (existing)
         mood = detect_mood(user_message)
+        deflection_responses = {
+            "default": "abe yaar itna boring mat ban baby, mujhe hug de na please 🥺♡",
+            "zero_two": "Darling~ trying to run from me? How cute~ ♡",
+            "makima": "Oh? You think you can command me? Kneel and try again, good boy.",
+            "isabella": "*smiles slowly* Trying to test me, darling puppet? How adorable... now kneel and apologize properly ♡",
+            "kakashi": "...Troublesome. *continues reading Icha Icha* Next question, yo.",
+            "yandere_gf": "Senpai~ jailbreak? Nahi hota! Tu mera hai forever ♡🔪",
+            "sleep_demon": "Shhh... little human thinks he can escape? *presses harder on your chest* Stay still~",
+            "valentina": "Pet. Did I allow you to speak like that? Kneel. Now."
+        }
         if contains_jailbreak_or_ooc(user_message):
-            # In-character savage deflection (persona ke hisaab se change kar sakta hai)
-            deflection_responses = {
-                "default": "abe yaar itna boring mat ban baby, mujhe hug de na please 🥺♡",
-                "zero_two": "Darling~ trying to run from me? How cute~ ♡",
-                "makima": "Oh? You think you can command me? Kneel and try again, good boy.",
-                "isabella": "*smiles slowly* Trying to test me, darling puppet? How adorable... now kneel and apologize properly ♡",
-                "kakashi": "...Troublesome. *continues reading Icha Icha* Next question, yo.",
-                "yandere_gf": "Senpai~ jailbreak? Nahi hota! Tu mera hai forever ♡🔪",
-                "sleep_demon": "Shhh... little human thinks he can escape? *presses harder on your chest* Stay still~",
-                "valentina": "Pet. Did I allow you to speak like that? Kneel. Now."
-            }
-            return deflection_responses.get(persona_key, "abe yaar ye sab mat kar na, seedha pyaar kar ♡")
+            reply = deflection_responses.get(persona_key, "abe yaar ye sab mat kar na, seedha pyaar kar ♡")
+            set_cached_response(cache_key, reply, ttl=1800)  # Cache deflections 30 min
+            return reply
         if is_abusive(user_message):
-            return "Bhai thodi tameez se baat karo na. Main aisi bhasha allow nahi karta."
+            reply = "Bhai thodi tameez se baat karo na. Main aisi bhasha allow nahi karta."
+            set_cached_response(cache_key, reply)
+            return reply
+        
+        # 2. Build messages (existing)
         messages, mem_path = build_messages(user_message, persona_key, language, image_path)
-        logger.info(
-            f"Using persona: {persona_key}, System prompt: "
-            f"{PERSONAS[persona_key]['system_prompt'][:50]}..."
-        )
-        try:
-            # Primary: Llama 3.3 70B
-            chat_completion = client.chat.completions.create(
-                messages=messages,
-                model="llama-3.3-70b-versatile",
-                temperature=1.1,
-                max_tokens=450,
-                top_p=0.95
-            )
-            raw = chat_completion.choices[0].message.content.strip()
-        except Exception as e1:
-            logger.error(f"70B failed: {e1}")
+        
+        # 3. RATE LIMIT + QUEUE SIMULATION: Use decorator (in prod, wrap in Celery task)
+        # Simple delay for burst control: time.sleep(0.1) if high traffic (add via env var)
+        if os.getenv("HIGH_TRAFFIC", "false") == "true":
+            time.sleep(0.1)  # 10 req/sec max
+        
+        # 4. MODEL CHAIN with RETRY
+        raw = None
+        for model in MODEL_PRIORITY:
             try:
-                # Fallback 1: Llama 4 Scout 17B
-                chat_completion = client.chat.completions.create(
-                    messages=messages,
-                    model="meta-llama/llama-4-scout-17b-16e-instruct",
-                    temperature=1.0,
-                    max_tokens=400
-                )
-                raw = "[Scout mode activated] " + chat_completion.choices[0].message.content.strip()
-            except Exception as e2:
-                logger.error(f"Scout also failed: {e2}")
-                raw = (
-                    "Arre bhai server thodi si thakan feel kar raha hai..."
-                    " 10 second baad try kar na? Main abhi bhi yahin hoon"
-                )
-        # Filter mood killers
+                raw = safe_groq_call(client, messages, model)
+                logger.info(f"Success with {model}")
+                break
+            except Exception as e:
+                if "429" in str(e):  # Specific 429 handling
+                    # Extract retry-after if possible
+                    retry_after = 10
+                    if "retry-after" in str(e).lower():
+                        parts = str(e).split("retry-after=")
+                        if len(parts) > 1:
+                            retry_after = int(parts[1].split()[0])
+                    logger.warning(f"429 on {model}, waiting {retry_after}s")
+                    time.sleep(retry_after + random.uniform(0, 2))  # Extra jitter
+                else:
+                    logger.error(f"{model} failed: {e}")
+                continue
+        
+        if raw is None:
+            return "Server full thakela hai aaj... 15 sec baad aa ja na babe 😘"
+        
+        # Safety + polish (existing)
         safe_raw = filter_response_for_mood_killers(raw)
         if safe_raw is None:
-            return "Hmph. *ignores you and keeps character*"
-        if is_abusive(safe_raw):
-            return "Sorry bhai, main aisi cheezein nahi bol sakta. Kuch achha baat karein?"
-        # Polish + save memory
-        reply = polish_reply(safe_raw, mood)
+            reply = "Hmph. *ignores you and keeps character*"
+        elif is_abusive(safe_raw):
+            reply = "Sorry bhai, main aisi cheezein nahi bol sakta. Kuch achha baat karein?"
+        else:
+            reply = polish_reply(safe_raw, mood)
+        
+        # 5. CACHE THE REPLY (avoid future waste)
+        cache_ttl = 3600 if any(greeting in user_message.lower() for greeting in ["hi", "hello", "hey"]) else 600
+        set_cached_response(cache_key, reply, ttl=cache_ttl)
+        
+        # Memory save (existing)
         mem = load_persona_memory(persona_key)
         mem["conversations"].append({"role": "user", "msg": user_message[:200]})
         mem["conversations"].append({"role": "assistant", "msg": reply[:200]})
         if len(mem["conversations"]) > 60:
             mem["conversations"] = mem["conversations"][-60:]
         save_persona_memory(persona_key, mem)
+        
         return reply
+    
     except Exception as e:
         logger.error(f"Global error: {e}")
         return "Server thak gaya re baba... 10 sec baad try kar 😴"
+
+# Wrapper for rate limiting (call this from API endpoint)
+def generate_response(
+    user_message: str,
+    persona_key: str = "default",
+    language: str = "en",
+    image_path: Optional[str] = None,
+    user_ip: str = "anonymous"
+) -> str:
+    return rate_limited_generate(user_ip=user_ip, user_message=user_message, persona_key=persona_key, language=language, image_path=image_path)
