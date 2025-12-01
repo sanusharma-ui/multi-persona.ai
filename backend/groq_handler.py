@@ -30,7 +30,7 @@ client = Groq(api_key=GROQ_API_KEY)
 
 r = None
 REDIS_AVAILABLE = False
-# SMART REDIS SETUP (Free + Render + Local sab mein chalega)
+# SMART REDIS SETUP 
 try:
     redis_url = os.getenv("REDIS_URL")          
     if redis_url:
