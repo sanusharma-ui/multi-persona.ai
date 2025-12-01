@@ -28,11 +28,16 @@ if not GROQ_API_KEY:
 
 client = Groq(api_key=GROQ_API_KEY)
 
-# Redis setup (for prod caching; fallback to in-memory)
+# Redis setup (for prod caching; fallback to in-memory) - Test connection with ping
+r = None
+REDIS_AVAILABLE = False
 try:
-    r = redis.Redis(host='localhost', port=6379, db=0)  # Adjust for your setup
+    r = redis.Redis(host='localhost', port=6379, db=0, socket_connect_timeout=5, socket_timeout=5)  # Adjust for your setup, add timeouts
+    r.ping()  # Actually test the connection
     REDIS_AVAILABLE = True
-except:
+    logger.info("Redis connection successful")
+except Exception as redis_err:
+    logger.warning(f"Redis connection failed: {redis_err}. Falling back to in-memory cache.")
     r = None
     REDIS_AVAILABLE = False
 
@@ -40,14 +45,14 @@ except:
 CALLS_PER_MINUTE = 25
 PERIOD = 60  # seconds
 
-# Updated MODEL_PRIORITY (verified available on Groq - Dec 2025)
+# Updated MODEL_PRIORITY (verified available on Groq - Dec 2025) - Using stable models primarily
 MODEL_PRIORITY = [
-    "llama-3.3-70b-versatile",  # Tier-1: Best quality
-    "meta-llama/llama-4-scout-17b-16e-instruct",  # Tier-2: Fast + cheap + very stable (preview)
-    "llama-3.1-8b-instant",  # Tier-3: Viral traffic saver
-    "qwen/qwen3-32b",  # Tier-4: Hindi + multilingual strong (preview)
-    "openai/gpt-oss-120b",  # Tier-5: Heavy but optional
-    "moonshotai/kimi-k2-instruct-0905"  # Tier-6: Long context + creative fallback (preview)
+    "llama-3.3-70b-versatile",  # Tier-1: Best quality (assuming available)
+    "llama-3.1-405b-reasoning",  # Strong fallback if 3.3 not out
+    "llama-3.1-8b-instant",  # Tier-3: Fast and reliable
+    "qwen/qwen-2.5-coder-32b-instruct",  # Multilingual strong
+    "mixtral-8x22b-32768",  # Heavy but stable
+    "gemma2-27b-it"  # Creative fallback
 ]
 
 # MEMORY HANDLING PER PERSONA
@@ -243,15 +248,21 @@ def hash_message(user_message: str, persona_key: str) -> str:
 # Cache response (in-memory LRU for now; Redis for prod)
 @lru_cache(maxsize=1000)  # Caches last 1000 unique calls
 def get_cached_response(cache_key: str) -> Optional[str]:
-    if REDIS_AVAILABLE:
-        cached = r.get(f"cache:{cache_key}")
-        if cached:
-            return cached.decode('utf-8')
+    if REDIS_AVAILABLE and r:
+        try:
+            cached = r.get(f"cache:{cache_key}")
+            if cached:
+                return cached.decode('utf-8')
+        except Exception as cache_err:
+            logger.warning(f"Redis cache get failed: {cache_err}")
     return None
 
 def set_cached_response(cache_key: str, response: str, ttl: int = 3600):  # 1 hour default
-    if REDIS_AVAILABLE:
-        r.setex(f"cache:{cache_key}", ttl, response)
+    if REDIS_AVAILABLE and r:
+        try:
+            r.setex(f"cache:{cache_key}", ttl, response)
+        except Exception as cache_err:
+            logger.warning(f"Redis cache set failed: {cache_err}")
     # LRU auto-handles in-memory
 
 # Retry decorator for Groq calls (handles 429 with backoff + jitter)
@@ -265,21 +276,13 @@ def set_cached_response(cache_key: str, response: str, ttl: int = 3600):  # 1 ho
 )
 def safe_groq_call(client, messages, model):
     completion = client.chat.completions.create(
-        messages=messages,
         model=model,
-        temperature=1.1 if any(large in model.lower() for large in ["70b", "120b", "32b"]) else 1.0,
-        max_tokens=450,
-        top_p=0.95
+        messages=messages
     )
-    # Safely check headers for rate limits (log for monitoring)
-    remaining_req = 'Unknown'
-    try:
-        if hasattr(completion, '_response') and completion._response and hasattr(completion._response, 'headers'):
-            remaining_req = completion._response.headers.get('x-ratelimit-remaining-requests', 'Unknown')
-    except Exception:
-        pass
-    logger.info(f"Model {model}: {remaining_req} req remaining")
-    return completion.choices[0].message.content.strip()
+
+    logger.info(f"Model {model}: call success")
+
+    return completion.choices[0].message["content"].strip()
 
 # Rate limiter decorator (global + per-user)
 @sleep_and_retry
@@ -375,7 +378,7 @@ def generate_response_impl(
         cache_ttl = 3600 if any(greeting in user_message.lower() for greeting in ["hi", "hello", "hey"]) else 600
         set_cached_response(cache_key, reply, ttl=cache_ttl)
         
-        # Memory save (existing)
+        # Memory save (existing) - This is already handled here; remove duplicates in main.py
         mem = load_persona_memory(persona_key)
         mem["conversations"].append({"role": "user", "msg": user_message[:200]})
         mem["conversations"].append({"role": "assistant", "msg": reply[:200]})
