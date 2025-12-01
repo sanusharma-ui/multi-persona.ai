@@ -57,10 +57,10 @@ PERIOD = 60  # seconds
 
 MODEL_PRIORITY = [
     "llama-3.3-70b-versatile",                   
+    "deepseek-r1-distill-llama-70b",             
     "llama-3.1-70b-versatile",                   
     "meta-llama/llama-4-scout-17b-16e-instruct",  
     "llama-3.1-8b-instant",                      
-    "deepseek-r1-distill-llama-70b",             
     "qwen2.5-7b-instruct",                       
     "gemma2-9b-it"                               
 ]
