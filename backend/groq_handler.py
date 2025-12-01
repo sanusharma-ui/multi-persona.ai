@@ -254,10 +254,14 @@ def set_cached_response(cache_key: str, response: str, ttl: int = 3600):  # 1 ho
         r.setex(f"cache:{cache_key}", ttl, response)
     # LRU auto-handles in-memory
 
+# Custom wait function for jitter
+def wait_with_jitter():
+    return wait_exponential(multiplier=1, min=4, max=10)() + wait_fixed(1 + random.uniform(0, 1))()
+
 # Retry decorator for Groq calls (handles 429 with backoff + jitter)
 @retry(
     stop=stop_after_attempt(3),
-    wait=wait_exponential(multiplier=1, min=4, max=10) + wait_fixed(1 + random.uniform(0, 1)),  # Jitter: 1-2 sec base
+    wait=wait_with_jitter,
     retry=retry_if_exception_type(Exception)  # Retry on any error, incl. 429
 )
 def safe_groq_call(client, messages, model):
@@ -268,9 +272,8 @@ def safe_groq_call(client, messages, model):
         max_tokens=450,
         top_p=0.95
     )
-    # Check headers for rate limits (log for monitoring)
-    remaining_req = completion.response.headers.get('x-ratelimit-remaining-requests', 'Unknown') if hasattr(completion.response, 'headers') else 'Unknown'
-    logger.info(f"Model {model}: {remaining_req} req remaining")
+    # Rate limit info not directly available in SDK; skip logging for now
+    logger.info(f"Model {model}: Request completed")
     return completion.choices[0].message.content.strip()
 
 # Rate limiter decorator (global + per-user)
