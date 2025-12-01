@@ -30,7 +30,7 @@ client = Groq(api_key=GROQ_API_KEY)
 
 r = None
 REDIS_AVAILABLE = False
-# ──────── SMART REDIS SETUP (Free + Render + Local sab mein chalega) ────────
+# SMART REDIS SETUP (Free + Render + Local sab mein chalega)
 try:
     redis_url = os.getenv("REDIS_URL")          
     if redis_url:
@@ -51,7 +51,6 @@ except Exception as redis_err:
     logger.warning(f"Redis not available ({redis_err}). Using only in-memory LRU cache – totally fine for now!")
     r = None
     REDIS_AVAILABLE = False
-# ─────────────────────────────────────────────────────────────────────────────
 
 CALLS_PER_MINUTE = 25
 PERIOD = 60  # seconds
