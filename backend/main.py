@@ -1,7 +1,7 @@
 import sys
 import os
 import traceback
-from fastapi import FastAPI, HTTPException, File, UploadFile
+from fastapi import FastAPI, HTTPException, File, UploadFile, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="Aisha — Friendly AI",
     description="Aisha: your warm, caring AI best friend. Uses Groq under the hood and persona-based modes.",
-    version="2.0"
+    version="2.1"  # Upgraded version
 )
 
 #CORS CONFIG
@@ -96,9 +96,9 @@ def memory_update(payload: UpdateUserMeta):
 def list_modes():
     return {"modes": {k: v["name"] for k, v in PERSONAS.items()}}
 
-#CHAT ROUTE (supports mode and reset)
+#CHAT ROUTE (supports mode and reset) - Upgraded with Request for IP-based rate limiting
 @app.post("/chat")
-def chat(request: ChatRequest, mode: str = "default", reset: bool = False):
+def chat(request: ChatRequest, mode: str = "default", reset: bool = False, req: Request = None):
     if mode not in PERSONAS:
         mode = "default"
     if not request.message.strip():
@@ -110,24 +110,19 @@ def chat(request: ChatRequest, mode: str = "default", reset: bool = False):
             mem = {"user": {"name": None, "interests": [], "notes": {}}, "conversations": []}
             save_persona_memory(mode, mem)
         logger.info(f"Loading memory for persona: {mode}")
+        
+        # Extract user IP for rate limiting
+        user_ip = req.client.host if req else "anonymous"
+        
         reply = generate_response(
             user_message=request.message,
             persona_key=mode,
-            language=request.language
+            language=request.language,
+            user_ip=user_ip
         )
-        # Per-persona memory
-        mem = load_persona_memory(mode)
-        mem["conversations"].append({
-            "role": "user",
-            "msg": request.message[:200]
-        })
-        mem["conversations"].append({
-            "role": "assistant",
-            "msg": reply[:200]
-        })
-        if len(mem["conversations"]) > 60:
-            mem["conversations"] = mem["conversations"][-60:]
-        save_persona_memory(mode, mem)
+        
+        # Memory is already saved in generate_response; no duplication
+        
         return {
             "reply": reply,
             "mode": mode,
@@ -137,13 +132,14 @@ def chat(request: ChatRequest, mode: str = "default", reset: bool = False):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Server error: {str(e)}")
 
-#IMAGE CHAT ROUTE (supports mode)
+#IMAGE CHAT ROUTE (supports mode) - Upgraded with Request for IP and async handling
 @app.post("/chat/image")
 async def chat_image(
     file: UploadFile = File(...),
     message: Optional[str] = None,
     language: str = "en",
-    mode: str = "default"
+    mode: str = "default",
+    req: Request = None
 ):
     # Validate type
     allowed = ["image/jpeg", "image/png", "image/gif", "image/webp"]
@@ -162,25 +158,19 @@ async def chat_image(
     # User text
     user_text = message.strip() if message and message.strip() else "Describe this image."
     try:
+        # Extract user IP for rate limiting
+        user_ip = req.client.host if req else "anonymous"
+        
         reply = generate_response(
             user_message=user_text,
             persona_key=mode,
             language=language,
-            image_path=str(file_path)
+            image_path=str(file_path),
+            user_ip=user_ip
         )
-        # Per-persona memory save
-        mem = load_persona_memory(mode)
-        mem["conversations"].append({
-            "role": "user",
-            "msg": f"[Image: {filename}] {user_text}"[:200]
-        })
-        mem["conversations"].append({
-            "role": "assistant",
-            "msg": reply[:200]
-        })
-        if len(mem["conversations"]) > 60:
-            mem["conversations"] = mem["conversations"][-60:]
-        save_persona_memory(mode, mem)
+        
+        # Memory is already saved in generate_response; no duplication
+        
         return {
             "reply": reply,
             "image_path": f"uploads/{filename}",
@@ -191,6 +181,10 @@ async def chat_image(
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Vision error: {str(e)}")
+    finally:
+        # Clean up temp file after response (optional, but good practice)
+        if file_path.exists():
+            file_path.unlink()
 
 #SERVE IMAGES STATICALLY
-app.mount("/uploads", StaticFiles(directory="/tmp/uploads"), name="uploads")  
+app.mount("/uploads", StaticFiles(directory="/tmp/uploads"), name="uploads")

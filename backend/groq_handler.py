@@ -45,15 +45,15 @@ except Exception as redis_err:
 CALLS_PER_MINUTE = 25
 PERIOD = 60  # seconds
 
-# Updated MODEL_PRIORITY (verified available on Groq - Dec 2025) - Using stable models primarily
+# Updated MODEL_PRIORITY (prioritize stable models based on Dec 2025 availability; moved versatile down due to observed errors)
 MODEL_PRIORITY = [
-    "llama-3.3-70b-versatile",                 # Best quality
-    "meta-llama/llama-4-scout-17b-16e-instruct",  # Super stable + cheap
-    "llama-3.1-70b-versatile",                 # Strong fallback
-    "llama-3.1-8b-instant",                    # Fastest lightweight
-    "deepseek-r1-distill-llama-70b",           # Reasoning optimized
-    "qwen2.5-7b-instruct",                     # Multilingual fallback
-    "gemma2-9b-it"                             # Creative fallback
+    "meta-llama/llama-4-scout-17b-16e-instruct",  # Super stable + cheap (preview but reliable)
+    "llama-3.1-70b-versatile",                   # Strong fallback
+    "llama-3.1-8b-instant",                      # Fastest lightweight
+    "llama-3.3-70b-versatile",                   # Best quality but error-prone; last resort
+    "deepseek-r1-distill-llama-70b",             # Reasoning optimized
+    "qwen2.5-7b-instruct",                       # Multilingual fallback
+    "gemma2-9b-it"                               # Creative fallback
 ]
 
 
@@ -277,16 +277,18 @@ def set_cached_response(cache_key: str, response: str, ttl: int = 3600):  # 1 ho
     retry=retry_if_exception_type(Exception)
 )
 def safe_groq_call(client, messages, model):
-
     completion = client.chat.completions.create(
         model=model,
-        messages=messages
+        messages=messages,
+        temperature=0.7,  # Added for balanced creativity
+        max_tokens=512,   # Limit to prevent runaway responses
+        top_p=0.9         # Nucleus sampling for variety
     )
 
     logger.info(f"Model {model}: call success")
 
-    # CORRECT extraction
-    return completion.choices[0].message["content"].strip()
+    # Fixed: Use .content attribute to avoid TypeError
+    content = completion.choices[0].message.content
     if content is None:
         raise ValueError("No content in response")
     return content.strip()
