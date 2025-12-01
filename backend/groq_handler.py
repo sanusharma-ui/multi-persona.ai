@@ -47,10 +47,10 @@ PERIOD = 60  # seconds
 
 # Updated MODEL_PRIORITY (prioritize stable models based on Dec 2025 availability; moved versatile down due to observed errors)
 MODEL_PRIORITY = [
-    "meta-llama/llama-4-scout-17b-16e-instruct",  # Super stable + cheap (preview but reliable)
-    "llama-3.1-70b-versatile",                   # Strong fallback
-    "llama-3.1-8b-instant",                      # Fastest lightweight
     "llama-3.3-70b-versatile",                   # Best quality but error-prone; last resort
+    "llama-3.1-70b-versatile",                   # Strong fallback
+    "meta-llama/llama-4-scout-17b-16e-instruct",  # Super stable + cheap (preview but reliable)
+    "llama-3.1-8b-instant",                      # Fastest lightweight
     "deepseek-r1-distill-llama-70b",             # Reasoning optimized
     "qwen2.5-7b-instruct",                       # Multilingual fallback
     "gemma2-9b-it"                               # Creative fallback
