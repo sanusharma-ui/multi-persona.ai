@@ -47,13 +47,15 @@ PERIOD = 60  # seconds
 
 # Updated MODEL_PRIORITY (verified available on Groq - Dec 2025) - Using stable models primarily
 MODEL_PRIORITY = [
-    "llama-3.3-70b-versatile",  # Tier-1: Best quality (assuming available)
-    "llama-3.1-405b-reasoning",  # Strong fallback if 3.3 not out
-    "llama-3.1-8b-instant",  # Tier-3: Fast and reliable
-    "qwen/qwen-2.5-coder-32b-instruct",  # Multilingual strong
-    "mixtral-8x22b-32768",  # Heavy but stable
-    "gemma2-27b-it"  # Creative fallback
+    "llama-3.3-70b-versatile",                 # Best quality
+    "meta-llama/llama-4-scout-17b-16e-instruct",  # Super stable + cheap
+    "llama-3.1-70b-versatile",                 # Strong fallback
+    "llama-3.1-8b-instant",                    # Fastest lightweight
+    "deepseek-r1-distill-llama-70b",           # Reasoning optimized
+    "qwen2.5-7b-instruct",                     # Multilingual fallback
+    "gemma2-9b-it"                             # Creative fallback
 ]
+
 
 # MEMORY HANDLING PER PERSONA
 def get_memory_path(persona_key: str = "default") -> str:
