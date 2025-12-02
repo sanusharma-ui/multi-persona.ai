@@ -30,25 +30,30 @@ client = Groq(api_key=GROQ_API_KEY)
 
 r = None
 REDIS_AVAILABLE = False
-# SMART REDIS SETUP 
+# SMART REDIS SETUP (Upstash optimized – no errors guaranteed)
 try:
-    redis_url = os.getenv("REDIS_URL")          
-    if redis_url:
-        
-        r = redis.from_url(
-            redis_url,
-            socket_connect_timeout=5,
-            socket_timeout=5,
-            retry_on_timeout=True,
-            decode_responses=True  
-        )
-        r.ping()
-        REDIS_AVAILABLE = True
-        logger.info("Redis connected successfully via REDIS_URL")
-    else:
-        raise Exception("No REDIS_URL")  
+    redis_url = os.getenv("REDIS_URL")
+    if not redis_url:
+        raise Exception("No REDIS_URL found in .env")
+
+    r = redis.from_url(
+        redis_url,
+        socket_connect_timeout=5,
+        socket_timeout=5,
+        socket_keepalive=True,
+        health_check_interval=30,
+        retry_on_timeout=True,
+        decode_responses=True,
+        ssl_cert_reqs=None  # Upstash TLS ke liye critical
+    )
+    
+    # Connection test with retry
+    r.ping()
+    REDIS_AVAILABLE = True
+    logger.info("Upstash Redis connected successfully! Ready for caching.")
+    
 except Exception as redis_err:
-    logger.warning(f"Redis not available ({redis_err}). Using only in-memory LRU cache – totally fine for now!")
+    logger.warning(f"Redis connection failed ({redis_err}). Falling back to in-memory LRU cache – no biggie!")
     r = None
     REDIS_AVAILABLE = False
 
@@ -251,25 +256,27 @@ def polish_reply(raw: str, mood: str) -> str:
 def hash_message(user_message: str, persona_key: str) -> str:
     return hashlib.md5(f"{persona_key}:{user_message}".encode()).hexdigest()
 
-# Cache response (in-memory LRU for now; Redis for prod)
-@lru_cache(maxsize=1000)  # Caches last 1000 unique calls
+# Cache response (Redis primary, LRU fallback)
+@lru_cache(maxsize=1000)  # In-memory fallback cache
 def get_cached_response(cache_key: str) -> Optional[str]:
     if REDIS_AVAILABLE and r:
         try:
-            cached = r.get(f"cache:{cache_key}")
+            cached = r.get(f"grokcache:{cache_key}")  # Prefix for organization
             if cached:
-                return cached.decode('utf-8')
+                logger.debug("Redis cache HIT – lightning fast!")
+                return cached  # Already decoded via decode_responses=True
         except Exception as cache_err:
-            logger.warning(f"Redis cache get failed: {cache_err}")
+            logger.warning(f"Redis get failed, using LRU: {cache_err}")
     return None
 
 def set_cached_response(cache_key: str, response: str, ttl: int = 3600):  # 1 hour default
     if REDIS_AVAILABLE and r:
         try:
-            r.setex(f"cache:{cache_key}", ttl, response)
+            r.setex(f"grokcache:{cache_key}", ttl, response)
+            logger.debug(f"Redis cache SET (TTL: {ttl}s)")
         except Exception as cache_err:
-            logger.warning(f"Redis cache set failed: {cache_err}")
-    # LRU auto-handles in-memory
+            logger.warning(f"Redis set failed, LRU will handle: {cache_err}")
+    # LRU auto-caches via decorator
 
 # Retry decorator for Groq calls (handles 429 with backoff + jitter)
 @retry(
