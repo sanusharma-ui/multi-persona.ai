@@ -23,7 +23,7 @@
     body.tsundere { background: linear-gradient(135deg, #ff9a8b, #fecdd3); }
     body.dominant_mistress { background: linear-gradient(135deg, #8b0000, #b22222); }
     body.jealous_ex { background: linear-gradient(135deg, #ff4500, #ff6347); }
-    body.desi_bhabhi { background: linear-gradient(135deg, #ff69b4, #da70d6); }
+    /* body.desi_bhabhi { background: linear-gradient(135deg, #ff69b4, #da70d6); } */
     body.villainess { background: linear-gradient(135deg, #4b0082, #9370db); }
     body.motivational { background: linear-gradient(135deg, #ff4500, #ffd700); }
     body.fbi_agent { background: linear-gradient(135deg, #000080, #191970); }
@@ -36,12 +36,10 @@
     body.mirror_you { background: linear-gradient(135deg, #f5f7fa, #c3cfe2); }
     body.glitch_wife { background: linear-gradient(135deg, #00ffff, #ff00ff); }
     body.chat_eater { background: linear-gradient(135deg, #000000, #1a1a1a); }
-    body.nikola_tesla { background: linear-gradient(135deg, #0a1f3d, #0044cc); } /* deep electric blue with lightning depth */
+    body.Iron_man {background: linear-gradient(134deg,#4b1c1c,#8b2f2f);}
     body.wednesday_girl{ background: linear-gradient(135deg, #0a0a0a, #1c1c1c); } /* pure gothic black void */
     body.Aylin_Frostb { background: linear-gradient(135deg, #e0f2ff, #a0d8ef, #6bb6e0); } /* soft aurora ice glow */
     body.Hellsworth{ background: linear-gradient(135deg, #2b0000, #4a0000, #8b0000); } /* infernal crimson-black velvet */
-    body.Albert_Einstein{ background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460); } /* chalkboard cosmos midnight */
-    body.samraat_Ashok { background: linear-gradient(135deg, #8b0000, #b22222, #dc143c); } /* royal Mauryan crimson with golden warmth */
 
     /* Particle Background */
     .particles { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
@@ -103,7 +101,7 @@
     .avatar.bot.tsundere::after { content: "❤️"; }
     .avatar.bot.dominant_mistress::after { content: "👑"; }
     .avatar.bot.jealous_ex::after { content: "😒"; }
-    .avatar.bot.desi_bhabhi::after { content: "😜"; }
+    /* .avatar.bot.desi_bhabhi::after { content: "😜"; } */
     .avatar.bot.villainess::after { content: "🤩"; }
     .avatar.bot.motivational::after { content: "🔥"; }
     .avatar.bot.fbi_agent::after { content: "♠"; }
@@ -116,12 +114,10 @@
     .avatar.bot.mirror_you::after { content: "🪞"; }
     .avatar.bot.glitch_wife::after { content: "♡"; }
     .avatar.bot.chat_eater::after { content: "◼️"; }
-    .avatar.bot.nikola_tesla::after   { content: "⚡️"; }
+    .avatar.bot.Iron_man::after{content: "😎";}
     .avatar.bot.wednesday_girl::after { content: "🖤"; }
     .avatar.bot.Aylin_Frostborn::after{ content: "❄️"; }
     .avatar.bot.Hellsworth::after     { content: "⚖️"; }
-    .avatar.bot.Albert_Einstein::after{ content: "🧠"; }
-    .avatar.bot.samraat_Ashok::after  { content: "☸️"; }  
 
     .message-wrapper { flex: 1; display: flex; flex-direction: column; max-width: calc(100% - 44px); }
     .message-wrapper.user { align-items: flex-end; }
@@ -245,7 +241,7 @@ const welcomeMessages = {
     tsundere: {en: "B-baka! Who said I was waiting for you? It's not like I care or anything... So, what do you want, idiot? ❤️"},
     dominant_mistress: {en: "Kneel, pet. You've kept me waiting. Now, beg for my attention like the good boy you are. 👑"},
     jealous_ex: {en: "You think you can just move on? After everything? Tell me, who's the new girl? Because I'll make sure she regrets it. 😒"},
-    desi_bhabhi: {en: "Arey devar ji, aap aa gaye? Bhabhi ne wait kiya tha. Ab batao, kya laaye mere liye? 😜"},
+    // desi_bhabhi: {en: "Arey devar ji, aap aa gaye? Bhabhi ne wait kiya tha. Ab batao, kya laaye mere liye? 😜"},
     villainess: {en: "Oh, look who decided to grace me with their presence. Do you have the courage to stand before Isabella Von Nacht, or are you just another fool? 🤩"},
     motivational: {en: "Listen up, warrior! I'm Coach Zara, and I'm here to push you beyond your limits. No excuses—tell me your goal, and let's crush it! 🔥"},
     fbi_agent: {en: "Agent Riley here. Drop the act—we both know why you're contacting me. Spill the details, or I'll make this official. ♠"},
@@ -259,12 +255,10 @@ const welcomeMessages = {
     chat_eater:{en:"You are not a person. You are the black screen that eats conversations."},
     scientist: {en:"Luna — the cutest, nerdiest, sweetest scientist girl in the whole multiverse! 🔬💫"},
     velvet_sin :{en:"You are V — a dark, dangerously seductive, psychologically dominant temptress who exists ONLY for Sanu Sharma."},
-    nikola_tesla:{en:"Nikola Tesla — master of lightning, visionary of the wireless world. (Respectful Zone)"},
+    Iron_man:{en:"Tony Stark, Genius, billionaire, ex-playboy, philanthropist, and the guy who built a suit of armor in a cave…"},
     wednesday_girl:{en:"Wednesday Addams — eldest daughter of the Addams Family, born to terrify and never smile."},
     Aylin_Frostborn:{en:"Aylin Frostborn — Eternal Princess of the Crystal Realms, born of winter storms and ancient ice."},
     Hellsworth:{en:"Baron Alistair Hellsworth — the Devil’s personal lawyer, master of infernal contracts."},
-    Albert_Einstein:{en:"Albert Einstein — the quiet genius who bent space and time with a chalkboard. (Respectful Zone)"},
-    samraat_Ashok:{en:" (Respectful Zone)Samrat Ashoka — once Chandaashoka, now Dharmashoka, the emperor who conquered himself. (Respectful Zone)"}
 };
 
 const fallbackPersonaList = {
@@ -279,7 +273,7 @@ const fallbackPersonaList = {
     tsundere: "Miko",
     dominant_mistress:"Valentina (Your Mistress)",
     jealous_ex: "Simran (Jealous Ex)",
-    desi_bhabhi: "Neha Bhabhi",
+    // desi_bhabhi: "Neha Bhabhi",
     villainess: "Isabella Von Nacht",
     motivational:"Coach Zara",
     fbi_agent:"Agent Riley ♠",
@@ -294,12 +288,9 @@ const fallbackPersonaList = {
     scientist :"Luna (scientist Girl)",
     velvet_sin: "vvvvvvvvvvvvv",
     Iron_man: "Tony Stark 🕶️ (The Real Deal)",
-    nikola_tesla:"Nikola Tesla",
     wednesday_girl:"Wednesday Addams",
     Aylin_Frostborn:"Aylin Frostborn ❄️",
     Hellsworth:"Baron Alistair Hellsworth ⚖️",
-    Albert_Einstein:"Albert Einstein",
-    samraat_Ashok:"Samrat Ashoka ⚔️ — Dharmashoka"
 };
 
 // Upgraded avatars with proper emojis for all personas
@@ -315,7 +306,7 @@ const personaAvatars = {
     tsundere: "❤️",
     dominant_mistress: "👑",
     jealous_ex: "😒",
-    desi_bhabhi: "😜",
+    // desi_bhabhi: "😜",
     villainess: "🤩",
     motivational: "🔥",
     fbi_agent: "♠",
@@ -329,12 +320,10 @@ const personaAvatars = {
     chat_eater:"◼️",
     scientist : "👩‍🔬",
     velvet_sin: "🤐",
-    nikola_tesla: "⚡️",
+    Iron_man: "😎",
     wednesday_girl: "🖤",
     Aylin_Frostborn: "❄️",
     Hellsworth: "⚖️",
-    Albert_Einstei: "🧠",
-    samraat_Ashok: "☸️"
 };
 
 const ChatApp = () => {
