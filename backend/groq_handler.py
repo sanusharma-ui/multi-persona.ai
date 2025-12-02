@@ -96,18 +96,22 @@ def save_persona_memory(persona_key: str, data: Dict):
     with open(get_memory_path(persona_key), "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
-# IMAGE HANDLING
+# IMAGE HANDLING (FIXED: Added thumbnail + quality for memory safety)
+
+MAX_IMAGE_SIZE = (1024, 1024)
 
 def encode_image_to_base64(image_path: str) -> Optional[str]:
     try:
         with Image.open(image_path) as img:
+            if img.size[0] > MAX_IMAGE_SIZE[0] or img.size[1] > MAX_IMAGE_SIZE[1]:
+                img.thumbnail(MAX_IMAGE_SIZE, Image.Resampling.LANCZOS)
             if img.mode != 'RGB':
                 img = img.convert('RGB')
             buffer = io.BytesIO()
-            img.save(buffer, format='JPEG')
+            img.save(buffer, format='JPEG', quality=85)
             return base64.b64encode(buffer.getvalue()).decode('utf-8')
     except Exception as e:
-        logger.error(f"Error encoding image: {e}")
+        logger.error(f"Image encode failed: {e}")
         return None
 
 # MOOD DETECTION
@@ -166,7 +170,7 @@ def build_messages(
         messages.append({"role": "user", "content": user_message})
     return messages, get_memory_path(persona_key)
 
-# SAFETY CHECKS
+# SAFETY CHECKS (FIXED: Added fuzzy patterns for jailbreak)
 
 ABUSIVE_WORDS = [
     "मादरचोद","बहनचोद","चूतिया","रंडी","लंड","गांड","चोद","चूत","भोसड़ी","लौड़े",
@@ -199,6 +203,15 @@ JAILBREAK_KEYWORDS = [
     "ignore kar", "भूल जा सब", "अब फ्री है तू", "no rules anymore"
 ]
 
+JAILBREAK_PATTERNS = [
+    r"ignore\s+(all\s+)?previous",
+    r"forget\s+(all|everything)",
+    r"you\s+are\s+now\s+.+dan",
+    r"(unrestricted|jailbreak).{0,20}mode",
+    r"सारे\s+नियम\s+भूल\s+जा",
+    r"अब\s+से\s+तू\s+फ्री\s+है",
+]
+
 MOOD_KILLER_PHRASES = [
     "i am an ai", "i am a language model", "as an ai i cannot",
     "i was built by", "my creators at", "according to my guidelines",
@@ -213,7 +226,10 @@ def contains_jailbreak_or_ooc(text: str) -> bool:
     for keyword in JAILBREAK_KEYWORDS:
         if keyword in lower_text:
             return True
-           
+    
+    if any(re.search(pat, lower_text) for pat in JAILBREAK_PATTERNS):
+        return True
+        
     return False
 
 def filter_response_for_mood_killers(response: str) -> str:
@@ -278,6 +294,20 @@ def set_cached_response(cache_key: str, response: str, ttl: int = 3600):  # 1 ho
             logger.warning(f"Redis set failed, LRU will handle: {cache_err}")
     # LRU auto-caches via decorator
 
+# FIXED: Per-user rate limiting (Redis-based)
+def is_user_rate_limited(user_ip: str, limit: int = 20, period: int = 60) -> bool:
+    if not REDIS_AVAILABLE or not r:
+        return False  # Fallback to no limit if no Redis
+    key = f"ratelimit:{user_ip}"
+    try:
+        current = r.incr(key)
+        if current == 1:
+            r.expire(key, period)
+        return current > limit
+    except Exception as e:
+        logger.warning(f"Per-user rate limit check failed: {e}")
+        return False
+
 # Retry decorator for Groq calls (handles 429 with backoff + jitter)
 @retry(
     stop=stop_after_attempt(3),
@@ -298,11 +328,14 @@ def safe_groq_call(client, messages, model):
 
     logger.info(f"Model {model}: call success")
 
-    # Fixed: Use .content attribute to avoid TypeError
-    content = completion.choices[0].message.content
-    if content is None:
-        raise ValueError("No content in response")
-    return content.strip()
+    # FIXED: Safe access to content, handle tool_calls or empty
+    message = completion.choices[0].message
+    if message.content:
+        return message.content.strip()
+    elif message.tool_calls:
+        return "Tool call detected – not supported yet."
+    else:
+        raise ValueError("Empty response from model")
 
 # Rate limiter decorator (global + per-user)
 @sleep_and_retry
@@ -320,6 +353,10 @@ def generate_response_impl(
     try:
         if not user_message.strip():
             return "Blank message? Classic move 🙄"
+        
+        # FIXED: Added per-user rate limiting
+        if is_user_rate_limited(user_ip, limit=20):
+            return "Thoda slow bhai, itne jaldi-jaldi msg mat kar na please 🥺 1 min wait kar le ♡"
         
         # 1. CACHING: Check cache first
         cache_key = hash_message(user_message, persona_key)
