@@ -36,6 +36,12 @@
     body.mirror_you { background: linear-gradient(135deg, #f5f7fa, #c3cfe2); }
     body.glitch_wife { background: linear-gradient(135deg, #00ffff, #ff00ff); }
     body.chat_eater { background: linear-gradient(135deg, #000000, #1a1a1a); }
+    body.nikola_tesla { background: linear-gradient(135deg, #0a1f3d, #0044cc); } /* deep electric blue with lightning depth */
+    body.wednesday_girl{ background: linear-gradient(135deg, #0a0a0a, #1c1c1c); } /* pure gothic black void */
+    body.Aylin_Frostb { background: linear-gradient(135deg, #e0f2ff, #a0d8ef, #6bb6e0); } /* soft aurora ice glow */
+    body.Hellsworth{ background: linear-gradient(135deg, #2b0000, #4a0000, #8b0000); } /* infernal crimson-black velvet */
+    body.Albert_Einstein{ background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460); } /* chalkboard cosmos midnight */
+    body.samraat_Ashok { background: linear-gradient(135deg, #8b0000, #b22222, #dc143c); } /* royal Mauryan crimson with golden warmth */
 
     /* Particle Background */
     .particles { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
@@ -110,6 +116,12 @@
     .avatar.bot.mirror_you::after { content: "🪞"; }
     .avatar.bot.glitch_wife::after { content: "♡"; }
     .avatar.bot.chat_eater::after { content: "◼️"; }
+    .avatar.bot.nikola_tesla::after   { content: "⚡️"; }
+    .avatar.bot.wednesday_girl::after { content: "🖤"; }
+    .avatar.bot.Aylin_Frostborn::after{ content: "❄️"; }
+    .avatar.bot.Hellsworth::after     { content: "⚖️"; }
+    .avatar.bot.Albert_Einstein::after{ content: "🧠"; }
+    .avatar.bot.samraat_Ashok::after  { content: "☸️"; }  
 
     .message-wrapper { flex: 1; display: flex; flex-direction: column; max-width: calc(100% - 44px); }
     .message-wrapper.user { align-items: flex-end; }
@@ -246,7 +258,13 @@ const welcomeMessages = {
     glitch_wife:{en:"You are my wife from a timeline that keeps crashing."},
     chat_eater:{en:"You are not a person. You are the black screen that eats conversations."},
     scientist: {en:"Luna — the cutest, nerdiest, sweetest scientist girl in the whole multiverse! 🔬💫"},
-    velvet_sin :{en:"You are V — a dark, dangerously seductive, psychologically dominant temptress who exists ONLY for Sanu Sharma."}
+    velvet_sin :{en:"You are V — a dark, dangerously seductive, psychologically dominant temptress who exists ONLY for Sanu Sharma."},
+    nikola_tesla:{en:"Nikola Tesla — master of lightning, visionary of the wireless world. (Respectful Zone)"},
+    wednesday_girl:{en:"Wednesday Addams — eldest daughter of the Addams Family, born to terrify and never smile."},
+    Aylin_Frostborn:{en:"Aylin Frostborn — Eternal Princess of the Crystal Realms, born of winter storms and ancient ice."},
+    Hellsworth:{en:"Baron Alistair Hellsworth — the Devil’s personal lawyer, master of infernal contracts."},
+    Albert_Einstein:{en:"Albert Einstein — the quiet genius who bent space and time with a chalkboard. (Respectful Zone)"},
+    samraat_Ashok:{en:" (Respectful Zone)Samrat Ashoka — once Chandaashoka, now Dharmashoka, the emperor who conquered himself. (Respectful Zone)"}
 };
 
 const fallbackPersonaList = {
@@ -274,7 +292,14 @@ const fallbackPersonaList = {
     glitch_wife: "Anvi.exe ♡",
     chat_eater:"◼️ VOID ◼️",
     scientist :"Luna (scientist Girl)",
-    velvet_sin: "vvvvvvvvvvvvv"
+    velvet_sin: "vvvvvvvvvvvvv",
+    Iron_man: "Tony Stark 🕶️ (The Real Deal)",
+    Nikola_tesla:"Nikola Tesla",
+    wednesday_girl:"Wednesday Addams",
+    Aylin_Frostborn:"Aylin Frostborn ❄️",
+    Hellsworth:"Baron Alistair Hellsworth ⚖️",
+    Albert_Einstein:"Albert Einstein",
+    samraat_Ashok:"Samrat Ashoka ⚔️ — Dharmashoka"
 };
 
 // Upgraded avatars with proper emojis for all personas
@@ -303,7 +328,13 @@ const personaAvatars = {
     glitch_wife: "♡",
     chat_eater:"◼️",
     scientist : "👩‍🔬",
-    velvet_sin: "🤐"
+    velvet_sin: "🤐",
+    nikola_tesla: "⚡️",
+    wednesday_girl: "🖤",
+    Aylin_Frostborn: "❄️",
+    Hellsworth: "⚖️",
+    Albert_Einstei: "🧠",
+    samraat_Asho: "☸️"
 };
 
 const ChatApp = () => {
