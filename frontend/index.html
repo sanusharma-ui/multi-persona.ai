@@ -294,7 +294,7 @@ const fallbackPersonaList = {
     scientist :"Luna (scientist Girl)",
     velvet_sin: "vvvvvvvvvvvvv",
     Iron_man: "Tony Stark 🕶️ (The Real Deal)",
-    Nikola_tesla:"Nikola Tesla",
+    nikola_tesla:"Nikola Tesla",
     wednesday_girl:"Wednesday Addams",
     Aylin_Frostborn:"Aylin Frostborn ❄️",
     Hellsworth:"Baron Alistair Hellsworth ⚖️",
@@ -334,7 +334,7 @@ const personaAvatars = {
     Aylin_Frostborn: "❄️",
     Hellsworth: "⚖️",
     Albert_Einstei: "🧠",
-    samraat_Asho: "☸️"
+    samraat_Ashok: "☸️"
 };
 
 const ChatApp = () => {
@@ -555,7 +555,7 @@ const ChatApp = () => {
                             {msg.image && <img src={msg.image} alt="Uploaded" className="message-image" />}
                             <div className="message-time">{msg.timestamp}</div>
                         </div>
-                        {msg.type === 'user' && <div className="avatar user">Cool</div>}
+                        {msg.type === 'user' && <div className="avatar user">☺️</div>}
                     </div>
                 ))}
                 {isLoading && (
