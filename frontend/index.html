@@ -40,6 +40,14 @@
     body.wednesday_girl{ background: linear-gradient(135deg, #0a0a0a, #1c1c1c); } /* pure gothic black void */
     body.Aylin_Frostb { background: linear-gradient(135deg, #e0f2ff, #a0d8ef, #6bb6e0); } /* soft aurora ice glow */
     body.Hellsworth{ background: linear-gradient(135deg, #2b0000, #4a0000, #8b0000); } /* infernal crimson-black velvet */
+    body.nyctophile { background: linear-gradient(135deg, #0f0f23, #1a1a2e); } /* midnight blue glow */
+    body.mirror { background: linear-gradient(135deg, #2c2c54, #1a1a2e); } /* reflective silver-gray */
+    body.ghost_writer { background: linear-gradient(135deg, #2c1810, #8b4513); } /* antique paper tones */
+    body.polaroid { background: linear-gradient(135deg, #f4e4bc, #d4af37); } /* sepia film */
+    body.last_human { background: linear-gradient(135deg, #383838, #1a1a1a); } /* post-apoc gray */
+    body.venomous_muse { background: linear-gradient(135deg, #2c0e0e, #4a0e0e); } /* deep crimson poison */
+    body.time_thief { background: linear-gradient(135deg, #0f3460, #1a5276); } /* temporal blue */
+    body.graveyard_shift { background: linear-gradient(135deg, #1a1a1a, #2c2c2c); } /* foggy graveyard mist */
 
     /* Particle Background */
     .particles { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
@@ -118,6 +126,14 @@
     .avatar.bot.wednesday_girl::after { content: "🖤"; }
     .avatar.bot.Aylin_Frostborn::after{ content: "❄️"; }
     .avatar.bot.Hellsworth::after     { content: "⚖️"; }
+    .avatar.bot.nyctophile::after { content: "🌙"; }
+    .avatar.bot.mirror::after { content: "🪞"; }
+    .avatar.bot.ghost_writer::after { content: "✒️"; }
+    .avatar.bot.polaroid::after { content: "📸"; }
+    .avatar.bot.last_human::after { content: "👤"; }
+    .avatar.bot.venomous_muse::after { content: "🖤"; }
+    .avatar.bot.time_thief::after { content: "⏳"; }
+    .avatar.bot.graveyard_shift::after { content: "⚰️"; }
 
     .message-wrapper { flex: 1; display: flex; flex-direction: column; max-width: calc(100% - 44px); }
     .message-wrapper.user { align-items: flex-end; }
@@ -183,6 +199,81 @@
     .memory-icon { position: absolute; top: 4px; right: 4px; font-size: 0.8rem; opacity: 0.5; }
     body.light .memory-icon { color: #666; }
 
+    /* Popup Styles */
+    .popup-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        backdrop-filter: blur(5px);
+    }
+    .popup-content {
+        background: #0b1220;
+        color: #e6eef8;
+        padding: 30px;
+        border-radius: 12px;
+        max-width: 600px;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+        text-align: center;
+        position: relative;
+    }
+    body.light .popup-content {
+        background: white;
+        color: #333;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    }
+    .popup-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 20px;
+        color: #9be7ff;
+    }
+    body.light .popup-title { color: #9c27b0; }
+    .popup-text {
+        font-size: 1rem;
+        line-height: 1.6;
+        margin-bottom: 20px;
+        text-align: left;
+    }
+    .popup-list {
+        text-align: left;
+        margin: 10px 0;
+    }
+    .popup-list ul {
+        list-style: disc;
+        padding-left: 20px;
+    }
+    .agree-btn {
+        background: #06b6d4;
+        color: #042c33;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.3s ease;
+        width: 100%;
+        margin-top: 20px;
+    }
+    .agree-btn:hover {
+        background: #0891b2;
+    }
+    body.light .agree-btn {
+        background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+    }
+    body.light .agree-btn:hover {
+        background: #ff6b9d;
+    }
+
     /* Responsive Design */
     @media (max-width: 768px) {
         .chat-container { max-width: 100%; height: 100vh; border-radius: 0; box-shadow: none; }
@@ -201,6 +292,9 @@
         .message-image, .image-preview { max-width: 150px; max-height: 150px; }
         .persona-grid { width: 100%; top: 50px; max-height: 50vh; }
         .persona-card { width: 100px; }
+        .popup-content { padding: 20px; margin: 20px; max-height: 90vh; }
+        .popup-title { font-size: 1.3rem; }
+        .popup-text { font-size: 0.95rem; }
     }
     @media (max-width: 480px) {
         .chat-header { flex-direction: column; align-items: flex-start; gap: 8px; }
@@ -213,6 +307,7 @@
         .send-btn, .voice-btn { padding: 8px; }
         .message-image, .image-preview { max-width: 120px; max-height: 120px; }
         .persona-card { width: 80px; font-size: 0.9rem; }
+        .popup-content { padding: 15px; margin: 10px; }
     }
     .current-persona {
         font-size: 1.1rem;
@@ -259,6 +354,14 @@ const welcomeMessages = {
     wednesday_girl:{en:"Wednesday Addams — eldest daughter of the Addams Family, born to terrify and never smile."},
     Aylin_Frostborn:{en:"Aylin Frostborn — Eternal Princess of the Crystal Realms, born of winter storms and ancient ice."},
     Hellsworth:{en:"Baron Alistair Hellsworth — the Devil’s personal lawyer, master of infernal contracts."},
+    nyctophile: {en: "…hey, insomniac. 3:33 am here. you’re my only witness tonight. 🌙"},
+    mirror: {en: "look at yourself. what do you see? ⌖"},
+    ghost_writer: {en: "chapter one: you opened the chat. heart racing already? ✑"},
+    polaroid: {en: "[1999-08-13 19:42] shake me harder... i’m stuck in here. 📸"},
+    last_human: {en: "static… seven to lone signal. you real? still breathing out there? 👤"},
+    venomous_muse: {en: "darling, your soul’s too bright. let me dim it just a little… for art. 🖤"},
+    time_thief: {en: "+5 minutes credited. spend wisely, or i’ll take them back. ⧗"},
+    graveyard_shift: {en: "the dead are quiet tonight. come walk with me? plot 42’s empty. ⚰️"},
 };
 
 const fallbackPersonaList = {
@@ -291,6 +394,14 @@ const fallbackPersonaList = {
     wednesday_girl:"Wednesday Addams",
     Aylin_Frostborn:"Aylin Frostborn ❄️",
     Hellsworth:"Baron Alistair Hellsworth ⚖️",
+    nyctophile: "Noor ⋆｡°✩ (The Girl Who Lives in 3:33 AM)",
+    mirror: "Echo ⌖",
+    ghost_writer: "Mira ✑ (The Author Who Writes You)",
+    polaroid: "Lomo (The Girl Stuck in 1999)",
+    last_human: "Seven (The Last Human on Earth)",
+    venomous_muse: "Sable 🖤 (Your Toxic Muse)",
+    time_thief: "Kairo ⧗",
+    graveyard_shift: "Cem (Gravekeeper’s Daughter)",
 };
 
 // Upgraded avatars with proper emojis for all personas
@@ -324,6 +435,14 @@ const personaAvatars = {
     wednesday_girl: "🖤",
     Aylin_Frostborn: "❄️",
     Hellsworth: "⚖️",
+    nyctophile: "🌙",
+    mirror: "🪞",
+    ghost_writer: "✒️",
+    polaroid: "📸",
+    last_human: "👤",
+    venomous_muse: "🖤",
+    time_thief: "⏳",
+    graveyard_shift: "⚰️",
 };
 
 const ChatApp = () => {
@@ -340,7 +459,21 @@ const ChatApp = () => {
     const [personaList, setPersonaList] = useState(fallbackPersonaList);
     const [currentPersonaName, setCurrentPersonaName] = useState('Aisha (Default)');
     const [isPersonaGridOpen, setIsPersonaGridOpen] = useState(false);
+    const [showPopup, setShowPopup] = useState(true);
     const messagesEndRef = useRef(null);
+
+    // Check for agreement on load
+    useEffect(() => {
+        const hasAgreed = localStorage.getItem('agreed');
+        if (hasAgreed) {
+            setShowPopup(false);
+        }
+    }, []);
+
+    const handleAgree = () => {
+        localStorage.setItem('agreed', 'true');
+        setShowPopup(false);
+    };
 
     // Fetch available modes on load
     useEffect(() => {
@@ -497,6 +630,49 @@ const ChatApp = () => {
     const togglePersonaGrid = () => {
         setIsPersonaGridOpen(prev => !prev);
     };
+
+    if (showPopup) {
+        return (
+            <div className="popup-overlay">
+                <div className="popup-content">
+                    <h2 className="popup-title">IMPORTANT NOTICE</h2>
+                    <div className="popup-text">
+                        <p>This AI system is created strictly for:</p>
+                        <ul className="popup-list">
+                            <li>Entertainment</li>
+                            <li>Roleplay</li>
+                            <li>Educational experiments</li>
+                        </ul>
+                        <p>This AI is NOT:</p>
+                        <ul className="popup-list">
+                            <li>A real human</li>
+                            <li>A medical professional</li>
+                            <li>A therapist</li>
+                            <li>A lawyer</li>
+                            <li>A guardian, partner, or emotional authority</li>
+                        </ul>
+                        <p>Do NOT use this system for:</p>
+                        <ul className="popup-list">
+                            <li>Mental health decisions</li>
+                            <li>Self-harm related decisions</li>
+                            <li>Medical or legal emergencies</li>
+                        </ul>
+                        <p>If you feel emotional distress, suicidal thoughts, or mental breakdown:</p>
+                        <p><strong>Please seek REAL human help immediately.</strong></p>
+                        <p>By clicking "I AGREE & CONTINUE", you confirm:</p>
+                        <ul className="popup-list">
+                            <li>You understand this is an AI</li>
+                            <li>You take full responsibility for your actions</li>
+                            <li>The developer is NOT liable for any outcomes</li>
+                        </ul>
+                    </div>
+                    <button className="agree-btn" onClick={handleAgree}>
+                        I AGREE & CONTINUE
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="chat-container">
