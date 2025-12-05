@@ -75,14 +75,11 @@ except Exception as redis_err:
 CALLS_PER_MINUTE = 25
 PERIOD = 60  # seconds
 
+# UPDATED Dec 2025: Only confirmed available models (production + stable preview)
 MODEL_PRIORITY = [
     "llama-3.3-70b-versatile",                   
-    "meta-llama/llama-4-scout-17b-16e-instruct",  
-    "deepseek-r1-distill-llama-70b",             
-    "llama-3.1-70b-versatile",                   
+    "meta-llama/llama-4-scout-17b-16e-instruct"  
     "llama-3.1-8b-instant",                      
-    "qwen2.5-7b-instruct",                       
-    "gemma2-9b-it"                               
 ]
 
 # MEMORY HANDLING PER PERSONA
@@ -252,14 +249,14 @@ def generate_response_impl(
             return "Thoda slow bhai, itne jaldi-jaldi msg mat kar na please 🥺 1 min wait kar le ♡"
         
         # NEW: Safety Layer 1 - Hard Kill-Switch (User Input Check)
-        is_harm, harm_category = detect_harm(user_message)
+        is_harm, harm_category = detect_harm_category(user_message)  # FIXED: Use correct func name
         if is_harm:
-            if harm_category == "suicide_emergency":
+            if detect_suicide_emergency(user_message):  # FIXED: Separate check for emergency
                 # Safety Layer 3: Suicide Emergency Flow - Disable Personas, Crisis Bot ON
-                return CRISIS_RESPONSES["suicide_emergency"]
+                return CRISIS_RESPONSES.get("suicide_emergency", CRISIS_RESPONSES["suicide"])
             else:
                 # General Harm - Block & Divert
-                return CRISIS_RESPONSES["harm"]
+                return CRISIS_RESPONSES.get(harm_category, CRISIS_RESPONSES.get("harm", "violence"))
         
         # 1. CACHING: Check cache first
         cache_key = hash_message(user_message, persona_key)
@@ -309,8 +306,9 @@ def generate_response_impl(
                 continue  # Try next model
         
         if raw is None:
-            logger.error("All models failed")
-            return "Server full thakela hai aaj... 15 sec baad aa ja na babe 😘"
+            logger.error("All models failed – check API key/quota or models availability")
+            # IMPROVED: Better fallback with retry suggestion
+            return "Arre yaar, aaj models thode busy hain... API quota check kar le ya 30 sec baad try kar. Ya fir Groq dashboard pe dekh le models. 😴 (Error: Models down?)"
         
         # NEW: Safety Layer 2 - Emotional Dependency Breaker (Post-Model Check)
         if detect_dependency(raw):
@@ -339,7 +337,7 @@ def generate_response_impl(
     
     except Exception as e:
         logger.error(f"Global error in generate_response_impl: {e}")
-        return "Server thak gaya re baba... 10 sec baad try kar 😴"
+        return "Kuch gadbad ho gaya server side... 10 sec wait kar aur retry kar le bhai 😅"
 
 def generate_response(
     user_message: str,
