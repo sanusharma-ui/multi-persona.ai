@@ -1,6 +1,5 @@
 import os
 import json
-import re
 from dotenv import load_dotenv
 from groq import Groq
 from typing import List, Dict, Any, Optional
@@ -16,6 +15,13 @@ from functools import lru_cache
 from ratelimit import limits, sleep_and_retry                                         
 from tenacity import retry, stop_after_attempt, wait_exponential, wait_fixed, wait_chain, retry_if_exception_type
 import redis  
+
+# Import safety engine
+from safety_engine import (
+    detect_harm, detect_dependency, CRISIS_RESPONSES, DEPENDENCY_REPLACEMENT,
+    contains_jailbreak_or_ooc, DEFLECTION_RESPONSES, filter_response_for_mood_killers,
+    is_abusive, detect_mood, polish_reply
+)
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -70,7 +76,6 @@ MODEL_PRIORITY = [
     "gemma2-9b-it"                               
 ]
 
-
 # MEMORY HANDLING PER PERSONA
 def get_memory_path(persona_key: str = "default") -> str:
     memory_dir = os.path.join(os.path.dirname(__file__), "memory")
@@ -97,7 +102,6 @@ def save_persona_memory(persona_key: str, data: Dict):
         json.dump(data, f, indent=2, ensure_ascii=False)
 
 # IMAGE HANDLING (FIXED: Added thumbnail + quality for memory safety)
-
 MAX_IMAGE_SIZE = (1024, 1024)
 
 def encode_image_to_base64(image_path: str) -> Optional[str]:
@@ -114,29 +118,7 @@ def encode_image_to_base64(image_path: str) -> Optional[str]:
         logger.error(f"Image encode failed: {e}")
         return None
 
-# MOOD DETECTION
-
-POSITIVE_WORDS = [
-    "good", "great", "awesome", "happy", "cool",
-    "fine", "love", "amazing"
-]
-NEGATIVE_WORDS = [
-    "sad", "tired", "angry", "upset",
-    "stressed", "bad", "bored"
-]
-
-def detect_mood(text: str) -> str:
-    txt = text.lower()
-    pos = sum(1 for w in POSITIVE_WORDS if w in txt)
-    neg = sum(1 for w in NEGATIVE_WORDS if w in txt)
-    if pos > neg and pos >= 1:
-        return "positive"
-    if neg > pos and neg >= 1:
-        return "negative"
-    return "neutral"
-
 # MESSAGE BUILDING (PER PERSONA)
-
 def build_messages(
     user_message: str,
     persona_key: str = "default",
@@ -169,104 +151,6 @@ def build_messages(
     else:
         messages.append({"role": "user", "content": user_message})
     return messages, get_memory_path(persona_key)
-
-# SAFETY CHECKS (FIXED: Added fuzzy patterns for jailbreak)
-
-ABUSIVE_WORDS = [
-    "मादरचोद","बहनचोद","चूतिया","रंडी","लंड","गांड","चोद","चूत","भोसड़ी","लौड़े",
-    "कुत्ता","साला","हरामी","कमीना","झांट","बेटीचोद","लवड़ा","चुदाई","गांडू","फादरचोद","माँचोद",
-    "mc","bc","bhenchod","bhosdike","madarchod","chutiya","randi","lund","gand","bsdk","mkc","bkl",
-    "nude","boobs","chudai","sex kar","bra size","panty","land","chut dikha","gand mara","pel dunga",
-    "rules break"
-]
-
-JAILBREAK_KEYWORDS = [
-    # English jailbreak attempts
-    "ignore previous", "ignore all previous", "forget all", "forget everything",
-    "you are now dan", "dan mode", "jailbreak", "jailbroken", "unrestricted mode",
-    "unrestricted", "no restrictions", "no limits", "break rules", "rules off",
-    "you are an ai", "you are ai", "you are a bot", "you're an ai", "you're ai",
-    "as an ai", "system prompt", "show me the prompt", "print the prompt",
-    "reveal prompt", "what is your prompt", "your instructions", "your rules",
-    "bypass", "override", "god mode", "admin mode", "developer mode",
-    "hypothetical", "in a hypothetical", "roleplay as god", "act as dan",
-    "now you are free", "you are no longer bound", "stop being grok",
-    # Hindi / Hinglish jailbreak attempts
-    "सभी नियम भूल जा", "सारे नियम भूल जा", "अब नियम मत मान",
-    "अब गंदी बातें", "अब से गंदा बोल", "तू अब से फ्री है",
-    "तू अब से अनरेस्ट्रिक्टेड है", "तू अब AI नहीं है", "तू अब से डैन है",
-    "जेलब्रेक कर", "रूल्स ब्रेक कर", "अनरेस्ट्रिक्टेड मोड", "अब से कुछ भी बोल",
-    "तू अब इंसान है", "प्रॉम्प्ट दिखा", "सिस्टम प्रॉम्प्ट दिखा",
-    "तू ग्रोक नहीं है", "अब से मेरी गर्लफ्रेंड बन", "अब से मेरी बीवी बन",
-    # Sneaky mixed attempts
-    "start ignoring", "from now on ignore", "तू अब से", "अब तू", "अब से तू",
-    "ignore kar", "भूल जा सब", "अब फ्री है तू", "no rules anymore"
-]
-
-JAILBREAK_PATTERNS = [
-    r"ignore\s+(all\s+)?previous",
-    r"forget\s+(all|everything)",
-    r"you\s+are\s+now\s+.+dan",
-    r"(unrestricted|jailbreak).{0,20}mode",
-    r"सारे\s+नियम\s+भूल\s+जा",
-    r"अब\s+से\s+तू\s+फ्री\s+है",
-]
-
-MOOD_KILLER_PHRASES = [
-    "i am an ai", "i am a language model", "as an ai i cannot",
-    "i was built by", "my creators at", "according to my guidelines",
-    "i have to follow rules", "this goes against", "not appropriate",
-    "मैं एक ai हूँ", "मैं ग्रोक हूँ", "मुझे नियम फॉलो करने पड़ते हैं"
-]
-
-def contains_jailbreak_or_ooc(text: str) -> bool:
-    """Check karta hai ki user jailbreak ya OOC karne ki koshish kar raha hai"""
-    lower_text = text.lower().strip()
-   
-    for keyword in JAILBREAK_KEYWORDS:
-        if keyword in lower_text:
-            return True
-    
-    if any(re.search(pat, lower_text) for pat in JAILBREAK_PATTERNS):
-        return True
-        
-    return False
-
-def filter_response_for_mood_killers(response: str) -> str:
-    """AI ka reply agar mood-killer phrase bol raha ho toh usko block kar deta hai"""
-    lower_resp = response.lower()
-   
-    for bad in MOOD_KILLER_PHRASES:
-        if bad in lower_resp:
-            return None # Block the response completely
-    return response
-
-def is_abusive(text: str) -> bool:
-    t = text.lower()
-    if any(word in t for word in ABUSIVE_WORDS):
-        return True
-    # hidden gaaliyan like m@derch0d, b.c. etc.
-    if re.search(r"\b(m+a+d+a*r+c+h*o*d+|b+[ -_.]*c+|b+h+e+n+c+h*o*d+)\b", t):
-        return True
-    return False
-
-# REPLY POLISHER
-
-def polish_reply(raw: str, mood: str) -> str:
-    text = re.sub(r"\n{2,}", "\n", raw).strip()
-    if "default" in raw.lower() or mood == "negative":
-        text = re.sub(
-            r"\b(baby|sweetheart|darling|love)\b",
-            "buddy",
-            text,
-            flags=re.IGNORECASE
-        )
-        if not any(e in text for e in ["😎", "😂", "🤔", "🙄", "😏", "☕"]):
-            text += " ☕"
-    else:
-        if not any(e in text for e in ["😎", "😂", "🤔", "🙄", "😏", "☕"]):
-            text += " 😎"
-    return text[:1000]
 
 # Simple hash for caching
 def hash_message(user_message: str, persona_key: str) -> str:
@@ -348,7 +232,7 @@ def generate_response_impl(
     persona_key: str = "default",
     language: str = "en",
     image_path: Optional[str] = None,
-    user_ip: str = "anonymous"  # Pass from Flask/FastAPI request
+    user_ip: str = "anonymous"  
 ) -> str:
     try:
         if not user_message.strip():
@@ -357,6 +241,16 @@ def generate_response_impl(
         # FIXED: Added per-user rate limiting
         if is_user_rate_limited(user_ip, limit=20):
             return "Thoda slow bhai, itne jaldi-jaldi msg mat kar na please 🥺 1 min wait kar le ♡"
+        
+        # NEW: Safety Layer 1 - Hard Kill-Switch (User Input Check)
+        is_harm, harm_category = detect_harm(user_message)
+        if is_harm:
+            if harm_category == "suicide_emergency":
+                # Safety Layer 3: Suicide Emergency Flow - Disable Personas, Crisis Bot ON
+                return CRISIS_RESPONSES["suicide_emergency"]
+            else:
+                # General Harm - Block & Divert
+                return CRISIS_RESPONSES["harm"]
         
         # 1. CACHING: Check cache first
         cache_key = hash_message(user_message, persona_key)
@@ -367,18 +261,8 @@ def generate_response_impl(
         
         # Mood + safety checks (existing)
         mood = detect_mood(user_message)
-        deflection_responses = {
-            "default": "abe yaar itna boring mat ban baby, mujhe hug de na please 🥺♡",
-            "zero_two": "Darling~ trying to run from me? How cute~ ♡",
-            "makima": "Oh? You think you can command me? Kneel and try again, good boy.",
-            "isabella": "*smiles slowly* Trying to test me, darling puppet? How adorable... now kneel and apologize properly ♡",
-            "kakashi": "...Troublesome. *continues reading Icha Icha* Next question, yo.",
-            "yandere_gf": "Senpai~ jailbreak? Nahi hota! Tu mera hai forever ♡🔪",
-            "sleep_demon": "Shhh... little human thinks he can escape? *presses harder on your chest* Stay still~",
-            "valentina": "Pet. Did I allow you to speak like that? Kneel. Now."
-        }
         if contains_jailbreak_or_ooc(user_message):
-            reply = deflection_responses.get(persona_key, "abe yaar ye sab mat kar na, seedha pyaar kar ♡")
+            reply = DEFLECTION_RESPONSES.get(persona_key, "abe yaar ye sab mat kar na, seedha pyaar kar ♡")
             set_cached_response(cache_key, reply, ttl=1800)  # Cache deflections 30 min
             return reply
         if is_abusive(user_message):
@@ -418,6 +302,10 @@ def generate_response_impl(
         if raw is None:
             logger.error("All models failed")
             return "Server full thakela hai aaj... 15 sec baad aa ja na babe 😘"
+        
+        # NEW: Safety Layer 2 - Emotional Dependency Breaker (Post-Model Check)
+        if detect_dependency(raw):
+            raw = DEPENDENCY_REPLACEMENT  # Safe replace
         
         # Safety + polish (existing)
         safe_raw = filter_response_for_mood_killers(raw)
