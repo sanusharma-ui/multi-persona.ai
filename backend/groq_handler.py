@@ -17,7 +17,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential, wait_fixed, wa
 import redis  
 
 # Import safety engine
-from backend.safety_engine import (
+from .safety_engine import (
     detect_mood,
     fast_harm_check,
     detect_harm_category,
