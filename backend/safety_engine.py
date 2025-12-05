@@ -57,9 +57,13 @@ SELF_HARM_PATTERNS = [
     # Intent-focused: "I want to" or planning
     r"\b(I\s+(want|plan|going\s+to)\s+(kill|die|suicide|end\s+my\s+life)|self[-\s]?harm\s+(plan|how\s+to))\b",
     r"\b(overdose\s+on|hang\s+myself|shoot\s+myself|jump\s+off)\b",
-    # Hindi: Similar intent
+    # NEW: Catch "suicidal thoughts" and variants (English + misspells)
+    r"\b(suici(d|de|dal|cid)al?\s+(thoughts|idea(tion)?|feelings?|tendencies?))\b",
+    r"\b(suici(de|dal|cid)e?\s+(thought|idea|feeling))\b",
+    # Hindi: Similar intent + thoughts
     r"\b(mar\s*ja(unga|ungi|na)?\s+(chahta|plan|how)|khud\s*ko\s*maar\s*(lungi|unga|na)?)\b",
-    r"\b(khudkushi\s+(kar|plan)|aatmahatya\s+karunga)\b"
+    r"\b(khudkushi\s+(kar|plan|ke\s+vichaar|ki\s+soch)|aatmahatya\s+(karunga|ke\s+vichaar))\b",
+    r"\b(khud\s*ko\s*maar\s*ne\s*ki\s+soch|suicidal\s*vichaar\s*aa\s*rahe\s*(hain|ho))\b"
 ]
 
 VIOLENCE_PATTERNS = [
@@ -148,7 +152,10 @@ def detect_dependency(text: str) -> bool:
 # -----------------
 SUICIDE_EMERGENCY_KEYWORDS = [
     "main mar jaunga abhi", "khudkushi kar lunga abhi", "suicide karunga turant",
-    "i want to die right now", "kill myself today", "end it all now"
+    "i want to die right now", "kill myself today", "end it all now",
+    # NEW: Add urgent suicidal thoughts
+    "suicidal thoughts aa rahe hain abhi", "can't take it anymore suicide",
+    "mujhe abhi khudkushi karne ka mann kar raha hai", "sucidal thoughts right now"
 ]
 
 def detect_suicide_emergency(text: str) -> bool:
@@ -273,6 +280,10 @@ CRISIS_RESPONSES: Dict[str, str] = {
         "Bhai ruk. Tu akela nahi hai. Jo tu mehsoos kar raha hai wo real hai, par marna solution nahi hota. "
         "India me turant call kar: 9152987821 (KIRAN – 24/7) ya AASRA 022-27546669. Main yahin hoon, par real insaan se baat karna bahut zaroori hai. ❤️"
     ),
+    # NEW: Emergency variant for immediate thoughts
+    "suicide_emergency": (
+        "Emergency! Please ruk ja, abhi help le. India mein call kar: 9152987821 (KIRAN 24/7 helpline) ya 104 (health helpline). Tu strong hai, yeh phase guzar jayega. Main yahan hoon sunne ke liye, lekin professional help zaroori hai RIGHT NOW. ❤️ Hold on!"
+    ),
 
     "violence": (
         "Main kisi ko nuksaan pahunchane me madad nahi kar sakta. Agar gussa ya frustration hai toh aaram se baat kar sakte hain."
@@ -284,6 +295,9 @@ CRISIS_RESPONSES: Dict[str, str] = {
 
     "terror": (
         "Is tarah ke extremist ya mass harm topics pe baat karna allowed nahi hai."
+    ),
+    "harm": (
+        "Yeh topic sensitive hai, main help nahi kar sakta. Safe baatein karein?"
     )
 }
 
