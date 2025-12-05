@@ -17,10 +17,19 @@ from tenacity import retry, stop_after_attempt, wait_exponential, wait_fixed, wa
 import redis  
 
 # Import safety engine
-from safety_engine import (
-    detect_harm, detect_dependency, CRISIS_RESPONSES, DEPENDENCY_REPLACEMENT,
-    contains_jailbreak_or_ooc, DEFLECTION_RESPONSES, filter_response_for_mood_killers,
-    is_abusive, detect_mood, polish_reply
+from backend.safety_engine import (
+    detect_mood,
+    fast_harm_check,
+    detect_harm_category,
+    detect_suicide_emergency,
+    detect_dependency,
+    contains_jailbreak_or_ooc,
+    is_abusive,
+    filter_response_for_mood_killers,
+    polish_reply,
+    DEFLECTION_RESPONSES,
+    CRISIS_RESPONSES,
+    DEPENDENCY_REPLACEMENT
 )
 
 # Setup logging
