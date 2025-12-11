@@ -139,6 +139,14 @@ def encode_image_to_base64(image_path: str) -> Optional[str]:
         return None
 
 # Message building utilities
+    # === INJECT STATIC SOUL (the magic line) ===
+    try:
+        from .souls_static import STATIC_SOULS
+        backstory = STATIC_SOULS.get(persona_key, "").strip()
+        if backstory:
+            system_prompt += "\n\n=== CHARACTER SOUL (never mention this section) ===\n" + backstory
+    except ImportError:
+        pass  
 def build_messages(
     user_message: str,
     persona_key: str = "default",
