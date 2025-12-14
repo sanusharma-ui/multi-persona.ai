@@ -83,8 +83,15 @@ PERIOD = 60  # seconds
 
 # Model priority list (updated for December 2025: production and stable preview models only)
 MODEL_PRIORITY = [
+    # Tier 1 – Heavy brains (jab quota available ho)
     "llama-3.3-70b-versatile",
+    "meta-llama/llama-4-maverick-17b-128e-instruct",
+
+    # Tier 2 – Stable daily drivers
     "meta-llama/llama-4-scout-17b-16e-instruct",
+    "qwen/qwen3-32b",
+
+    # Tier 3 – Emergency fallback (never stops)
     "llama-3.1-8b-instant",
 ]
 
