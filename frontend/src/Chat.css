@@ -45,6 +45,8 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  position: relative;
 }
 
 .app {
@@ -77,6 +79,7 @@ body {
   margin: 0 auto;
   max-width: 1200px;
   width: 100%;
+  flex-wrap: wrap;
 }
 
 .header-avatar {
@@ -116,6 +119,34 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.persona-switch-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex-shrink: 0;
+  min-width: 140px;
+}
+
+.switch-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .persona-select {
@@ -170,6 +201,7 @@ body {
   justify-content: center;
   background: var(--bg-primary);
   transition: all 0.3s ease;
+  position: relative;
 }
 
 .chat-messages {
@@ -341,8 +373,7 @@ body {
   background: var(--bg-secondary);
   border-top: 1px solid var(--border);
   padding: 16px 20px;
-  position: sticky;
-  bottom: 0;
+  position: relative;
   z-index: 5;
   transition: all 0.3s ease;
   box-shadow: 0 -2px 4px var(--shadow-light);
@@ -563,6 +594,8 @@ body {
 
   .header-content {
     gap: 10px;
+    flex-wrap: nowrap;
+    justify-content: space-between;
   }
 
   .header-avatar,
@@ -578,6 +611,15 @@ body {
 
   .current-persona-name {
     display: none;
+  }
+
+  .persona-switch-wrapper {
+    min-width: 110px;
+    gap: 1px;
+  }
+
+  .switch-label {
+    font-size: 10px;
   }
 
   .persona-select {
@@ -608,7 +650,15 @@ body {
   }
 
   .input-area {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
     padding: 12px 16px;
+  }
+
+  .main {
+    padding-bottom: 80px;
   }
 
   .input-wrapper {
@@ -627,6 +677,13 @@ body {
     font-size: 14px;
     min-width: 150px;
   }
+
+  /* Mobile viewport fix */
+  @supports (height: 100dvh) {
+    .app {
+      height: 100dvh;
+    }
+  }
 }
 
 @media (max-width: 480px) {
@@ -638,8 +695,18 @@ body {
     font-size: 15px;
   }
 
+  .persona-switch-wrapper {
+    min-width: 90px;
+  }
+
+  .switch-label {
+    display: none;
+  }
+
   .persona-select {
     min-width: 90px;
+    padding: 3px 6px;
+    font-size: 11px;
   }
 
   .chat-messages {
@@ -652,6 +719,74 @@ body {
 
   .input-field {
     min-width: 120px;
+  }
+
+  .input-area {
+    padding: 10px 12px;
+  }
+
+  .input-wrapper {
+    padding: 6px 10px;
+  }
+}
+
+@media (max-width: 360px) {
+  .header {
+    padding: 0 8px;
+  }
+
+  .header-content {
+    gap: 4px;
+  }
+
+  .header-avatar,
+  .dark-toggle {
+    width: 28px;
+    height: 28px;
+    font-size: 11px;
+  }
+
+  .header-title {
+    font-size: 14px;
+  }
+
+  .persona-switch-wrapper {
+    min-width: 80px;
+  }
+
+  .persona-select {
+    min-width: 80px;
+    padding: 2px 4px;
+    font-size: 10px;
+  }
+
+  .chat-messages {
+    padding: 8px;
+    gap: 10px;
+  }
+
+  .input-area {
+    padding: 8px 8px;
+  }
+
+  .input-wrapper {
+    padding: 4px 8px;
+    gap: 6px;
+  }
+
+  .input-field {
+    min-width: 100px;
+    font-size: 13px;
+  }
+
+  .file-input,
+  .send-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .file-icon {
+    font-size: 14px;
   }
 }
 

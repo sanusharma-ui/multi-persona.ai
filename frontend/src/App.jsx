@@ -168,7 +168,7 @@ function App() {
       }, 30);
       return () => clearInterval(welcomeIntervalRef.current);
     }
-  }, [showWelcome, messages.length, welcomeTyping, selectedPersona]);
+  }, [showWelcome, messages.length, selectedPersona]); // Removed welcomeTyping from deps
 
   // Scroll to bottom
   useEffect(() => {
@@ -215,28 +215,31 @@ function App() {
       // Typing effect
       const plainText = (data.reply || "").replace(/<[^>]*>/g, '');
       setMessages(prev => [...prev, { role: 'assistant', content: '', isTyping: true, timestamp, persona: selectedPersona }]);
-    
+   
       let typedContent = '';
       for (let i = 0; i <= plainText.length; i++) {
         await new Promise(r => setTimeout(r, 20));
         typedContent = plainText.substring(0, i);
         setMessages(prev => {
           const newMsgs = [...prev];
-          if (newMsgs[newMsgs.length - 1]?.isTyping) {
-            newMsgs[newMsgs.length - 1].content = typedContent + (i < plainText.length ? '|' : '');
+          const lastMsgIndex = newMsgs.length - 1;
+          if (newMsgs[lastMsgIndex]?.isTyping) {
+            newMsgs[lastMsgIndex] = { ...newMsgs[lastMsgIndex], content: typedContent + (i < plainText.length ? '|' : '') };
           }
           return newMsgs;
         });
       }
       setMessages(prev => {
         const newMsgs = [...prev];
-        newMsgs[newMsgs.length - 1] = {
+        const lastMsgIndex = newMsgs.length - 1;
+        newMsgs[lastMsgIndex] = {
           role: 'assistant',
           content: botContent,
           timestamp,
           image: data.image_path ? `${backendUrl}/uploads/${data.filename}` : null,
           persona: selectedPersona,
-          hasMemory: true
+          hasMemory: true,
+          isTyping: false
         };
         return newMsgs;
       });
@@ -271,11 +274,14 @@ function App() {
             <h1 className="header-title">Multi-Persona AI Chat</h1>
             <div className="current-persona-name">{currentPersonaName}</div>
           </div>
-          <select value={selectedPersona} onChange={(e) => setSelectedPersona(e.target.value)} className="persona-select">
-            {PERSONAS.map(persona => (
-              <option key={persona.key} value={persona.key}>{persona.label}</option>
-            ))}
-          </select>
+          <div className="persona-switch-wrapper">
+            <label htmlFor="persona-select" className="switch-label sr-only">Switch Persona</label>
+            <select id="persona-select" value={selectedPersona} onChange={(e) => setSelectedPersona(e.target.value)} className="persona-select">
+              {PERSONAS.map(persona => (
+                <option key={persona.key} value={persona.key}>{persona.label}</option>
+              ))}
+            </select>
+          </div>
           <button className="dark-toggle" onClick={() => setIsDarkMode(prev => !prev)} aria-label="Toggle dark mode">
             {isDarkMode ? '☀️' : '🌙'}
           </button>
