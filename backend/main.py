@@ -39,7 +39,7 @@ app.add_middleware(
         "http://127.0.0.1:5500",
         "http://127.0.0.1:8000",
         "http://localhost:5173/",
-        "https://groq-chat-bot-woad.vercel.app/"
+        "https://multi-persona-ai.vercel.app"
     ],
     allow_credentials=True,
     allow_methods=["*"],
