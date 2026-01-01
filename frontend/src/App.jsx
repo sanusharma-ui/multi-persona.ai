@@ -44,22 +44,22 @@ const AgreementPopup = ({ onAgree }) => (
 
 function App() {
   // ---- STATES ----
-  const [hasAgreed, setHasAgreed] = useState(false);
+  const [hasAgreed, setHasAgreed] = useState(() => localStorage.getItem('ai-agreement-accepted') === 'true');
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
   const [welcomeTyping, setWelcomeTyping] = useState('');
   const [selectedPersona, setSelectedPersona] = useState(localStorage.getItem('selectedPersona') || 'default');
   const [currentPersonaName, setCurrentPersonaName] = useState('Aisha (Professional Admin)');
   const [personaList, setPersonaList] = useState({});
+  const [showWelcome, setShowWelcome] = useState(true);
   const messagesEndRef = useRef(null);
   const welcomeIntervalRef = useRef(null);
   const backendUrl = 'https://groqchatbot-xoiv.onrender.com';
   const selectedLanguage = 'en';
-
   const fallbackPersonaList = {
     default: "Aisha (Professional Admin)",
     luna: "Luna",
@@ -82,14 +82,12 @@ function App() {
     pulse: "Pulse (Reality Check Persona)",
     ava: "Ava (Everyday Companion)",
   };
-
   const personaAvatars = {
     default: "😎", luna: "🔬", iron_man: "🕶️", motivational: "🔥", neo: "💻",
     gojo: "👁️", levi: "⚔️", nyctophile: "🌙", mirror: "⌖", ghost_writer: "✑",
     last_human: "🌍", graveyard_shift: "⚰️", dr_aria: "👂", kavya: "📜",
     atlas: "🏗️", orion: "♟️", nyra: "💡", rishi: "🕉️", pulse: "💓", ava: "☕"
   };
-
   const welcomeMessages = {
     default: { en: "Greetings, guest ji. I am AISHA — Supreme Admin of the Sanu Sharma Multiverse😎" },
     luna: { en: "Hi hi! I'm Luna, your bubbly scientist buddy! Ready for some sparkly experiments today? 🔬✨ What's brewing in your brain?" },
@@ -120,7 +118,11 @@ function App() {
       .then(data => {
         if (data?.modes) {
           setPersonaList(data.modes);
-          setCurrentPersonaName(data.modes.default || fallbackPersonaList.default);
+          const initialName = data.modes.default || fallbackPersonaList.default;
+          setCurrentPersonaName(initialName);
+          if (selectedPersona === 'default' && !localStorage.getItem('selectedPersona')) {
+            setSelectedPersona(data.modes.default ? Object.keys(data.modes).find(key => key === data.modes.default) || 'default' : 'default');
+          }
         } else {
           setPersonaList(fallbackPersonaList);
           setCurrentPersonaName(fallbackPersonaList.default);
@@ -131,18 +133,25 @@ function App() {
       });
   }, []);
 
+  // Persist dark mode
+  useEffect(() => {
+    localStorage.setItem('darkMode', isDarkMode.toString());
+    document.documentElement.classList.toggle('dark', isDarkMode);
+  }, [isDarkMode]);
+
   // Persist persona and reset chat on change
   useEffect(() => {
     localStorage.setItem('selectedPersona', selectedPersona);
     const name = personaList[selectedPersona] || fallbackPersonaList[selectedPersona] || fallbackPersonaList.default;
     setCurrentPersonaName(name);
     setMessages([]); // Reset chat history
-    setWelcomeTyping(''); // Reset welcome
+    setWelcomeTyping(''); // Reset welcome to trigger typing
+    setShowWelcome(true);
   }, [selectedPersona, personaList]);
 
-  // Welcome typing animation (only when no messages)
+  // Welcome typing animation on mount or persona change (only when no messages)
   useEffect(() => {
-    if (messages.length === 0 && welcomeTyping === '') {
+    if (showWelcome && messages.length === 0 && welcomeTyping === '') {
       if (welcomeIntervalRef.current) {
         clearInterval(welcomeIntervalRef.current);
       }
@@ -154,11 +163,12 @@ function App() {
           index++;
         } else {
           clearInterval(welcomeIntervalRef.current);
+          setShowWelcome(false);
         }
-      }, 40);
+      }, 30);
       return () => clearInterval(welcomeIntervalRef.current);
     }
-  }, [messages.length, welcomeTyping, selectedPersona]);
+  }, [showWelcome, messages.length, welcomeTyping, selectedPersona]);
 
   // Scroll to bottom
   useEffect(() => {
@@ -178,10 +188,11 @@ function App() {
   const sendMessage = async () => {
     if (!input.trim() && !image) return;
     setLoading(true);
-    const timestamp = new Date().toLocaleTimeString();
+    const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const userContent = input.trim() || "Sent an image.";
     setMessages(prev => [...prev, { role: 'user', content: userContent, timestamp, image: imagePreview }]);
     setInput(''); setImage(null); setImagePreview(null);
+    setShowWelcome(false);
     try {
       let response;
       if (image) {
@@ -201,10 +212,10 @@ function App() {
       if (!response.ok) throw new Error(`Server error: ${response.status}`);
       const data = await response.json();
       const botContent = data.reply || "Oops! No response.";
-      // Typing effect exactly like index.html
+      // Typing effect
       const plainText = (data.reply || "").replace(/<[^>]*>/g, '');
       setMessages(prev => [...prev, { role: 'assistant', content: '', isTyping: true, timestamp, persona: selectedPersona }]);
-     
+    
       let typedContent = '';
       for (let i = 0; i <= plainText.length; i++) {
         await new Promise(r => setTimeout(r, 20));
@@ -212,7 +223,7 @@ function App() {
         setMessages(prev => {
           const newMsgs = [...prev];
           if (newMsgs[newMsgs.length - 1]?.isTyping) {
-            newMsgs[newMsgs.length - 1].content = typedContent + '|';
+            newMsgs[newMsgs.length - 1].content = typedContent + (i < plainText.length ? '|' : '');
           }
           return newMsgs;
         });
@@ -256,26 +267,29 @@ function App() {
       <header className="header">
         <div className="header-content">
           <div className="header-avatar">{currentAvatar}</div>
-          <h1 className="header-title">Multi-Persona AI Chat</h1>
-          <div className="current-persona-name">{currentPersonaName}</div>
+          <div className="header-text">
+            <h1 className="header-title">Multi-Persona AI Chat</h1>
+            <div className="current-persona-name">{currentPersonaName}</div>
+          </div>
           <select value={selectedPersona} onChange={(e) => setSelectedPersona(e.target.value)} className="persona-select">
             {PERSONAS.map(persona => (
               <option key={persona.key} value={persona.key}>{persona.label}</option>
             ))}
           </select>
-          <div className="header-status">Online</div>
-          <button className="dark-toggle" onClick={() => setIsDarkMode(prev => !prev)}>
+          <button className="dark-toggle" onClick={() => setIsDarkMode(prev => !prev)} aria-label="Toggle dark mode">
             {isDarkMode ? '☀️' : '🌙'}
           </button>
         </div>
       </header>
       <main className="main">
         <div className="chat-messages">
-          {messages.length === 0 && welcomeTyping && (
-            <div className="welcome-message">
-              <div className="welcome-avatar">{currentAvatar}</div>
-              <div className="welcome-content">
-                <p className="welcome-text" dangerouslySetInnerHTML={{ __html: welcomeTyping.replace(/\n/g, '<br/>') }} />
+          {showWelcome && messages.length === 0 && (
+            <div className="message-wrapper assistant">
+              <div className="message assistant">
+                <div className="avatar assistant">{currentAvatar}</div>
+                <div className="message-content">
+                  <p className="welcome-text" dangerouslySetInnerHTML={{ __html: welcomeTyping.replace(/\n/g, '<br/>') }} />
+                </div>
               </div>
             </div>
           )}
@@ -285,13 +299,27 @@ function App() {
                 <div className={`avatar ${msg.role}`}>{msg.role === 'user' ? 'U' : currentAvatar}</div>
                 <div className="message-content">
                   {msg.image && <img src={msg.image} alt="Uploaded" className="uploaded-image" />}
-                  <p dangerouslySetInnerHTML={{ __html: msg.isTyping ? msg.content : (msg.content || '').replace(/\n/g, '<br/>') }} />
+                  <p dangerouslySetInnerHTML={{ __html: msg.isTyping ? (msg.content || '') : (msg.content || '').replace(/\n/g, '<br/>') }} />
                   {msg.hasMemory && !msg.isTyping && <span className="memory-icon">🧠</span>}
                   {!msg.isTyping && <div className="message-time">{msg.timestamp}</div>}
                 </div>
               </div>
             </div>
           ))}
+          {loading && (
+            <div className="message-wrapper assistant">
+              <div className="message assistant">
+                <div className="avatar assistant">{currentAvatar}</div>
+                <div className="message-content typing-indicator">
+                  <div className="typing-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
           <div ref={messagesEndRef} />
         </div>
       </main>
@@ -316,9 +344,6 @@ function App() {
           </button>
         </div>
       </div>
-      <footer className="footer">
-        <p>Built with ❤️ by <strong>Sanu Sharma</strong></p>
-      </footer>
     </div>
   );
 }
