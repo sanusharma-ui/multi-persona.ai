@@ -38,7 +38,8 @@ app.add_middleware(
         "http://localhost:8000",
         "http://127.0.0.1:5500",
         "http://127.0.0.1:8000",
-        "https://sonu-frontend.onrender.com",
+        "http://localhost:5173/",
+        "https://groq-chat-bot-woad.vercel.app/"
     ],
     allow_credentials=True,
     allow_methods=["*"],
