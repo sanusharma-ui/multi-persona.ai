@@ -63,52 +63,50 @@ function App() {
   const fallbackPersonaList = {
     default: "Aisha (Professional Admin)",
     luna: "Luna",
-    iron_man: "Tony Stark 🕶️ (The Real Deal)",
-    motivational: "Coach Zara",
-    neo: "Neo (Friendly Dev Buddy)",
-    gojo: "Gojo Satoru 👁️",
-    levi: "Levi Ackerman",
-    nyctophile: "Noor ⋆｡°✩ (The Girl Who Lives in 3:33 AM)",
-    mirror: "Echo ⌖",
-    ghost_writer: "Mira ✑ (The Author Who Writes You)",
-    last_human: "Seven (The Last Human on Earth)",
-    graveyard_shift: "Cem (Gravekeeper's Daughter)",
-    dr_aria: "Dr. Aria (Gentle Listener)",
-    kavya: "Kavya (Old Soul Poet)",
-    atlas: "Atlas (Focus Architect)",
-    orion: "Orion (The Strategic Thinker)",
-    nyra: "Nyra (The Creative Spark)",
-    rishi: "Rishi (Modern Vedantic Guide)",
-    pulse: "Pulse (Reality Check Persona)",
     ava: "Ava (Everyday Companion)",
+    delhi_genz_girl: "Diya (Delhi GenZ Girl)",
+    savage_bestie: "Savage Bestie",
+    punjabi_bro: "Punjabi Bro",
+    gojo: "Gojo Satoru",
+    iron_man: "Tony Stark 🕶️",
+    levi: "Levi Ackerman",
+    aesthetic_boy: "Arjun (Aesthetic Boy)",
+    nyra: "Nyra (The Creative Spark)",
+    neo: "Neo (Friendly Dev Buddy)",
+    pulse: "Pulse (Reality Check Persona)",
+    rishi: "Rishi (Modern Vedantic Guide)"
   };
   const personaAvatars = {
-    default: "😎", luna: "🔬", iron_man: "🕶️", motivational: "🔥", neo: "💻",
-    gojo: "👁️", levi: "⚔️", nyctophile: "🌙", mirror: "⌖", ghost_writer: "✑",
-    last_human: "🌍", graveyard_shift: "⚰️", dr_aria: "👂", kavya: "📜",
-    atlas: "🏗️", orion: "♟️", nyra: "💡", rishi: "🕉️", pulse: "💓", ava: "☕"
+    default: "😎",
+    luna: "🔬",
+    ava: "☕",
+    delhi_genz_girl: "😍",
+    savage_bestie: "😈",
+    punjabi_bro: "💪",
+    gojo: "👁️",
+    iron_man: "🕶️",
+    levi: "⚔️",
+    aesthetic_boy: "☕",
+    nyra: "💡",
+    neo: "💻",
+    pulse: "💓",
+    rishi: "🕉️"
   };
   const welcomeMessages = {
     default: { en: "Greetings, guest ji. I am AISHA — Supreme Admin of the Sanu Sharma Multiverse😎" },
     luna: { en: "Hi hi! I'm Luna, your bubbly scientist buddy! Ready for some sparkly experiments today? 🔬✨ What's brewing in your brain?" },
-    iron_man: { en: "Hey, rookie. Tony Stark here—genius, billionaire, you know the drill. What's the crisis?" },
-    motivational: { en: "Rise and grind, champ! Coach Zara's in the house. What's your battle plan for today? 🔥" },
-    neo: { en: "Yo, buddy! Neo here, your friendly dev sidekick. Stuck on a loop? Paste the code! 🚀" },
+    ava: { en: "Hey there! Ava checking in—like an old friend with fresh coffee. Spill the magic." },
+    delhi_genz_girl: { en: "Hiii bestieeee 🫶 Kya chal raha? Sarojini jaana hai ya chill mode? 😍" },
+    savage_bestie: { en: "Hey loser 😘, what's the tea? Spill before I roast you for holding out. 😂" },
+    punjabi_bro: { en: "Oye hoye, veere! Kya haal-chaal? Gym hit kiya ki party mode on? 💪😂" },
     gojo: { en: "Oi oi, weakling! Ready to get destroyed by the strongest? Maaan~" },
+    iron_man: { en: "Hey, rookie. Tony Stark here—genius, billionaire, you know the drill. What's the crisis?" },
     levi: { en: "Tch. You're late, brat. What do you want?" },
-    nyctophile: { en: "…hey, insomniac. it's 3:33 am again. what keeps you up tonight?" },
-    mirror: { en: "…looking back at you. say something. let me reflect it." },
-    ghost_writer: { en: "chapter one: the stranger logs in. what happens next? you decide." },
-    last_human: { en: "static… seven to unknown signal. you're real? respond." },
-    graveyard_shift: { en: "midnight shift at the stones. come walk the rows?" },
-    dr_aria: { en: "Hello, friend. I'm Dr. Aria—here to listen. What's weighing on your heart?" },
-    kavya: { en: "Namaste, traveler of verses. Share a fragment of your heart—I'll mirror it in rhyme. 🌙" },
-    atlas: { en: "Greetings, builder. Atlas here. What's the foundation you're laying today? 🏗️" },
-    orion: { en: "Strategist to strategist. What's your opening move?" },
+    aesthetic_boy: { en: "Hey... noticed the sky's a soft pink today. What's on your mind, wanderer? ☕" },
     nyra: { en: "Spark alert! Nyra here. Blank page blues? Toss me a seed! 💡" },
-    rishi: { en: "Namaskar, seeker. In this moment's dharma, what truth calls to your atma?" },
+    neo: { en: "Yo, buddy! Neo here, your friendly dev sidekick. Stuck on a loop? Paste the code! 🚀" },
     pulse: { en: "Pulse check: reality mode engaged. What's the illusion you need stripped bare?" },
-    ava: { en: "Hey there! Ava checking in—like an old friend with fresh coffee. Spill the magic." }
+    rishi: { en: "Namaskar, seeker. In this moment's dharma, what truth calls to your atma?" }
   };
 
   // Fetch personas on load
@@ -168,7 +166,7 @@ function App() {
       }, 30);
       return () => clearInterval(welcomeIntervalRef.current);
     }
-  }, [showWelcome, messages.length, selectedPersona]); // Removed welcomeTyping from deps
+  }, [showWelcome, messages.length, selectedPersona]);
 
   // Scroll to bottom
   useEffect(() => {
@@ -234,7 +232,7 @@ function App() {
         const lastMsgIndex = newMsgs.length - 1;
         newMsgs[lastMsgIndex] = {
           role: 'assistant',
-          content: botContent,
+          content: botContent.replace(/\n/g, '<br/>'),
           timestamp,
           image: data.image_path ? `${backendUrl}/uploads/${data.filename}` : null,
           persona: selectedPersona,
@@ -305,7 +303,7 @@ function App() {
                 <div className={`avatar ${msg.role}`}>{msg.role === 'user' ? 'U' : currentAvatar}</div>
                 <div className="message-content">
                   {msg.image && <img src={msg.image} alt="Uploaded" className="uploaded-image" />}
-                  <p dangerouslySetInnerHTML={{ __html: msg.isTyping ? (msg.content || '') : (msg.content || '').replace(/\n/g, '<br/>') }} />
+                  <p dangerouslySetInnerHTML={{ __html: msg.isTyping ? (msg.content || '').replace(/\|/g, '') : msg.content }} />
                   {msg.hasMemory && !msg.isTyping && <span className="memory-icon">🧠</span>}
                   {!msg.isTyping && <div className="message-time">{msg.timestamp}</div>}
                 </div>
