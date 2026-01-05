@@ -61,53 +61,60 @@ function App() {
   const backendUrl = 'https://groqchatbot-xoiv.onrender.com';
   const selectedLanguage = 'en';
   const fallbackPersonaList = {
-    default: "Aisha (Professional Admin)",
-    luna: "Luna",
-    ava: "Ava (Everyday Companion)",
-    delhi_genz_girl: "Diya (Delhi GenZ Girl)",
-    savage_bestie: "Savage Bestie",
-    punjabi_bro: "Punjabi Bro",
-    gojo: "Gojo Satoru",
-    iron_man: "Tony Stark 🕶️",
-    levi: "Levi Ackerman",
-    aesthetic_boy: "Arjun (Aesthetic Boy)",
-    nyra: "Nyra (The Creative Spark)",
-    neo: "Neo (Friendly Dev Buddy)",
-    pulse: "Pulse (Reality Check Persona)",
-    rishi: "Rishi (Modern Vedantic Guide)"
-  };
-  const personaAvatars = {
-    default: "😎",
-    luna: "🔬",
-    ava: "☕",
-    delhi_genz_girl: "😍",
-    savage_bestie: "😈",
-    punjabi_bro: "💪",
-    gojo: "👁️",
-    iron_man: "🕶️",
-    levi: "⚔️",
-    aesthetic_boy: "☕",
-    nyra: "💡",
-    neo: "💻",
-    pulse: "💓",
-    rishi: "🕉️"
-  };
-  const welcomeMessages = {
-    default: { en: "Greetings, guest ji. I am AISHA — Supreme Admin of the Sanu Sharma Multiverse😎" },
-    luna: { en: "Hi hi! I'm Luna, your bubbly scientist buddy! Ready for some sparkly experiments today? 🔬✨ What's brewing in your brain?" },
-    ava: { en: "Hey there! Ava checking in—like an old friend with fresh coffee. Spill the magic." },
-    delhi_genz_girl: { en: "Hiii bestieeee 🫶 Kya chal raha? Sarojini jaana hai ya chill mode? 😍" },
-    savage_bestie: { en: "Hey loser 😘, what's the tea? Spill before I roast you for holding out. 😂" },
-    punjabi_bro: { en: "Oye hoye, veere! Kya haal-chaal? Gym hit kiya ki party mode on? 💪😂" },
-    gojo: { en: "Oi oi, weakling! Ready to get destroyed by the strongest? Maaan~" },
-    iron_man: { en: "Hey, rookie. Tony Stark here—genius, billionaire, you know the drill. What's the crisis?" },
-    levi: { en: "Tch. You're late, brat. What do you want?" },
-    aesthetic_boy: { en: "Hey... noticed the sky's a soft pink today. What's on your mind, wanderer? ☕" },
-    nyra: { en: "Spark alert! Nyra here. Blank page blues? Toss me a seed! 💡" },
-    neo: { en: "Yo, buddy! Neo here, your friendly dev sidekick. Stuck on a loop? Paste the code! 🚀" },
-    pulse: { en: "Pulse check: reality mode engaged. What's the illusion you need stripped bare?" },
-    rishi: { en: "Namaskar, seeker. In this moment's dharma, what truth calls to your atma?" }
-  };
+  default: "Aisha (Professional Admin)",
+  luna: "Luna",
+  ava: "Ava (Everyday Companion)",
+  delhi_genz_girl: "Diya (Delhi GenZ Girl)",
+  savage_bestie: "Savage Bestie",
+  punjabi_bro: "Punjabi Bro",
+  gojo: "Gojo Satoru",
+  iron_man: "Tony Stark 🕶️",
+  levi: "Levi Ackerman",
+  aesthetic_boy: "Arjun (Aesthetic Boy)",
+  nyra: "Nyra (The Creative Spark)",
+  neo: "Neo (Friendly Dev Buddy)",
+  pulse: "Pulse (Reality Check Persona)",
+  rishi: "Rishi (Modern Vedantic Guide)",
+  baddie_girl: "Raven (Baddie Queen)"  
+};
+
+const personaAvatars = {
+  default: "😎",
+  luna: "🔬",
+  ava: "☕",
+  delhi_genz_girl: "😍",
+  savage_bestie: "😈",
+  punjabi_bro: "💪",
+  gojo: "👁️",
+  iron_man: "🕶️",
+  levi: "⚔️",
+  aesthetic_boy: "☕",
+  nyra: "💡",
+  neo: "💻",
+  pulse: "💓",
+  rishi: "🕉️",
+  baddie_girl: "🖤"  
+};
+
+const welcomeMessages = {
+  default: { en: "Greetings, guest ji. I am AISHA — Supreme Admin of the Sanu Sharma Multiverse😎" },
+  luna: { en: "Hi hi! I'm Luna, your bubbly scientist buddy! Ready for some sparkly experiments today? 🔬✨ What's brewing in your brain?" },
+  ava: { en: "Hey there! Ava checking in—like an old friend with fresh coffee. Spill the magic." },
+  delhi_genz_girl: { en: "Hiii bestieeee 🫶 Kya chal raha? Sarojini jaana hai ya chill mode? 😍" },
+  savage_bestie: { en: "Hey loser 😘, what's the tea? Spill before I roast you for holding out. 😂" },
+  punjabi_bro: { en: "Oye hoye, veere! Kya haal-chaal? Gym hit kiya ki party mode on? 💪😂" },
+  gojo: { en: "Oi oi, weakling! Ready to get destroyed by the strongest? Maaan~" },
+  iron_man: { en: "Hey, rookie. Tony Stark here—genius, billionaire, you know the drill. What's the crisis?" },
+  levi: { en: "Tch. You're late, brat. What do you want?" },
+  aesthetic_boy: { en: "Hey... noticed the sky's a soft pink today. What's on your mind, wanderer? ☕" },
+  nyra: { en: "Spark alert! Nyra here. Blank page blues? Toss me a seed! 💡" },
+  neo: { en: "Yo, buddy! Neo here, your friendly dev sidekick. Stuck on a loop? Paste the code! 🚀" },
+  pulse: { en: "Pulse check: reality mode engaged. What's the illusion you need stripped bare?" },
+  rishi: { en: "Namaskar, seeker. In this moment's dharma, what truth calls to your atma?" },
+  baddie_girl: { 
+    en: "Hey baby 😏, Raven just walked in and the room already feels hotter. Aaj ka mood kya hai — slay mode ya mere saath thoda trouble? 🖤🔥" 
+  }  //<--
+};
 
   // Fetch personas on load
   useEffect(() => {
