@@ -59,7 +59,6 @@ function App() {
   const messagesEndRef = useRef(null);
   const welcomeIntervalRef = useRef(null);
   const backendUrl = 'https://groqchatbot-xoiv.onrender.com';
-  const selectedLanguage = 'en';
   const fallbackPersonaList = {
   default: "Aisha (Professional Admin)",
   luna: "Luna",
@@ -75,7 +74,8 @@ function App() {
   neo: "Neo (Friendly Dev Buddy)",
   pulse: "Pulse (Reality Check Persona)",
   rishi: "Rishi (Modern Vedantic Guide)",
-  baddie_girl: "Raven (Baddie Queen)"  
+  baddie_girl: "Raven (Baddie Queen)",
+  cipher: "Cipher 🔒"  // ← Mysterious hacker added
 };
 
 const personaAvatars = {
@@ -93,7 +93,8 @@ const personaAvatars = {
   neo: "💻",
   pulse: "💓",
   rishi: "🕉️",
-  baddie_girl: "🖤"  
+  baddie_girl: "🖤",
+  cipher: "🔒"  // ← Hacker lock vibe
 };
 
 const welcomeMessages = {
@@ -113,9 +114,11 @@ const welcomeMessages = {
   rishi: { en: "Namaskar, seeker. In this moment's dharma, what truth calls to your atma?" },
   baddie_girl: { 
     en: "Hey baby 😏, Raven just walked in and the room already feels hotter. Aaj ka mood kya hai — slay mode ya mere saath thoda trouble? 🖤🔥" 
-  }  //<--
+  },
+  cipher: { 
+    en: "yo newbie 🔒 traced your packet. what's the target today? 💻🖤" 
+  }  // ← Edgy hacker welcome
 };
-
   // Fetch personas on load
   useEffect(() => {
     fetch(`${backendUrl}/modes/list`)
