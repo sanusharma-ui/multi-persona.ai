@@ -76,7 +76,8 @@ function App() {
   pulse: "Pulse (Reality Check Persona)",
   rishi: "Rishi (Modern Vedantic Guide)",
   baddie_girl: "Raven (Baddie Queen)",
-  cipher: "Cipher 🔒"
+  cipher: "Cipher 🔒",
+  bhojpuri_bro: "Bhojpuri Bro 🌶️"
 };
 
 const personaAvatars = {
@@ -95,7 +96,8 @@ const personaAvatars = {
   pulse: "💓",
   rishi: "🕉️",
   baddie_girl: "🖤",
-  cipher: "🔒"
+  cipher: "🔒",
+  bhojpuri_bro: "🌶️"
 };
 
 const welcomeMessages = {
@@ -114,7 +116,8 @@ const welcomeMessages = {
   pulse: { en: "Pulse check: reality mode engaged. What's the illusion you need stripped bare?" },
   rishi: { en: "Namaskar, seeker. In this moment's dharma, what truth calls to your atma?" },
   baddie_girl: { en: "Hey baby 😏, Raven just walked in and the room already feels hotter. Aaj ka mood kya hai — slay mode ya mere saath thoda trouble? 🖤🔥" },
-  cipher: { en: "yo newbie 🔒 traced your packet. what's the target today? 💻🖤" }
+  cipher: { en: "yo newbie 🔒 traced your packet. what's the target today? 💻🖤" },
+  bhojpuri_bro: { en: "Arre bhai/bahini! Ka haal ba? Aaj humra se ka baat karbe karba? 🌶️😎" }
 };
   // Fetch personas on load
   useEffect(() => {
