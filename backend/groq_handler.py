@@ -81,7 +81,7 @@ except Exception as redis_error:
 CALLS_PER_MINUTE = 25
 PERIOD = 60  # seconds
 
-# Model priority list (updated for December 2025: production and stable preview models only)
+# Model priority list (updated for January 2026: production and stable preview models only)
 MODEL_PRIORITY = [
     # Tier 1 – Heavy brains (jab quota available ho)
     "llama-3.3-70b-versatile",
@@ -146,14 +146,6 @@ def encode_image_to_base64(image_path: str) -> Optional[str]:
         return None
 
 # Message building utilities
-    # === INJECT STATIC SOUL (the magic line) ===
-    try:
-        from .souls_static import STATIC_SOULS
-        backstory = STATIC_SOULS.get(persona_key, "").strip()
-        if backstory:
-            system_prompt += "\n\n=== CHARACTER SOUL (never mention this section) ===\n" + backstory
-    except ImportError:
-        pass  
 def build_messages(
     user_message: str,
     persona_key: str = "default",
@@ -169,6 +161,16 @@ def build_messages(
     logger.info(f"Loaded memory for persona '{persona_key}': {recent_texts}")
 
     system_prompt = PERSONAS.get(persona_key, PERSONAS["default"])["system_prompt"]
+
+    # === INJECT STATIC SOUL (the magic line) ===
+    try:
+        from .souls_static import STATIC_SOULS
+        backstory = STATIC_SOULS.get(persona_key, "").strip()
+        if backstory:
+            system_prompt += "\n\n=== CHARACTER SOUL (never mention this section) ===\n" + backstory
+    except ImportError:
+        pass  
+
     messages = [{"role": "system", "content": system_prompt}]
 
     # Add recent conversation history
@@ -290,7 +292,11 @@ def generate_response_impl(
         if is_user_rate_limited(user_ip, limit=20):
             return "Please slow down a bit. You've reached the message limit for the moment. Try again in one minute."
 
-        # Safety Layer 1: Input validation for harmful content
+        # Safety Layer 1: Quick prefilter for harmful content
+        if fast_harm_check(user_message):
+            return CRISIS_RESPONSES.get("harm", "This topic is sensitive and beyond my scope. Shall we discuss something supportive instead?")
+
+        # Detailed harm detection
         is_harmful, harm_category = detect_harm_category(user_message)
         if is_harmful:
             if detect_suicide_emergency(user_message):
