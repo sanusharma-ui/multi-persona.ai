@@ -59,6 +59,7 @@ function App() {
   const messagesEndRef = useRef(null);
   const welcomeIntervalRef = useRef(null);
   const backendUrl = 'https://groqchatbot-xoiv.onrender.com';
+  const selectedLanguage = 'en';  // ← Yeh rakhna zaroori hai warna .. language not define error
   const fallbackPersonaList = {
   default: "Aisha (Professional Admin)",
   luna: "Luna",
@@ -75,7 +76,7 @@ function App() {
   pulse: "Pulse (Reality Check Persona)",
   rishi: "Rishi (Modern Vedantic Guide)",
   baddie_girl: "Raven (Baddie Queen)",
-  cipher: "Cipher 🔒"  // ← Mysterious hacker added
+  cipher: "Cipher 🔒"
 };
 
 const personaAvatars = {
@@ -94,7 +95,7 @@ const personaAvatars = {
   pulse: "💓",
   rishi: "🕉️",
   baddie_girl: "🖤",
-  cipher: "🔒"  // ← Hacker lock vibe
+  cipher: "🔒"
 };
 
 const welcomeMessages = {
@@ -112,12 +113,8 @@ const welcomeMessages = {
   neo: { en: "Yo, buddy! Neo here, your friendly dev sidekick. Stuck on a loop? Paste the code! 🚀" },
   pulse: { en: "Pulse check: reality mode engaged. What's the illusion you need stripped bare?" },
   rishi: { en: "Namaskar, seeker. In this moment's dharma, what truth calls to your atma?" },
-  baddie_girl: { 
-    en: "Hey baby 😏, Raven just walked in and the room already feels hotter. Aaj ka mood kya hai — slay mode ya mere saath thoda trouble? 🖤🔥" 
-  },
-  cipher: { 
-    en: "yo newbie 🔒 traced your packet. what's the target today? 💻🖤" 
-  }  // ← Edgy hacker welcome
+  baddie_girl: { en: "Hey baby 😏, Raven just walked in and the room already feels hotter. Aaj ka mood kya hai — slay mode ya mere saath thoda trouble? 🖤🔥" },
+  cipher: { en: "yo newbie 🔒 traced your packet. what's the target today? 💻🖤" }
 };
   // Fetch personas on load
   useEffect(() => {
