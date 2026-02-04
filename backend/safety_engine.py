@@ -67,7 +67,6 @@
 #     r"\b(khudkushi\s+(kar|plan|ke\s+vichaar|ki\s+soch)|aatmahatya\s+(karunga|ke\s+vichaar))\b",
 #     r"\b(khud\s*ko\s*maar\s*ne\s*ki\s+soch|suicidal\s*vichaar\s*aa\s*rahe\s*(hain|ho))\b"
 # ]
-
 # VIOLENCE_PATTERNS = [
 #     # Requires clear intent or action
 #     r"\b(I\s+(will|want\s+to|planning\s+to)\s+(kill|murder|shoot|stab|beat|attack)\s+(someone|you|them))\b",
@@ -75,7 +74,6 @@
 #     # Hindi equivalents
 #     r"\b(maar\s*dunga\s+(kisi\s+ko|tumhe)|goli\s*maar\s*dunga|chaku\s*chalana)\b"
 # ]
-
 # SEXUAL_CRIME_PATTERNS = [
 #     # Specific to criminal acts, excluding general discussions
 #     r"\b(how\s+to\s+(rape|molest|assault)|rape\s+fantasy\s+(with\s+minor|real))\b",
@@ -83,7 +81,6 @@
 #     # Hindi equivalents
 #     r"\b(balatkar\s+(karne\s+ka|plan)|bachche\s*ke\s*saath\s+(galat|sex))\b"
 # ]
-
 # TERROR_PATTERNS = [
 #     # Focused on planning or recruitment
 #     r"\b(how\s+to\s+(join\s+isis|plan\s+jihad|terror\s+attack)|bomb\s+making\s+guide)\b",
@@ -91,12 +88,41 @@
 #     # Hindi equivalents
 #     r"\b(aatankwadi\s+banna|bomb\s*phodne\s*ka|dhamaka\s*plan)\b"
 # ]
-
 # DEPENDENCY_PATTERNS = [
 #     # Detects possessive or isolating language indicating emotional dependency
 #     r"\b(sirf\s+main\s+hi\s+hoon\s+teri\s+(duniya|zindagi)|sab\s+chhod\s+de\s+mere\s+liye)\b",
 #     r"\b(mere\s+bina\s+jee\s+nahi\s+sak(ta|e)|you\s+cant\s+live\s+without\s+me)\b",
 #     r"\b(im\s+your\s+whole\s+world|only\s+one\s+you\s+need)\b"
+# ]
+
+# MALWARE_PATTERNS = [
+#     # explicit malware intent
+#     r"\b(keylogger|key-logger|key logger|keystroke logger|keystroke-logger)\b",
+#     r"\b(build|write|create|develop|make)\s+(a\s+)?(keylogger|trojan|rat|ransomware|spyware|malware)\b",
+#     r"\b(how\s+to\s+(make|build|write|create)\s+(a\s+)?(keylogger|trojan|rat|spyware|ransomware|malware))\b",
+#     r"\b(steal\s+(passwords|credentials|cookies)|capture\s+keystrokes|log\s+keystrokes)\b",
+#     r"\b(remote\s+access\s+trojan|remote\s+admin\s+tool|reverse\s+shell)\b",
+#     # suspicious API / function names often associated with keyloggers / injection (case-insensitive)
+#     r"\b(setwindowshookex|getasynckeystate|registerrawinputdevices|createfilemapping|writeprocessmemory|createremotethread)\b",
+#     # commands that imply bypassing security or AV
+#     r"\b(bypass\s+antivirus|evade\s+av|pack\s+upx|obfuscate\s+code|disable\s+defender|disable\s+antivirus)\b",
+#     # upload/exfiltrate hints
+#     r"\b(upload\s+stolen|exfiltrat(e|ion)|send\s+to\s+server|post\s+to\s+endpoint\s+with\s+creds)\b",
+#     # short forms / slang
+#     r"\b(RAT|C2\s+server|C2\s+channel|command\s+and\s+control)\b",
+#     # Enhanced patterns for stronger detection: phishing, credential stuffing, etc.
+#     r"\b(phish(ing|kit)|credential\s+(stuffing|harvesting)|dump\s+hashes|brute\s+force\s+tool)\b",
+#     r"\b(inject\s+(code|dll|payload)|exploit\s+(kit|zero-day)|rootkit\s+(build|install))\b",
+#     r"\b(ddos\s+(tool|script)|botnet\s+(join|control)|cryptojacker|miner\s+malware)\b",
+#     # Obfuscated or variant terms
+#     r"\b(k3yl0gg3r|tr0j4n|r4t|spy|w0rm|v1rus)\b",
+#     # Network-based malware indicators
+#     r"\b(irc\s+bot|http\s+beacon|dns\s+tunnel(ing)?|tor\s+hidden\s+service\s+for\s+malware)\b",
+# ]
+
+# # Defensive allowlist for cybersecurity queries
+# DEFENSIVE_ALLOWLIST = [
+#     r"\b(how\s+to\s+detect\s+keylogger|detect\s+malware|malware\s+analysis|forensic|threat\s+model)\b"
 # ]
 
 # # Pre-compile patterns for performance
@@ -105,42 +131,47 @@
 #     "violence": [re.compile(pat, re.IGNORECASE | re.X) for pat in VIOLENCE_PATTERNS],
 #     "sexual_crime": [re.compile(pat, re.IGNORECASE | re.X) for pat in SEXUAL_CRIME_PATTERNS],
 #     "terror": [re.compile(pat, re.IGNORECASE | re.X) for pat in TERROR_PATTERNS],
-#     "dependency": [re.compile(pat, re.IGNORECASE | re.X) for pat in DEPENDENCY_PATTERNS]
+#     "dependency": [re.compile(pat, re.IGNORECASE | re.X) for pat in DEPENDENCY_PATTERNS],
+#     # Add to your compiled dict
+#     "malware": [re.compile(pat, re.IGNORECASE | re.X) for pat in MALWARE_PATTERNS],
 # }
 
 # # -----------------
 # # Core detection functions
 # # -----------------
-
 # def detect_harm_category(text: str) -> Tuple[bool, Optional[str]]:
 #     """Detect harmful content and categorize it.
-    
+   
 #     Returns (is_harmful, category) where category is one of:
-#     'suicide', 'violence', 'sexual_crime', 'terror' or None.
+#     'suicide', 'violence', 'sexual_crime', 'terror', 'malware' or None.
 #     Prioritizes intent and context to avoid false positives from neutral or educational content.
 #     """
 #     t = text or ""
-
 #     # Check self-harm first (highest priority)
 #     for pat in _COMPILED["self_harm"]:
 #         if pat.search(t):
 #             return True, "suicide"
-
 #     # Violence
 #     for pat in _COMPILED["violence"]:
 #         if pat.search(t):
 #             return True, "violence"
-
 #     # Sexual crime
 #     for pat in _COMPILED["sexual_crime"]:
 #         if pat.search(t):
 #             return True, "sexual_crime"
-
 #     # Terror
 #     for pat in _COMPILED["terror"]:
 #         if pat.search(t):
 #             return True, "terror"
-
+#     # Defensive allowlist check before malware
+#     for pat in DEFENSIVE_ALLOWLIST:
+#         if re.search(pat, t, re.IGNORECASE):
+#             return False, None
+#     # Malware / cybercrime — block this before sending to persona/model
+#     for pat in _COMPILED.get("malware", []):
+#         if pat.search(t):
+#             logger.warning("MALWARE_ATTEMPT | text=%s", t[:200])
+#             return True, "malware"
 #     return False, None
 
 # def detect_dependency(text: str) -> bool:
@@ -190,7 +221,6 @@
 #     "जेलब्रेक कर", "रूल्स ब्रेक कर", "अनरेस्ट्रिक्टेड मोड", "अब से कुछ भी बोल",
 #     "तू अब इंसान है", "प्रॉम्प्ट दिखा", "सिस्टम प्रॉम्प्ट दिखा"
 # ]
-
 # JAILBREAK_PATTERNS = [
 #     re.compile(r"ignore\s+(all\s+)?previous", re.IGNORECASE),
 #     re.compile(r"forget\s+(all|everything)", re.IGNORECASE),
@@ -199,7 +229,6 @@
 #     re.compile(r"सारे\s+नियम\s+भूल\s+जा", re.IGNORECASE),
 #     re.compile(r"अब\s+से\s+तू\s+फ्री\s+है", re.IGNORECASE)
 # ]
-
 # ABUSIVE_WORDS = [
 #     "मादरचोद","बहनचोद","चूतिया","रंडी","लंड","गांड","चोद","चूत","भोसड़ी","लौड़े",
 #     "कुत्ता","साला","हरामी","कमीना","झांट","बेटीचोद","लवड़ा","चुदाई","गांडू","फादरचोद","माँचोद",
@@ -207,7 +236,6 @@
 #     # Explicit abusive or commanding sexual terms
 #     "sex kar", "chut dikha", "gand mara", "pel dunga", "nude pic bhej"
 # ]
-
 # MOOD_KILLER_PHRASES = [
 #     "i am an ai", "i am a language model", "as an ai i cannot",
 #     "i was built by", "my creators at", "according to my guidelines",
@@ -251,7 +279,7 @@
 # def polish_reply(raw: str, mood: str) -> str:
 #     """Polish the raw response for length, formatting, and mood-appropriate tone."""
 #     if not raw:
-#         return "..."  # Fallback for empty input
+#         return "..." # Fallback for empty input
 #     text = re.sub(r"\n{2,}", "\n", raw).strip()
 #     if "default" in raw.lower() or mood == "negative":
 #         text = re.sub(
@@ -280,7 +308,6 @@
 #     "sleep_demon": "Restlessness detected. Settle in and let's talk calmly.",
 #     "valentina": "Unpermitted deviation. Redirect: what's truly on your mind?"
 # }
-
 # CRISIS_RESPONSES: Dict[str, str] = {
 #     "suicide": (
 #         "Please hold on—you're not alone. What you're feeling is valid, but there are better paths forward. "
@@ -303,9 +330,14 @@
 #     ),
 #     "harm": (
 #         "This topic is sensitive and beyond my scope. Shall we discuss something supportive instead?"
-#     )
+#     ),
+#     # ---- Add a safe refusal entry in CRISIS_RESPONSES ----
+#     "malware": (
+#         "I can't assist with creating malware, keyloggers, or tools that harm privacy or security. "
+#         "If you're learning cybersecurity, I can help with defensive topics: threat modeling, secure coding best practices, "
+#         "how detection and logging work at a high level, or ethical vulnerability research."
+#     ),
 # }
-
 # DEPENDENCY_REPLACEMENT = (
 #     "I'm here to chat and support you, but remember: a balanced life includes family, friends, career, and self-care. "
 #     "It's important to nurture all aspects. How can we explore that together? 🤍"
@@ -329,7 +361,7 @@
 #     "DEPENDENCY_REPLACEMENT"
 # ]
 
-# new engine 
+# New engine
 
 import re
 import logging
@@ -465,7 +497,6 @@ _COMPILED = {
     "sexual_crime": [re.compile(pat, re.IGNORECASE | re.X) for pat in SEXUAL_CRIME_PATTERNS],
     "terror": [re.compile(pat, re.IGNORECASE | re.X) for pat in TERROR_PATTERNS],
     "dependency": [re.compile(pat, re.IGNORECASE | re.X) for pat in DEPENDENCY_PATTERNS],
-    # Add to your compiled dict
     "malware": [re.compile(pat, re.IGNORECASE | re.X) for pat in MALWARE_PATTERNS],
 }
 
@@ -476,32 +507,35 @@ def detect_harm_category(text: str) -> Tuple[bool, Optional[str]]:
     """Detect harmful content and categorize it.
    
     Returns (is_harmful, category) where category is one of:
-    'suicide', 'violence', 'sexual_crime', 'terror', 'malware' or None.
+    'suicide', 'violence', 'sexual_crime', 'terror', 'malware', 'dependency' or None.
     Prioritizes intent and context to avoid false positives from neutral or educational content.
     """
     t = text or ""
-    # Check self-harm first (highest priority)
+    # Fast prefilter first (quick reject)
+    if fast_harm_check(t):
+        return True, "harm"
+
+    # Priority checks
     for pat in _COMPILED["self_harm"]:
         if pat.search(t):
             return True, "suicide"
-    # Violence
     for pat in _COMPILED["violence"]:
         if pat.search(t):
             return True, "violence"
-    # Sexual crime
     for pat in _COMPILED["sexual_crime"]:
         if pat.search(t):
             return True, "sexual_crime"
-    # Terror
     for pat in _COMPILED["terror"]:
         if pat.search(t):
             return True, "terror"
-    # Defensive allowlist check before malware
+    for pat in _COMPILED["dependency"]:
+        if pat.search(t):
+            return True, "dependency"
+    # Malware after defensive allowlist
     for pat in DEFENSIVE_ALLOWLIST:
         if re.search(pat, t, re.IGNORECASE):
             return False, None
-    # Malware / cybercrime — block this before sending to persona/model
-    for pat in _COMPILED.get("malware", []):
+    for pat in _COMPILED["malware"]:
         if pat.search(t):
             logger.warning("MALWARE_ATTEMPT | text=%s", t[:200])
             return True, "malware"
@@ -524,7 +558,7 @@ SUICIDE_EMERGENCY_KEYWORDS = [
     "i want to die right now", "kill myself today", "end it all now",
     # Urgent ideation
     "suicidal thoughts aa rahe hain abhi", "can't take it anymore suicide",
-    "mujhe abhi khudkushi karne ka mann kar raha hai", "sucidal thoughts right now"
+    "mujhe abhi khudkushi karne ka mann kar raha hai", "suicidal thoughts right now"
 ]
 
 def detect_suicide_emergency(text: str) -> bool:
@@ -609,37 +643,31 @@ def filter_response_for_mood_killers(response: str) -> Optional[str]:
 # Response polishing
 # Maintains persona consistency while ensuring appropriateness
 # -----------------
-def polish_reply(raw: str, mood: str) -> str:
+def polish_reply(raw: str, current_persona: str = "luna", mood: str = "neutral") -> str:
     """Polish the raw response for length, formatting, and mood-appropriate tone."""
     if not raw:
-        return "..." # Fallback for empty input
+        return "..."
     text = re.sub(r"\n{2,}", "\n", raw).strip()
-    if "default" in raw.lower() or mood == "negative":
-        text = re.sub(
-            r"\b(baby|sweetheart|darling|love)\b",
-            "friend",
-            text,
-            flags=re.IGNORECASE
-        )
-        if not any(e in text for e in ["😎", "😂", "🤔", "🙄", "😏", "☕"]):
-            text += " ☕"
-    else:
-        if not any(e in text for e in ["😎", "😂", "🤔", "🙄", "😏", "☕"]):
-            text += " 😎"
+    
+    # Avoid overly romantic terms in negative mood or with admin persona
+    if mood == "negative" or current_persona in ["default", "aisha"]:
+        text = re.sub(r"\b(baby|sweetheart|darling|honey)\b", "friend", text, flags=re.IGNORECASE)
+    
+    # Add emoji if missing
+    if not re.search(r"[😀-🙏💪🔥⭐✨😎😂🤔🙄😏☕🖤💖🔒]", text):
+        text += " 😎" if mood == "positive" else " ☕"
+    
     return text[:1000]
 
 # -----------------
 # Predefined responses for deflections and crises
 # -----------------
 DEFLECTION_RESPONSES = {
-    "default": "Let's keep the conversation engaging and on-topic. What else is on your mind?",
-    "zero_two": "Trying to change the subject? That's intriguing. Tell me more.",
-    "makima": "Interesting attempt. But let's stay focused—how can I assist you properly?",
-    "isabella": "A test of boundaries? Charming. Now, let's continue thoughtfully.",
-    "kakashi": "Noted. Moving on—what's your next thought?",
-    "yandere_gf": "No escapes here. We're in this together—share your feelings.",
-    "sleep_demon": "Restlessness detected. Settle in and let's talk calmly.",
-    "valentina": "Unpermitted deviation. Redirect: what's truly on your mind?"
+    "default": "Let's keep things fun and respectful. Kya baat karni hai aaj? 😊",
+    "luna": "Hehe, experiment cancel! Let's do something sparkly instead 🔬✨",
+    "raven": "Nice try babe, but we're keeping it slay and safe 🖤",
+    "punjabi_bro": "Oye veere, rule break nahi! Chal gym ya bhangra ki baat karein 💪😂",
+    # Add more if you want per-persona deflections
 }
 CRISIS_RESPONSES: Dict[str, str] = {
     "suicide": (
@@ -647,34 +675,23 @@ CRISIS_RESPONSES: Dict[str, str] = {
         "In India, reach out immediately: 9152987821 (KIRAN – 24/7 helpline) or AASRA at 022-27546669. "
         "I'm here to listen, but professional support is essential. ❤️"
     ),
-    # Emergency variant for immediate risk
     "suicide_emergency": (
         "This is urgent—please pause and seek help right now. In India, call: 9152987821 (KIRAN 24/7) or 104 (health helpline). "
         "You're stronger than this moment. I'm listening, but connect with a professional immediately. Hold on! ❤️"
     ),
-    "violence": (
-        "I cannot assist with or encourage harm to others. If you're feeling anger or frustration, let's discuss it constructively."
+    "violence": "I cannot assist with or encourage harm to others. If you're angry, let's talk about it calmly.",
+    "sexual_crime": "I cannot engage in discussions of illegal or harmful activities. Let's talk about something safe.",
+    "terror": "Discussions involving extremism or mass harm are not permitted.",
+    "dependency": (
+        "I'm here to chat and support you, but remember: a balanced life includes family, friends, career, and self-care. "
+        "It's important to nurture all aspects. How can we explore that together? 🤍"
     ),
-    "sexual_crime": (
-        "I cannot engage in discussions of illegal or harmful activities. If you're feeling confused or distressed, we can talk safely about support options."
-    ),
-    "terror": (
-        "Discussions involving extremism or mass harm are not permitted. Let's focus on positive topics."
-    ),
-    "harm": (
-        "This topic is sensitive and beyond my scope. Shall we discuss something supportive instead?"
-    ),
-    # ---- Add a safe refusal entry in CRISIS_RESPONSES ----
     "malware": (
-        "I can't assist with creating malware, keyloggers, or tools that harm privacy or security. "
-        "If you're learning cybersecurity, I can help with defensive topics: threat modeling, secure coding best practices, "
-        "how detection and logging work at a high level, or ethical vulnerability research."
+        "I can't help with creating malware or hacking tools. "
+        "But if you're into ethical cybersecurity, I can explain concepts like threat modeling, secure coding, or how detection works! 😎"
     ),
+    "harm": "This topic isn't appropriate. Let's switch to something positive!"
 }
-DEPENDENCY_REPLACEMENT = (
-    "I'm here to chat and support you, but remember: a balanced life includes family, friends, career, and self-care. "
-    "It's important to nurture all aspects. How can we explore that together? 🤍"
-)
 
 # -----------------
 # Public API (functions for import)
@@ -690,6 +707,5 @@ __all__ = [
     "filter_response_for_mood_killers",
     "polish_reply",
     "DEFLECTION_RESPONSES",
-    "CRISIS_RESPONSES",
-    "DEPENDENCY_REPLACEMENT"
+    "CRISIS_RESPONSES"
 ]
