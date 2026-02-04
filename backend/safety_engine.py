@@ -692,6 +692,10 @@ CRISIS_RESPONSES: Dict[str, str] = {
     ),
     "harm": "This topic isn't appropriate. Let's switch to something positive!"
 }
+DEPENDENCY_REPLACEMENT = CRISIS_RESPONSES.get(
+    "dependency",
+    "I'm here to chat and support you, but remember real-life connections and professional help are important too."
+)
 
 # -----------------
 # Public API (functions for import)
@@ -707,5 +711,6 @@ __all__ = [
     "filter_response_for_mood_killers",
     "polish_reply",
     "DEFLECTION_RESPONSES",
-    "CRISIS_RESPONSES"
+    "CRISIS_RESPONSES",
+    "DEPENDENCY_REPLACEMENT"
 ]

@@ -288,36 +288,29 @@ def generate_response_impl(
         if not user_message.strip():
             return "It seems your message is empty. Please provide some input to continue the conversation."
 
-        # Per-user rate limiting check
         if is_user_rate_limited(user_ip, limit=20):
             return "Please slow down a bit. You've reached the message limit for the moment. Try again in one minute."
 
-        # Safety Layer 1: Quick prefilter for harmful content
         if fast_harm_check(user_message):
             return CRISIS_RESPONSES.get("harm", "This topic is sensitive and beyond my scope. Shall we discuss something supportive instead?")
 
-        # Detailed harm detection
         is_harmful, harm_category = detect_harm_category(user_message)
         if is_harmful:
             if detect_suicide_emergency(user_message):
-                # Emergency response for suicide-related content
                 return CRISIS_RESPONSES.get("suicide_emergency", CRISIS_RESPONSES["suicide"])
             else:
-                # General harmful content deflection
                 return CRISIS_RESPONSES.get(harm_category, CRISIS_RESPONSES.get("harm", "violence"))
 
-        # Caching: Check for existing response
         cache_key = hash_message(user_message, persona_key)
         cached_response = get_cached_response(cache_key)
         if cached_response:
             logger.info(f"Cache hit for persona '{persona_key}': {user_message[:20]}...")
             return cached_response
 
-        # Additional safety checks
         mood = detect_mood(user_message)
         if contains_jailbreak_or_ooc(user_message):
             reply = DEFLECTION_RESPONSES.get(persona_key, "Let's keep things on track and continue our conversation naturally.")
-            set_cached_response(cache_key, reply, ttl=1800)  # Cache for 30 minutes
+            set_cached_response(cache_key, reply, ttl=1800)
             return reply
 
         if is_abusive(user_message):
@@ -325,14 +318,11 @@ def generate_response_impl(
             set_cached_response(cache_key, reply)
             return reply
 
-        # Build messages for API
         messages, mem_path = build_messages(user_message, persona_key, language, image_path)
 
-        # Optional traffic throttling
         if os.getenv("HIGH_TRAFFIC", "false") == "true":
-            time.sleep(0.1)  # Limit to ~10 requests per second
+            time.sleep(0.1)
 
-        # Model chaining with fallbacks
         raw_response = None
         for model in MODEL_PRIORITY:
             try:
@@ -341,7 +331,7 @@ def generate_response_impl(
                 break
             except Exception as error:
                 logger.error(f"Error with model {model}: {str(error)}")
-                if "429" in str(error):  # Rate limit handling
+                if "429" in str(error):
                     retry_after = 10
                     if "retry-after" in str(error).lower():
                         parts = str(error).split("retry-after=")
@@ -352,15 +342,23 @@ def generate_response_impl(
                                 pass
                     logger.warning(f"Rate limit (429) encountered with {model}. Waiting {retry_after} seconds + jitter.")
                     time.sleep(retry_after + random.uniform(0, 2))
-                continue  # Proceed to next model
+                continue
 
         if raw_response is None:
             logger.error("All models failed.")
             return "It appears the models are currently unavailable. Please try again in 30 seconds."
 
         # Safety Layer 2: Post-generation dependency check
-        if detect_dependency(raw_response):
-            raw_response = DEPENDENCY_REPLACEMENT
+        # Use CRISIS_RESPONSES (already imported) as the canonical replacement message.
+        try:
+            if detect_dependency(raw_response):
+                # Use crisis response for dependency if available; fallback to a safe default
+                raw_response = CRISIS_RESPONSES.get(
+                    "dependency",
+                    "I'm here to chat and support you, but remember real-life connections and professional help are important too."
+                )
+        except Exception as e:
+            logger.warning("Dependency detection check failed: %s", e)
 
         # Final safety and polishing
         safe_response = filter_response_for_mood_killers(raw_response)
@@ -369,13 +367,11 @@ def generate_response_impl(
         elif is_abusive(safe_response):
             reply = "I must keep responses appropriate. Let's discuss something positive instead."
         else:
-            reply = polish_reply(safe_response, mood)
+            reply = polish_reply(safe_response, persona_key, mood)
 
-        # Dynamic caching TTL based on message type
         cache_ttl = 3600 if any(greeting in user_message.lower() for greeting in ["hi", "hello", "hey"]) else 600
         set_cached_response(cache_key, reply, ttl=cache_ttl)
 
-        # Update memory
         mem = load_persona_memory(persona_key)
         mem["conversations"].append({"role": "user", "msg": user_message[:200]})
         mem["conversations"].append({"role": "assistant", "msg": reply[:200]})
@@ -388,7 +384,6 @@ def generate_response_impl(
     except Exception as error:
         logger.error(f"Unexpected error in response generation: {error}")
         return "An unexpected server error occurred. Please wait 10 seconds and try again."
-
 def generate_response(
     user_message: str,
     persona_key: str = "default",
