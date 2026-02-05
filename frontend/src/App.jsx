@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from "react";
 import "./Chat.css";
 
@@ -6,9 +7,7 @@ const AgreementPopup = ({ onAgree }) => (
     <div className="popup-overlay">
       <div className="popup-content">
         <h2 className="popup-title">IMPORTANT NOTICE</h2>
-        <div className="popup-text">
-          This AI system is created strictly for:
-        </div>
+        <div className="popup-text">This AI system is created strictly for:</div>
         <div className="popup-list">
           <ul>
             <li>Entertainment</li>
@@ -62,7 +61,6 @@ function App() {
   const [isDarkMode, setIsDarkMode] = useState(
     () => localStorage.getItem("darkMode") === "true",
   );
-  const [welcomeTyping, setWelcomeTyping] = useState("");
   const [selectedPersona, setSelectedPersona] = useState(
     localStorage.getItem("selectedPersona") || "default",
   );
@@ -70,9 +68,9 @@ function App() {
     "Aisha (Professional Admin)",
   );
   const [personaList, setPersonaList] = useState({});
-  const [showWelcome, setShowWelcome] = useState(true);
+  const [coldStart, setColdStart] = useState(false);
+
   const messagesEndRef = useRef(null);
-  const welcomeIntervalRef = useRef(null);
   const backendUrl = "https://groqchatbot-xoiv.onrender.com";
   const selectedLanguage = "en"; // ← Yeh rakhna zaroori hai warna .. language not define error
   const fallbackPersonaList = {
@@ -166,6 +164,16 @@ function App() {
       en: "Arre bhai/bahini! Ka haal ba? Aaj humra se ka baat karbe karba? 🌶️😎",
     },
   };
+
+  // Persona hints (minimal & clean)
+  const PERSONA_BLURBS = {
+    luna: "Cute scientist • Try: Explain black holes like I’m 5",
+    savage_bestie: "Brutally honest • Try: Rate my life choices",
+    rishi: "Vedantic clarity • Try: What is my dharma right now?",
+    pulse: "Reality check • Try: Is my plan actually realistic?",
+    iron_man: "Savage genius • Try: Roast my startup idea",
+  };
+
   // Fetch personas on load
   useEffect(() => {
     fetch(`${backendUrl}/modes/list`)
@@ -196,6 +204,7 @@ function App() {
         setPersonaList(fallbackPersonaList);
         setCurrentPersonaName(fallbackPersonaList.default);
       });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Persist dark mode
@@ -213,36 +222,12 @@ function App() {
       fallbackPersonaList.default;
     setCurrentPersonaName(name);
     setMessages([]); // Reset chat history
-    setWelcomeTyping(""); // Reset welcome to trigger typing
-    setShowWelcome(true);
   }, [selectedPersona, personaList]);
-
-  // Welcome typing animation on mount or persona change (only when no messages)
-  useEffect(() => {
-    if (showWelcome && messages.length === 0 && welcomeTyping === "") {
-      if (welcomeIntervalRef.current) {
-        clearInterval(welcomeIntervalRef.current);
-      }
-      const welcomeMessage =
-        welcomeMessages[selectedPersona]?.en || welcomeMessages.default.en;
-      let index = 0;
-      welcomeIntervalRef.current = setInterval(() => {
-        if (index < welcomeMessage.length) {
-          setWelcomeTyping((prev) => prev + welcomeMessage.charAt(index));
-          index++;
-        } else {
-          clearInterval(welcomeIntervalRef.current);
-          setShowWelcome(false);
-        }
-      }, 30);
-      return () => clearInterval(welcomeIntervalRef.current);
-    }
-  }, [showWelcome, messages.length, selectedPersona]);
 
   // Scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, welcomeTyping]);
+  }, [messages]);
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
@@ -256,7 +241,12 @@ function App() {
 
   const sendMessage = async () => {
     if (!input.trim() && !image) return;
+
+    if (messages.length === 0) {
+      setColdStart(true);
+    }
     setLoading(true);
+
     const timestamp = new Date().toLocaleTimeString([], {
       hour: "2-digit",
       minute: "2-digit",
@@ -269,7 +259,7 @@ function App() {
     setInput("");
     setImage(null);
     setImagePreview(null);
-    setShowWelcome(false);
+
     try {
       let response;
       if (image) {
@@ -296,7 +286,7 @@ function App() {
       if (!response.ok) throw new Error(`Server error: ${response.status}`);
       const data = await response.json();
       const botContent = data.reply || "Oops! No response.";
-      // Typing effect
+      // Typing effect for bot reply (keeps behaviour for message-by-message reveal)
       const plainText = (data.reply || "").replace(/<[^>]*>/g, "");
       setMessages((prev) => [
         ...prev,
@@ -311,6 +301,9 @@ function App() {
 
       let typedContent = "";
       for (let i = 0; i <= plainText.length; i++) {
+        // small per-char delay to simulate typing (will still be faster without welcome animation)
+        // keep it reasonable
+        // eslint-disable-next-line no-await-in-loop
         await new Promise((r) => setTimeout(r, 20));
         typedContent = plainText.substring(0, i);
         setMessages((prev) => {
@@ -325,6 +318,7 @@ function App() {
           return newMsgs;
         });
       }
+
       setMessages((prev) => {
         const newMsgs = [...prev];
         const lastMsgIndex = newMsgs.length - 1;
@@ -353,6 +347,7 @@ function App() {
       ]);
     } finally {
       setLoading(false);
+      setColdStart(false);
     }
   };
 
@@ -395,6 +390,7 @@ function App() {
                 </option>
               ))}
             </select>
+          
           </div>
           <button
             className="dark-toggle"
@@ -407,21 +403,35 @@ function App() {
       </header>
       <main className="main">
         <div className="chat-messages">
-          {showWelcome && messages.length === 0 && (
+          <div className="persona-banner">
+  <div className="persona-name">
+    {currentPersonaName}
+  </div>
+  <div className="persona-hint">
+    {PERSONA_BLURBS[selectedPersona]}
+  </div>
+</div>
+
+          {coldStart && (
+            <div className="cold-start">
+              💤 Waking up the server… first reply may take up to a minute.
+            </div>
+          )}
+
+          {messages.length === 0 && (
             <div className="message-wrapper assistant">
               <div className="message assistant">
                 <div className="avatar assistant">{currentAvatar}</div>
                 <div className="message-content">
-                  <p
-                    className="welcome-text"
-                    dangerouslySetInnerHTML={{
-                      __html: welcomeTyping.replace(/\n/g, "<br/>"),
-                    }}
-                  />
+                  <p className="welcome-text">
+                    {welcomeMessages[selectedPersona]?.en ||
+                      welcomeMessages.default.en}
+                  </p>
                 </div>
               </div>
             </div>
           )}
+
           {messages.map((msg, i) => (
             <div key={i} className={`message-wrapper ${msg.role}`}>
               <div className={`message ${msg.role}`}>
@@ -468,6 +478,7 @@ function App() {
             </div>
           )}
           <div ref={messagesEndRef} />
+
           <a
             href="mailto:sanusharma000aaa@gmail.com?subject=Multi-Persona%20AI%20Feedback&body=Persona:%20"
             className="floating-feedback"
@@ -518,3 +529,4 @@ function App() {
 }
 
 export default App;
+

@@ -300,9 +300,12 @@ body {
   border-bottom-left-radius: 4px;
 }
 
+/* Polished welcome text */
 .welcome-text {
   font-size: 16px;
   font-weight: 500;
+  color: var(--text-primary);
+  opacity: 0.95;
 }
 
 .memory-icon {
@@ -801,6 +804,7 @@ body {
   }
 }
 
+/* Floating feedback button */
 .floating-feedback {
   position: fixed;
   bottom: 90px; /* input bar se upar */
@@ -825,3 +829,59 @@ body {
   transform: scale(1.08);
   opacity: 0.95;
 }
+
+/* ---------------------------
+   ADDED: Cold start banner
+   --------------------------- */
+.cold-start {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  border: 1px dashed var(--border);
+  padding: 8px 12px;
+  border-radius: 10px;
+  margin: 6px auto 10px;
+  max-width: 420px;
+  box-shadow: 0 2px 6px var(--shadow-light);
+  animation: fadeIn 0.3s ease-in;
+}
+
+/* small fade-in for cold-start */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ---------------------------
+   ADDED: Persona hint below dropdown
+   --------------------------- */
+.persona-banner {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 6px var(--shadow-light);
+}
+
+.persona-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.persona-hint {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+/* End of additions */
