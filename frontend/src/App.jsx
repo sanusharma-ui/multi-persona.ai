@@ -115,7 +115,8 @@ function App() {
 
   const welcomeMessages = {
     default: {
-      en: "Greetings, guest ji. I am AISHA — Supreme Admin of the Sanu Sharma Multiverse😎",
+      en: "Welcome to the platform. I’m AISHA, your professional guide.This system offers multiple personas for different conversation styles.Let me know how you’d like to begin."
+
     },
     luna: {
       en: "Hi hi! I'm Luna, your bubbly scientist buddy! Ready for some sparkly experiments today? 🔬✨ What's brewing in your brain?",
