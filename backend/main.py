@@ -50,6 +50,8 @@ app.add_middleware(
 UPLOAD_DIR = Path("/tmp/uploads")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
+MAX_CHARS = 2000  # general chat ke liye best
+
 # -------------------------
 # Helpers (user_id + IP)
 # -------------------------
@@ -135,6 +137,12 @@ def chat(payload: ChatRequest, mode: str = "default", reset: bool = False, req: 
     if not payload.message.strip():
         raise HTTPException(status_code=400, detail="Empty message!")
 
+    if len(payload.message) > MAX_CHARS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Message too long! Max {MAX_CHARS} characters allowed."
+        )
+
     try:
         user_ip = get_user_ip(req)
         user_id = get_user_id(req)
@@ -188,6 +196,12 @@ async def chat_image(
         f.write(content)
 
     user_text = message.strip() if message and message.strip() else "Describe this image."
+
+    if len(user_text) > MAX_CHARS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Message too long! Max {MAX_CHARS} characters allowed."
+        )
 
     try:
         user_ip = get_user_ip(req)
