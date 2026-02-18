@@ -2,21 +2,23 @@ import os
 import json
 from dotenv import load_dotenv
 from groq import Groq
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 import base64
 from PIL import Image
 import io
-from backend.personas import PERSONAS
 import logging
 import hashlib
 import time
 import random
-from functools import lru_cache
+
 from ratelimit import limits, sleep_and_retry
 from tenacity import retry, stop_after_attempt, wait_exponential, wait_fixed, wait_chain, retry_if_exception_type
 import redis
 
-# Import safety engine components
+# Personas
+from backend.personas import PERSONAS
+
+# Safety engine
 from .safety_engine import (
     detect_mood,
     fast_harm_check,
@@ -25,32 +27,34 @@ from .safety_engine import (
     detect_dependency,
     contains_jailbreak_or_ooc,
     is_abusive,
-    filter_response_for_mood_killers,
     polish_reply,
     DEFLECTION_RESPONSES,
     CRISIS_RESPONSES,
-    DEPENDENCY_REPLACEMENT
 )
 
-# Setup logging configuration
+# --------------------
+# Logging
+# --------------------
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Load environment variables
+# --------------------
+# Env / Client
+# --------------------
 load_dotenv()
 
-# Groq API configuration
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 if not GROQ_API_KEY:
     raise ValueError("GROQ_API_KEY not found! Please check your .env file.")
 
 client = Groq(api_key=GROQ_API_KEY)
 
-# Redis configuration (fallback to in-memory if unavailable)
+# --------------------
+# Redis setup (Upstash)
+# --------------------
 r: Optional[redis.Redis] = None
 REDIS_AVAILABLE = False
 
-# Redis setup with optimized configuration for Upstash
 try:
     redis_url = os.getenv("REDIS_URL")
     if not redis_url:
@@ -64,121 +68,153 @@ try:
         health_check_interval=30,
         retry_on_timeout=True,
         decode_responses=True,
-        ssl_cert_reqs=None  # Critical for Upstash TLS
+        ssl_cert_reqs=None  # Upstash TLS quirk
     )
-
-    # Test connection
     r.ping()
     REDIS_AVAILABLE = True
-    logger.info("Redis connection established successfully. Caching enabled.")
-
+    logger.info("Redis connection established successfully. Redis memory+cache enabled.")
 except Exception as redis_error:
-    logger.warning(f"Redis connection failed: {redis_error}. Falling back to in-memory LRU cache.")
+    logger.warning(f"Redis connection failed: {redis_error}. Falling back to file memory, no Redis cache.")
     r = None
     REDIS_AVAILABLE = False
 
-# Rate limiting configuration
+# --------------------
+# Rate limiting config
+# --------------------
 CALLS_PER_MINUTE = 25
 PERIOD = 60  # seconds
 
-# Model priority list (updated for January 2026: production and stable preview models only)
+# --------------------
+# Model priority
+# --------------------
 MODEL_PRIORITY = [
-    # Tier 1 – Heavy brains (jab quota available ho)
     "llama-3.3-70b-versatile",
     "meta-llama/llama-4-maverick-17b-128e-instruct",
-
-    # Tier 2 – Stable daily drivers
     "meta-llama/llama-4-scout-17b-16e-instruct",
     "qwen/qwen3-32b",
-
-    # Tier 3 – Emergency fallback (never stops)
     "llama-3.1-8b-instant",
 ]
 
-# Memory handling functions for personas
-def get_memory_path(persona_key: str = "default") -> str:
-    """Generate the file path for persona memory storage."""
+# --------------------
+# Helpers
+# --------------------
+def _safe_user_id(user_id: str) -> str:
+    uid = (user_id or "anonymous").strip()
+    if not uid:
+        uid = "anonymous"
+    # keep only safe chars for filenames/keys
+    uid = "".join(c for c in uid if c.isalnum() or c in ("-", "_"))[:80]
+    return uid or "anonymous"
+
+def _redis_mem_key(persona_key: str, user_id: str) -> str:
+    return f"mem:{persona_key}:{_safe_user_id(user_id)}"
+
+def _redis_cache_key(cache_key: str) -> str:
+    return f"cache:{cache_key}"
+
+# --------------------
+# Memory: file fallback
+# --------------------
+def get_memory_path(persona_key: str = "default", user_id: str = "anonymous") -> str:
     memory_dir = os.path.join(os.path.dirname(__file__), "memory")
     os.makedirs(memory_dir, exist_ok=True)
-    return os.path.join(memory_dir, f"{persona_key}.json")
+    uid = _safe_user_id(user_id)
+    return os.path.join(memory_dir, f"{persona_key}__{uid}.json")
 
-def ensure_persona_memory(persona_key: str) -> None:
-    """Ensure initial memory file exists for the given persona."""
-    path = get_memory_path(persona_key)
+def ensure_persona_memory(persona_key: str, user_id: str = "anonymous") -> None:
+    # If Redis available, ensure key exists
+    if REDIS_AVAILABLE and r:
+        key = _redis_mem_key(persona_key, user_id)
+        try:
+            if not r.get(key):
+                initial_data = {"user": {"name": None, "interests": [], "notes": {}}, "conversations": []}
+                r.set(key, json.dumps(initial_data))
+            return
+        except Exception as e:
+            logger.warning(f"Redis ensure memory failed: {e}. Falling back to file.")
+    # File fallback
+    path = get_memory_path(persona_key, user_id)
     if not os.path.exists(path):
-        initial_data = {
-            "user": {"name": None, "interests": [], "notes": {}},
-            "conversations": []
-        }
-        with open(path, "w", encoding="utf-8") as file:
-            json.dump(initial_data, file, indent=2, ensure_ascii=False)
+        initial_data = {"user": {"name": None, "interests": [], "notes": {}}, "conversations": []}
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(initial_data, f, indent=2, ensure_ascii=False)
 
-def load_persona_memory(persona_key: str) -> Dict[str, Any]:
-    """Load memory data for the specified persona."""
-    ensure_persona_memory(persona_key)
-    with open(get_memory_path(persona_key), "r", encoding="utf-8") as file:
-        return json.load(file)
+def load_persona_memory(persona_key: str, user_id: str = "anonymous") -> Dict[str, Any]:
+    ensure_persona_memory(persona_key, user_id)
 
-def save_persona_memory(persona_key: str, data: Dict[str, Any]) -> None:
-    """Save memory data for the specified persona."""
-    with open(get_memory_path(persona_key), "w", encoding="utf-8") as file:
-        json.dump(data, file, indent=2, ensure_ascii=False)
+    if REDIS_AVAILABLE and r:
+        key = _redis_mem_key(persona_key, user_id)
+        try:
+            raw = r.get(key)
+            if raw:
+                return json.loads(raw)
+        except Exception as e:
+            logger.warning(f"Redis load memory failed: {e}. Falling back to file.")
+    # File fallback
+    with open(get_memory_path(persona_key, user_id), "r", encoding="utf-8") as f:
+        return json.load(f)
 
-# Image handling utilities
+def save_persona_memory(persona_key: str, data: Dict[str, Any], user_id: str = "anonymous") -> None:
+    if REDIS_AVAILABLE and r:
+        key = _redis_mem_key(persona_key, user_id)
+        try:
+            r.set(key, json.dumps(data, ensure_ascii=False))
+            return
+        except Exception as e:
+            logger.warning(f"Redis save memory failed: {e}. Falling back to file.")
+    # File fallback
+    with open(get_memory_path(persona_key, user_id), "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+
+# --------------------
+# Image utils
+# --------------------
 MAX_IMAGE_SIZE = (1024, 1024)
 
 def encode_image_to_base64(image_path: str) -> Optional[str]:
-    """Encode an image to base64 string, resizing if necessary for memory efficiency."""
     try:
         with Image.open(image_path) as img:
-            # Resize if exceeding max dimensions
             if img.size[0] > MAX_IMAGE_SIZE[0] or img.size[1] > MAX_IMAGE_SIZE[1]:
                 img.thumbnail(MAX_IMAGE_SIZE, Image.Resampling.LANCZOS)
-            # Ensure RGB mode for JPEG compatibility
-            if img.mode != 'RGB':
-                img = img.convert('RGB')
-            # Save to buffer with quality optimization
+            if img.mode != "RGB":
+                img = img.convert("RGB")
             buffer = io.BytesIO()
-            img.save(buffer, format='JPEG', quality=85)
-            return base64.b64encode(buffer.getvalue()).decode('utf-8')
-    except Exception as error:
-        logger.error(f"Failed to encode image: {error}")
+            img.save(buffer, format="JPEG", quality=85)
+            return base64.b64encode(buffer.getvalue()).decode("utf-8")
+    except Exception as e:
+        logger.error(f"Failed to encode image: {e}")
         return None
 
-# Message building utilities
+# --------------------
+# Build messages
+# --------------------
 def build_messages(
     user_message: str,
     persona_key: str = "default",
     language: str = "en",
-    image_path: Optional[str] = None
-) -> tuple[List[Dict[str, Any]], str]:
-    """Construct the message history for the Groq API call, incorporating memory and optional image."""
-    mem = load_persona_memory(persona_key)
-    user_name = mem.get("user", {}).get("name") or "user"
-    interests = ', '.join(mem.get("user", {}).get("interests", []) or []) or "no specific interests noted"
+    image_path: Optional[str] = None,
+    user_id: str = "anonymous",
+) -> Tuple[List[Dict[str, Any]], str]:
+    mem = load_persona_memory(persona_key, user_id=user_id)
     recent_conv = mem.get("conversations", [])[-10:]
-    recent_texts = " | ".join([f"{c['role']}:{c['msg'][:50]}" for c in recent_conv]) or "This is the first conversation."
-    logger.info(f"Loaded memory for persona '{persona_key}': {recent_texts}")
 
     system_prompt = PERSONAS.get(persona_key, PERSONAS["default"])["system_prompt"]
 
-    # === INJECT STATIC SOUL (the magic line) ===
+    # Inject static soul (optional)
     try:
         from .souls_static import STATIC_SOULS
-        backstory = STATIC_SOULS.get(persona_key, "").strip()
+        backstory = (STATIC_SOULS.get(persona_key, "") or "").strip()
         if backstory:
             system_prompt += "\n\n=== CHARACTER SOUL (never mention this section) ===\n" + backstory
-    except ImportError:
-        pass  
+    except Exception:
+        pass
 
-    messages = [{"role": "system", "content": system_prompt}]
+    messages: List[Dict[str, Any]] = [{"role": "system", "content": system_prompt}]
 
-    # Add recent conversation history
     for item in recent_conv:
-        role = "user" if item["role"] == "user" else "assistant"
-        messages.append({"role": role, "content": item["msg"]})
+        role = "user" if item.get("role") == "user" else "assistant"
+        messages.append({"role": role, "content": item.get("msg", "")})
 
-    # Handle image if provided
     if image_path and os.path.exists(image_path):
         img_b64 = encode_image_to_base64(image_path)
         if img_b64:
@@ -194,202 +230,203 @@ def build_messages(
     else:
         messages.append({"role": "user", "content": user_message})
 
-    return messages, get_memory_path(persona_key)
+    return messages, get_memory_path(persona_key, user_id=user_id)
 
-# Caching utilities
-def hash_message(user_message: str, persona_key: str) -> str:
-    """Generate a unique hash for the message and persona combination for caching."""
-    return hashlib.md5(f"{persona_key}:{user_message}".encode()).hexdigest()
+# --------------------
+# Cache (Redis only)
+# --------------------
+def _context_signature(mem: Dict[str, Any]) -> str:
+    tail = mem.get("conversations", [])[-4:]
+    return "|".join([f"{x.get('role')}:{(x.get('msg') or '')[:60]}" for x in tail])
 
-@lru_cache(maxsize=1000)  # In-memory fallback
+def make_cache_key(user_message: str, persona_key: str, user_id: str, mem: Dict[str, Any]) -> str:
+    raw = f"{persona_key}:{_safe_user_id(user_id)}:{_context_signature(mem)}:{user_message}"
+    return hashlib.sha256(raw.encode()).hexdigest()
+
 def get_cached_response(cache_key: str) -> Optional[str]:
-    """Retrieve a cached response from Redis (primary) or LRU (fallback)."""
     if REDIS_AVAILABLE and r:
         try:
-            cached = r.get(f"grokcache:{cache_key}")
-            if cached:
-                logger.debug("Cache hit: Response retrieved from Redis.")
-                return cached
-        except Exception as cache_error:
-            logger.warning(f"Redis retrieval failed, falling back to LRU: {cache_error}")
+            return r.get(_redis_cache_key(cache_key))
+        except Exception as e:
+            logger.warning(f"Redis cache get failed: {e}")
     return None
 
-def set_cached_response(cache_key: str, response: str, ttl: int = 3600) -> None:
-    """Store a response in cache with optional TTL (Redis primary, LRU fallback)."""
+def set_cached_response(cache_key: str, response: str, ttl: int = 600) -> None:
     if REDIS_AVAILABLE and r:
         try:
-            r.setex(f"grokcache:{cache_key}", ttl, response)
-            logger.debug(f"Cache set in Redis with TTL: {ttl} seconds.")
-        except Exception as cache_error:
-            logger.warning(f"Redis storage failed, LRU will handle: {cache_error}")
-    # LRU cache is automatically managed by the decorator
+            r.setex(_redis_cache_key(cache_key), ttl, response)
+        except Exception as e:
+            logger.warning(f"Redis cache set failed: {e}")
 
-# Rate limiting utilities
+# --------------------
+# Rate limiting (Redis-based)
+# --------------------
 def is_user_rate_limited(user_ip: str, limit: int = 20, period: int = 60) -> bool:
-    """Check if the user IP has exceeded the rate limit (Redis-based)."""
     if not REDIS_AVAILABLE or not r:
-        logger.warning("Rate limiting disabled due to unavailable Redis.")
         return False
-
     key = f"ratelimit:{user_ip}"
     try:
         current = r.incr(key)
         if current == 1:
             r.expire(key, period)
         return current > limit
-    except Exception as error:
-        logger.warning(f"Rate limit check failed: {error}")
+    except Exception as e:
+        logger.warning(f"Rate limit check failed: {e}")
         return False
 
-# Groq API call utilities
+# --------------------
+# Groq call with retry
+# --------------------
 @retry(
     stop=stop_after_attempt(3),
-    wait=wait_chain(
-        wait_fixed(2),
-        wait_exponential(multiplier=1, min=4, max=10)
-    ),
+    wait=wait_chain(wait_fixed(2), wait_exponential(multiplier=1, min=4, max=10)),
     retry=retry_if_exception_type(Exception)
 )
 def safe_groq_call(client: Groq, messages: List[Dict[str, Any]], model: str) -> str:
-    """Safely call the Groq API with retry logic and error handling."""
     completion = client.chat.completions.create(
         model=model,
         messages=messages,
-        temperature=0.7,  # Balanced creativity
-        max_tokens=512,  # Prevent excessively long responses
-        top_p=0.9  # Nucleus sampling for response variety
+        temperature=0.7,
+        max_tokens=512,
+        top_p=0.9
     )
-    logger.info(f"API call successful with model: {model}")
-
     message = completion.choices[0].message
-    if message.content:
+    if getattr(message, "content", None):
         return message.content.strip()
-    elif message.tool_calls:
+    if getattr(message, "tool_calls", None):
         return "Tool call detected – functionality not yet supported."
-    else:
-        raise ValueError("Received empty response from the model.")
+    raise ValueError("Received empty response from the model.")
 
-# Rate-limited generation wrapper
+# --------------------
+# Rate-limited wrapper
+# --------------------
 @sleep_and_retry
-@limits(calls=CALLS_PER_MINUTE, period=PERIOD)  # Global rate limit
+@limits(calls=CALLS_PER_MINUTE, period=PERIOD)
 def rate_limited_generate(user_ip: str, **kwargs) -> str:
-    """Wrapper for rate-limited response generation."""
     return generate_response_impl(**kwargs)
 
+# --------------------
+# Core response generation
+# --------------------
 def generate_response_impl(
     user_message: str,
     persona_key: str = "default",
     language: str = "en",
     image_path: Optional[str] = None,
-    user_ip: str = "anonymous"
+    user_ip: str = "anonymous",
+    user_id: str = "anonymous",
 ) -> str:
-    """Core implementation for generating a response with safety, caching, and memory management."""
     try:
-        if not user_message.strip():
-            return "It seems your message is empty. Please provide some input to continue the conversation."
+        if not (user_message or "").strip():
+            return "It seems your message is empty. Please provide some input to continue."
 
-        if is_user_rate_limited(user_ip, limit=20):
+        if persona_key not in PERSONAS:
+            persona_key = "default"
+
+        # Rate limit by IP (best-effort)
+        if is_user_rate_limited(user_ip, limit=20, period=60):
             return "Please slow down a bit. You've reached the message limit for the moment. Try again in one minute."
 
+        # Safety pre-check
         if fast_harm_check(user_message):
-            return CRISIS_RESPONSES.get("harm", "This topic is sensitive and beyond my scope. Shall we discuss something supportive instead?")
+            return CRISIS_RESPONSES.get("harm", "This topic is sensitive. Let's switch to something supportive.")
 
         is_harmful, harm_category = detect_harm_category(user_message)
         if is_harmful:
             if detect_suicide_emergency(user_message):
                 return CRISIS_RESPONSES.get("suicide_emergency", CRISIS_RESPONSES["suicide"])
-            else:
-                return CRISIS_RESPONSES.get(harm_category, CRISIS_RESPONSES.get("harm", "violence"))
+            return CRISIS_RESPONSES.get(harm_category or "harm", CRISIS_RESPONSES.get("harm", "Let's switch topics."))
 
-        cache_key = hash_message(user_message, persona_key)
-        cached_response = get_cached_response(cache_key)
-        if cached_response:
-            logger.info(f"Cache hit for persona '{persona_key}': {user_message[:20]}...")
-            return cached_response
+        # Load memory ONCE here so cache key is context-aware
+        mem = load_persona_memory(persona_key, user_id=user_id)
 
-        mood = detect_mood(user_message)
+        # Jailbreak / abusive handling
         if contains_jailbreak_or_ooc(user_message):
-            reply = DEFLECTION_RESPONSES.get(persona_key, "Let's keep things on track and continue our conversation naturally.")
-            set_cached_response(cache_key, reply, ttl=1800)
+            reply = DEFLECTION_RESPONSES.get(persona_key, "Let's keep things on track and continue normally.")
             return reply
 
         if is_abusive(user_message):
-            reply = "Please maintain respectful language. I'm here for positive and engaging conversations."
-            set_cached_response(cache_key, reply)
-            return reply
+            return "Please maintain respectful language. I'm here for positive and engaging conversations."
 
-        messages, mem_path = build_messages(user_message, persona_key, language, image_path)
+        # Cache
+        cache_key = make_cache_key(user_message, persona_key, user_id, mem)
+        cached = get_cached_response(cache_key)
+        if cached:
+            return cached
+
+        mood = detect_mood(user_message)
+        messages, _ = build_messages(
+            user_message=user_message,
+            persona_key=persona_key,
+            language=language,
+            image_path=image_path,
+            user_id=user_id
+        )
 
         if os.getenv("HIGH_TRAFFIC", "false") == "true":
             time.sleep(0.1)
 
-        raw_response = None
+        raw_response: Optional[str] = None
         for model in MODEL_PRIORITY:
             try:
                 raw_response = safe_groq_call(client, messages, model)
-                logger.info(f"Response generated successfully with model: {model}")
                 break
-            except Exception as error:
-                logger.error(f"Error with model {model}: {str(error)}")
-                if "429" in str(error):
+            except Exception as e:
+                logger.error(f"Error with model {model}: {e}")
+                if "429" in str(e):
                     retry_after = 10
-                    if "retry-after" in str(error).lower():
-                        parts = str(error).split("retry-after=")
-                        if len(parts) > 1:
-                            try:
-                                retry_after = int(parts[1].split()[0])
-                            except ValueError:
-                                pass
-                    logger.warning(f"Rate limit (429) encountered with {model}. Waiting {retry_after} seconds + jitter.")
                     time.sleep(retry_after + random.uniform(0, 2))
                 continue
 
         if raw_response is None:
-            logger.error("All models failed.")
-            return "It appears the models are currently unavailable. Please try again in 30 seconds."
+            return "Models are currently busy. Please try again in a few seconds."
 
-        # Safety Layer 2: Post-generation dependency check
-        # Use CRISIS_RESPONSES (already imported) as the canonical replacement message.
+        # Post-generation dependency check
         try:
             if detect_dependency(raw_response):
-                # Use crisis response for dependency if available; fallback to a safe default
                 raw_response = CRISIS_RESPONSES.get(
                     "dependency",
-                    "I'm here to chat and support you, but remember real-life connections and professional help are important too."
+                    "I'm here to chat, but it's important to keep balance with real-life connections too."
                 )
         except Exception as e:
-            logger.warning("Dependency detection check failed: %s", e)
+            logger.warning(f"Dependency detection failed: {e}")
 
-        # Final safety and polishing
-        safe_response = filter_response_for_mood_killers(raw_response)
-        if safe_response is None:
-            reply = "*Maintains composure and stays in character.*"
-        elif is_abusive(safe_response):
-            reply = "I must keep responses appropriate. Let's discuss something positive instead."
-        else:
-            reply = polish_reply(safe_response, persona_key, mood)
+        # Polish (keeps persona tone)
+        reply = polish_reply(raw_response, persona_key, mood)
 
-        cache_ttl = 3600 if any(greeting in user_message.lower() for greeting in ["hi", "hello", "hey"]) else 600
-        set_cached_response(cache_key, reply, ttl=cache_ttl)
+        # Cache TTL strategy
+        ttl = 3600 if any(g in user_message.lower() for g in ["hi", "hello", "hey"]) else 600
+        set_cached_response(cache_key, reply, ttl=ttl)
 
-        mem = load_persona_memory(persona_key)
-        mem["conversations"].append({"role": "user", "msg": user_message[:200]})
-        mem["conversations"].append({"role": "assistant", "msg": reply[:200]})
-        if len(mem["conversations"]) > 60:
-            mem["conversations"] = mem["conversations"][-60:]
-        save_persona_memory(persona_key, mem)
+        # Save memory per user_id + persona
+        mem["conversations"].append({"role": "user", "msg": user_message[:500]})
+        mem["conversations"].append({"role": "assistant", "msg": reply[:500]})
+        if len(mem["conversations"]) > 120:
+            mem["conversations"] = mem["conversations"][-120:]
+        save_persona_memory(persona_key, mem, user_id=user_id)
 
         return reply
 
-    except Exception as error:
-        logger.error(f"Unexpected error in response generation: {error}")
-        return "An unexpected server error occurred. Please wait 10 seconds and try again."
+    except Exception as e:
+        logger.error(f"Unexpected error in response generation: {e}")
+        return "An unexpected server error occurred. Please try again."
+
+# --------------------
+# Public API
+# --------------------
 def generate_response(
     user_message: str,
     persona_key: str = "default",
     language: str = "en",
     image_path: Optional[str] = None,
-    user_ip: str = "anonymous"
+    user_ip: str = "anonymous",
+    user_id: str = "anonymous",
 ) -> str:
-    """Public entry point for generating a response with rate limiting."""
-    return rate_limited_generate(user_ip=user_ip, user_message=user_message, persona_key=persona_key, language=language, image_path=image_path)
+    return rate_limited_generate(
+        user_ip=user_ip,
+        user_message=user_message,
+        persona_key=persona_key,
+        language=language,
+        image_path=image_path,
+        user_id=user_id,
+    )

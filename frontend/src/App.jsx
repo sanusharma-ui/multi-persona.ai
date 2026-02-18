@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import "./Chat.css";
 
@@ -69,6 +68,20 @@ function App() {
   );
   const [personaList, setPersonaList] = useState({});
   const [coldStart, setColdStart] = useState(false);
+
+  // ---- USER ID (persistent per browser) ----
+  const getOrCreateUserId = () => {
+    let uid = localStorage.getItem("mpai_uid");
+    if (!uid) {
+      uid =
+        (crypto?.randomUUID?.() ||
+          `uid_${Date.now()}_${Math.random().toString(36).slice(2)}`) + "";
+      localStorage.setItem("mpai_uid", uid);
+    }
+    return uid;
+  };
+
+  const userId = useRef(getOrCreateUserId()).current;
 
   const messagesEndRef = useRef(null);
   const backendUrl = "https://groqchatbot-xoiv.onrender.com";
@@ -271,12 +284,21 @@ function App() {
         formData.append("mode", selectedPersona);
         response = await fetch(
           `${backendUrl}/chat/image?mode=${selectedPersona}`,
-          { method: "POST", body: formData },
+          {
+            method: "POST",
+            headers: {
+              "x-user-id": userId,   
+            },
+            body: formData,
+          }
         );
       } else {
         response = await fetch(`${backendUrl}/chat?mode=${selectedPersona}`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "x-user-id": userId,  
+          },
           body: JSON.stringify({
             message: userContent,
             language: selectedLanguage,
@@ -530,4 +552,3 @@ function App() {
 }
 
 export default App;
-
