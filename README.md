@@ -207,7 +207,7 @@ It is **not a replacement for professional medical, legal, or psychological advi
 
 # License
 
-MIT License
+Apache License 2.0
 
 ---
 
