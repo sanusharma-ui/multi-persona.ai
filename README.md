@@ -1,4 +1,4 @@
-# 🧠 Multi-Persona AI Chat
+# Multi-Persona AI Chat
 
 ![Project Preview](screenshots/persona-selector.png)
 
@@ -8,9 +8,9 @@ Built using **React + FastAPI + Groq LLMs**, this project demonstrates how a sin
 
 ---
 
-# ✨ Features
+# Features
 
-### 🎭 Multi-Persona AI System
+### Multi-Persona AI System
 
 Interact with **16 unique AI personalities**, each with different tone, style, and behavior.
 
@@ -18,18 +18,18 @@ Examples include:
 
 * Tony Stark 
 * Gojo Satoru 
-* Savage Bestie 😈
-* Raven (Baddie Queen) 🖤
-* Rishi (Vedantic Guide) 🕉️
-* Neo (Developer Buddy) 💻
-* Punjabi Bro 💪
-* Bhojpuri Bro 🌶️
-* Luna 🔬
-* Ava ☕
+* Savage Bestie 
+* Raven (Baddie Queen) 
+* Rishi (Vedantic Guide) 
+* Neo (Developer Buddy) 
+* Punjabi Bro 
+* Bhojpuri Bro
+* Luna 
+* Ava 
 
 ---
 
-### 🧠 Persona Engine
+### Persona Engine
 
 The backend contains a **custom persona engine** that dynamically switches AI behavior depending on the selected personality.
 
@@ -156,7 +156,7 @@ Main components:
 ## 1️⃣ Clone repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/multi-persona-ai.git
+git clone https://github.com/sanusharma-ui/multi-persona.ai.git
 cd multi-persona-ai
 ```
 
@@ -205,13 +205,13 @@ It is **not a replacement for professional medical, legal, or psychological advi
 
 ---
 
-# 📜 License
+# License
 
 MIT License
 
 ---
 
-# 👨‍💻 Author
+# Author
 
 **Sanu Sharma**
 
