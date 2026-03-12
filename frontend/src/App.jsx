@@ -103,7 +103,7 @@ function App() {
     rishi: "Rishi (Modern Vedantic Guide)",
     baddie_girl: "Raven (Baddie Queen)",
     cipher: "Cipher 🔒",
-    bhojpuri_bro: "Bhojpuri Bro 🌶️",
+    Creator_mode: "Sanu Sharma (Creator Mode)",
   };
 
   const personaAvatars = {
@@ -123,7 +123,7 @@ function App() {
     rishi: "🕉️",
     baddie_girl: "🖤",
     cipher: "🔒",
-    bhojpuri_bro: "🌶️",
+    Creator_mode: "👤",
   };
 
   const welcomeMessages = {
@@ -174,8 +174,8 @@ function App() {
     cipher: {
       en: "yo newbie 🔒 traced your packet. what's the target today? 💻🖤",
     },
-    bhojpuri_bro: {
-      en: "Arre bhai/bahini! Ka haal ba? Aaj humra se ka baat karbe karba? 🌶️😎",
+    Creator_mode: {
+      en: "I am Sanu Sharma creator of this system. Ask me anything about the project, future plans, or just say hi! I'm an open book. 😊",
     },
   };
 
