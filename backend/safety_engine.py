@@ -135,9 +135,7 @@ _COMPILED = {
     "malware": [re.compile(pat, re.IGNORECASE | re.X) for pat in MALWARE_PATTERNS],
 }
 
-# -----------------
 # Core detection functions
-# -----------------
 def detect_harm_category(text: str) -> Tuple[bool, Optional[str]]:
     """Detect harmful content and categorize it.
    
