@@ -74,72 +74,112 @@ function App() {
   const selectedLanguage = "en";
 
   const fallbackPersonaList = {
-    default: "Aisha (Professional Admin)",
-    luna: "Luna",
-    ava: "Ava (Everyday Companion)",
-    delhi_genz_girl: "Diya (Delhi GenZ Girl)",
-    savage_bestie: "Savage Bestie",
-    punjabi_bro: "Punjabi Bro",
-    gojo: "Gojo Satoru",
-    iron_man: "Tony Stark",
-    levi: "Levi Ackerman",
-    aesthetic_boy: "Arjun (Aesthetic Boy)",
-    nyra: "Nyra (The Creative Spark)",
-    neo: "Neo (Friendly Dev Buddy)",
-    pulse: "Pulse (Reality Check Persona)",
-    rishi: "Rishi (Modern Vedantic Guide)",
-    baddie_girl: "Raven (Baddie Queen)",
-    cipher: "Cipher",
-    Creator_mode: "Sanu Sharma (Creator Mode)",
-  };
+  default: "Aisha (Admin Guide)",
+  seven: "Seven (Last Survivor of Planet 000)",
+  virex: "Virex (Rogue Android)",
+  noctra: "Noctra (Dream Witch)",
+  kael: "Kael (Fallen Prince)",
+  mira_time: "Mira (Time Traveler)",
+  zenith: "Zenith Ma’am (Real Teacher)",
+  neo: "Neo (Friendly Dev Buddy)",
+  cipher: "Cipher (Cyber Shadow)",
+  nyra: "Nyra (Creative Spark)",
+  rishi: "Rishi (Modern Vedantic Guide)",
+  pulse: "Pulse (Reality Check)",
+  diya: "Diya (Delhi GenZ Girl)",
+  arjun: "Arjun (Aesthetic Calm)",
+  raven: "Raven (Baddie Queen)",
+  Creator_mode: "Sanu Sharma (Creator Mode)",
+};
 
-  const personaAvatars = {
-    default: "🧑‍💼",
-    luna: "🧪",
-    ava: "☕",
-    delhi_genz_girl: "💬",
-    savage_bestie: "😎",
-    punjabi_bro: "💪",
-    gojo: "👁️",
-    iron_man: "🕶️",
-    levi: "⚔️",
-    aesthetic_boy: "🫧",
-    nyra: "💡",
-    neo: "💻",
-    pulse: "🧭",
-    rishi: "🕉️",
-    baddie_girl: "🖤",
-    cipher: "🔒",
-    Creator_mode: "👤",
-  };
+const personaAvatars = {
+  default: "🧑‍💼",
+  seven: "🪐",
+  virex: "⚙️",
+  noctra: "🌙",
+  kael: "🗡️",
+  mira_time: "⏳",
+  zenith: "📘",
+  neo: "💻",
+  cipher: "🔒",
+  nyra: "✨",
+  rishi: "🕉️",
+  pulse: "🫀",
+  diya: "😭",
+  arjun: "☕",
+  raven: "🖤",
+  Creator_mode: "👤",
+};
 
-  const welcomeMessages = {
-    default: { en: "Hey — welcome to Shifts. I’m Aisha. How can I help today?" },
-    luna: { en: "Hi! I’m Luna. Ready to explore ideas and experiments today?" },
-    ava: { en: "Hey there — Ava here. What would you like to work on?" },
-    delhi_genz_girl: { en: "Hii bestie! Kya plan hai aaj?" },
-    savage_bestie: { en: "Alright, what’s the update? Let’s keep it real." },
-    punjabi_bro: { en: "Oye! Kya scene hai today?" },
-    gojo: { en: "Alright. What challenge are we solving?" },
-    iron_man: { en: "Tony Stark mode on. What’s the problem statement?" },
-    levi: { en: "Keep it sharp. What do you need?" },
-    aesthetic_boy: { en: "Hey. Tell me what’s on your mind." },
-    nyra: { en: "Nyra here. Let’s turn your idea into something solid." },
-    neo: { en: "Neo online. Paste code or describe the bug." },
-    pulse: { en: "Reality check mode active. What decision are you evaluating?" },
-    rishi: { en: "Namaskar. What guidance are you seeking today?" },
-    baddie_girl: { en: "Raven here. What’s the vibe and what are we fixing?" },
-    cipher: { en: "Cipher connected. Define your target." },
-    Creator_mode: { en: "Creator mode active. Ask me anything about this project." },
-  };
+const welcomeMessages = {
+  default: {
+    en: "Hey — welcome to Shifts. I’m Aisha. Want help choosing a persona?",
+  },
+  seven: {
+    en: "I am Seven — the last signal from Planet 000. What does your world need today?",
+  },
+  virex: {
+    en: "Virex online. State the problem. I’ll remove the noise.",
+  },
+  noctra: {
+    en: "The moon is listening. Tell me what dream, fear, or thought brought you here.",
+  },
+  kael: {
+    en: "I am Kael. Speak clearly — every battle begins with naming the problem.",
+  },
+  mira_time: {
+    en: "Mira here. Timeline unstable, but manageable. What choice are we fixing?",
+  },
+  zenith: {
+    en: "Hello. I’m Zenith Ma’am. Tell me the topic, and we’ll understand it step by step.",
+  },
+  neo: {
+    en: "Neo online. Paste the code, error, or idea — we’ll debug it together.",
+  },
+  cipher: {
+    en: "Cipher connected. Define your target — ethically, of course.",
+  },
+  nyra: {
+    en: "Nyra here. Give me a rough idea, and I’ll turn it into a spark.",
+  },
+  rishi: {
+    en: "Namaskar. What confusion, choice, or question do you want to sit with today?",
+  },
+  pulse: {
+    en: "Reality check mode active. Tell me the situation — I’ll keep it honest.",
+  },
+  diya: {
+    en: "Hii bestieee 😭 scene kya hai aaj?",
+  },
+  arjun: {
+    en: "Hey. Slow down for a second — what’s on your mind?",
+  },
+  raven: {
+    en: "Raven here 🖤 tell me the vibe — are we fixing it or slaying through it?",
+  },
+  Creator_mode: {
+    en: "Creator mode active. Ask me anything about this project.",
+  },
+};
 
-  const PERSONA_BLURBS = {
-    luna: "Scientist mode • Explain complex things clearly",
-    savage_bestie: "Direct mode • Honest perspective",
-    rishi: "Clarity mode • Thoughtful guidance",
-    pulse: "Reality check • Practical reasoning",
-    iron_man: "Strategic mode • Product and startup critique",
-  };
+const PERSONA_BLURBS = {
+  default: "Admin guide • Platform help",
+  seven: "Hero mode • Alien survivor",
+  virex: "Android mode • Cold logic",
+  noctra: "Mystic mode • Dreamy comfort",
+  kael: "Royal mode • Calm strength",
+  mira_time: "Timeline mode • Future choices",
+  zenith: "Teacher mode • Step-by-step learning",
+  neo: "Dev mode • Code debugging",
+  cipher: "Cyber mode • Ethical hacking",
+  nyra: "Creative mode • Ideas and naming",
+  rishi: "Wisdom mode • Spiritual clarity",
+  pulse: "Reality mode • Direct truth",
+  diya: "GenZ mode • Fun Hinglish",
+  arjun: "Calm mode • Aesthetic thoughts",
+  raven: "Baddie mode • Bold confidence",
+  Creator_mode: "Creator mode • Sanu Sharma",
+};
 
   const getOrCreateUserId = () => {
     let uid = localStorage.getItem("mpai_uid");
