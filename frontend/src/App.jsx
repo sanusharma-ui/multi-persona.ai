@@ -69,8 +69,8 @@ function App() {
   const abortControllerRef = useRef(null);
   const typingStoppedRef = useRef(false);
 
-  // const backendUrl = "https://groqchatbot-xoiv.onrender.com";
-  const backendUrl = "http://localhost:8000";
+  const backendUrl = "https://groqchatbot-xoiv.onrender.com";
+  // const backendUrl = "http://localhost:8000";
   const selectedLanguage = "en";
 
   const fallbackPersonaList = {
