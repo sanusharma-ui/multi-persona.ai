@@ -1,189 +1,136 @@
-# Multi-Persona AI Chat
+# Shifts — Multi-Persona AI Platform
 
-![Project Preview](screenshots/persona-selector.png)
+A personality-driven AI chat platform built with **React (Vite)** and **FastAPI**, powered by **Groq** for low-latency inference.
 
-A powerful **multi-persona AI chat platform** where users can interact with different AI personalities — each with its own tone, behavior, and conversational style.
-
-Built using **React + FastAPI + Groq LLMs**, this project demonstrates how a single AI system can host multiple characters while maintaining memory, safety controls, and a polished chat experience.
+Shifts is not a utility chatbot. It's a creative experiment in character-driven AI — each persona has its own identity, tone, worldview, and rules. The goal was to explore what AI feels like when it has a personality, not just a function.
 
 ---
 
-# Features
+## Personas
 
-### Multi-Persona AI System
+Each character is original — designed from scratch, not copied from existing archetypes.
 
-Interact with **16 unique AI personalities**, each with different tone, style, and behavior.
+| Key | Name | Identity |
+|-----|------|----------|
+| `seven` | Seven | Last Survivor of Planet 000 |
+| `neo` | Neo | Friendly Dev Buddy |
+| `cipher` | Cipher | Cyber Shadow |
+| `noctra` | Noctra | Dream Witch |
+| `virex` | Virex | Rogue Android |
+| `aisha` | Aisha | Admin Guide |
+| ...and more | | 14 personas total |
 
-Examples include:
-
-* Tony Stark 
-* Gojo Satoru 
-* Savage Bestie 
-* Raven (Baddie Queen) 
-* Rishi (Vedantic Guide) 
-* Neo (Developer Buddy) 
-* Punjabi Bro 
-* Bhojpuri Bro
-* Luna 
-* Ava 
+Every persona is isolated by prompt rules — they don't leak or imitate each other.
 
 ---
 
-### Persona Engine
+## Architecture
 
-The backend contains a **custom persona engine** that dynamically switches AI behavior depending on the selected personality.
+```
+Browser (React)
+  └── FastAPI (/chat, /chat/image)
+        ├── Safety Engine   — pre-checks + deflections
+        ├── Persona Engine  — system prompt per persona
+        ├── Groq LLM        — text + optional vision
+        └── Response polish + memory persistence
+```
 
-Each persona has:
+Key design ideas:
 
-* unique prompt style
-* conversation tone
-* personality traits
-* behavioral rules
-
----
-
-### 🛡 Built-in Safety Engine
-
-Custom moderation system that detects:
-
-* jailbreak attempts
-* harmful prompts
-* abusive language
-* self-harm related content
-* malware / hacking prompts
-
-The system safely redirects the conversation.
+- **Persona = config** — name + system prompt + behavioral rules
+- **Memory = per-user, per-persona state** — conversation history + metadata
+- **Safety = fast checks first** — keyword prefilter → regex patterns → category-specific deflections
 
 ---
 
-### 🖼 Image Input Support
+## Backend (FastAPI)
 
-Users can send images to the AI and receive contextual responses.
+### Endpoints
 
----
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/` | Readiness check + available personas |
+| `GET` | `/health` | Health check |
+| `GET` | `/modes/list` | Persona keys → display names |
+| `POST` | `/chat` | Text chat (`?mode=<persona>&reset=<bool>`) |
+| `POST` | `/chat/image` | Image + optional text |
+| `GET` | `/memory` | Stored memory for current user |
+| `POST` | `/memory/update` | Update user metadata (name, interests, notes) |
 
-### ⚡ Fast AI Responses
+### Request Flow
 
-Powered by **Groq LLM inference** for fast response times.
+1. Frontend sends `x-user-id` header (persisted in localStorage)
+2. Backend validates message length (`MAX_CHARS = 2000`) and persona key
+3. If `reset=true`, memory is replaced with a clean structure
+4. LLM handler receives: `persona_key`, `user_id`, `user_ip`, optional `image_path`
 
----
-
-### 💬 Modern Chat UI
-
-* typing animation
-* dark mode
-* mobile responsive
-* persona avatars
-* memory indicator
-
----
-
-# 📸 Screenshots
-
-## Persona Selection
-
-![Persona Selector](screenshots/persona-selector.png)
-
-Switch between multiple AI personalities.
+See: `backend/main.py`, `backend/personas.py`
 
 ---
 
-## Savage Bestie Persona
+## Safety Engine
 
-![Savage Persona](screenshots/savage-bestie.png)
+The safety layer protects against misuse across multiple threat categories:
 
-A chaotic sarcastic personality designed for playful conversations.
+- Jailbreak / out-of-character attempts
+- Abusive language
+- Self-harm and suicide intent
+- Violence intent
+- Sexual crime intent
+- Terror / extremist planning
+- Malware / hacking tool requests
+- Emotional dependency and isolation language
 
----
+Implementation:
 
-## Rishi – Vedantic Guide
+- Fast keyword prefilter for high-confidence phrases
+- Compiled regex patterns per category
+- Defensive allowlist for legitimate questions (e.g. "how to detect malware")
+- Pre-written crisis/deflection responses per category
 
-![Rishi Persona](screenshots/rishi.png)
-
-A philosophical AI persona inspired by Vedantic thought.
-
----
-
-## Luna – Science Persona
-
-![Luna Persona](screenshots/luna.png)
-
-A playful scientist personality designed to make learning fun.
-
----
-
-# 🏗 Architecture
-
-User → React Frontend → FastAPI Backend → Persona Engine → Groq LLM → Response
-
-Main components:
-
-* React Frontend
-* FastAPI Backend
-* Persona Engine
-* Safety Engine
-* Groq LLM
-* Redis / memory storage
+See: `backend/safety_engine.py`
 
 ---
 
-# 🛠 Tech Stack
+## Frontend (React + Vite)
 
-### Frontend
+- Persona selector (populated from backend)
+- Dark mode (persisted in localStorage)
+- "Important Notice" agreement gate (persisted in localStorage)
+- Typing simulation with stop/regenerate controls
+- Image upload preview + multipart submit
 
-* React
-* CSS (custom responsive UI)
+Primary files: `frontend/src/App.jsx`, `frontend/src/Chat.css`
+
+---
+
+## Local Development
 
 ### Backend
 
-* Python
-* FastAPI
-
-### AI
-
-* Groq LLM APIs
-* Multiple model support
-
-### Infrastructure
-
-* REST API communication
-* Redis (optional)
-
----
-
-#  Installation
-
-## 1️⃣ Clone repository
-
 ```bash
-git clone https://github.com/sanusharma-ui/multi-persona.ai.git
-cd multi-persona-ai
-```
-
----
-
-## 2️⃣ Backend setup
-
-```bash
+cd backend
+python -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Create `.env`
+Create `backend/.env`:
 
-```
-GROQ_API_KEY=your_api_key
-REDIS_URL=your_redis_url
+```env
+GROQ_API_KEY=your_key_here
+
+# Optional
+REDIS_URL=redis://localhost:6379/0
 ```
 
-Run backend
+Run:
 
 ```bash
-uvicorn main:app --reload
+uvicorn main:app --reload --port 8000
 ```
 
----
-
-## 3️⃣ Frontend setup
+### Frontend
 
 ```bash
 cd frontend
@@ -191,28 +138,50 @@ npm install
 npm run dev
 ```
 
----
-
-# ⚠ Disclaimer
-
-This project is intended for:
-
-* entertainment
-* educational experiments
-* AI research
-
-It is **not a replacement for professional medical, legal, or psychological advice.**
+> **Note:** For local development, update the backend URL in `frontend/src/App.jsx` to `http://localhost:8000`.
 
 ---
 
-# License
+## Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `GROQ_API_KEY` | ✅ | Groq API key for LLM inference |
+| `REDIS_URL` | Optional | Redis for persistent memory |
+| `KNOWLEDGE_API_URL` | Optional | External knowledge fetcher |
+| `KNOWLEDGE_SCRAPE_URL_TEMPLATE` | Optional | URL template for scraping |
+| `KNOWLEDGE_TIMEOUT_SECONDS` | Optional | Fetch timeout |
+| `KNOWLEDGE_MAX_FETCH_BYTES` | Optional | Max bytes per fetch |
+| `KNOWLEDGE_RESULT_LIMIT` | Optional | Max results returned |
+| `KNOWLEDGE_MIN_CONTEXT_CHARS` | Optional | Minimum context threshold |
+
+---
+
+## Tech Stack
+
+- **Frontend:** React, Vite
+- **Backend:** FastAPI, Python
+- **LLM Provider:** Groq
+- **Memory:** In-memory (Redis optional)
+- **Deployment:** Any platform supporting Python + Node
+
+---
+
+## Disclaimer
+
+Shifts is built for **entertainment and educational experimentation**.
+It is not a substitute for professional medical, legal, or psychological advice.
+The safety layer is designed to handle misuse, but no system is perfect — use responsibly.
+
+---
+
+## License
 
 Apache License 2.0
 
 ---
 
-# Author
+## Author
 
 **Sanu Sharma**
-
-If you found this project interesting, consider giving it a ⭐ on GitHub.
+[sanusharma.dev](https://sanusharma.dev) · [LinkedIn](https://linkedin.com/in/sanu-sharma-256818341) · [DEV.to](https://dev.to/sanu_sharma00)
