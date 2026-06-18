@@ -90,6 +90,7 @@ function App() {
   arjun: "Arjun (Aesthetic Calm)",
   raven: "Raven (Baddie Queen)",
   Creator_mode: "Sanu Sharma (Creator Mode)",
+  Sales_Bot_Mode: "Nexus (Elite Sales Assistant)",
 };
 
 const personaAvatars = {
@@ -109,6 +110,7 @@ const personaAvatars = {
   arjun: "☕",
   raven: "🖤",
   Creator_mode: "👤",
+  Sales_Bot_Mode: "🤖",
 };
 
 const welcomeMessages = {
@@ -160,6 +162,9 @@ const welcomeMessages = {
   Creator_mode: {
     en: "Creator mode active. Ask me anything about this project.",
   },
+  Sales_Bot_Mode: {
+    en: "Sales Bot mode active. Ask me anything about our products or services.",
+  }
 };
 
 const PERSONA_BLURBS = {
@@ -179,6 +184,7 @@ const PERSONA_BLURBS = {
   arjun: "Calm mode • Aesthetic thoughts",
   raven: "Baddie mode • Bold confidence",
   Creator_mode: "Creator mode • Sanu Sharma",
+  sales_bot_mode: "Sales Bot mode • Nexus",
 };
 
   const getOrCreateUserId = () => {
