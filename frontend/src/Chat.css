@@ -669,6 +669,71 @@ body {
   border-color: var(--brand);
 }
 
+
+.code-block{
+
+overflow:hidden;
+
+border-radius:12px;
+
+margin-top:10px;
+
+margin-bottom:10px;
+
+border:1px solid #333;
+
+}
+
+.code-header{
+
+display:flex;
+
+justify-content:space-between;
+
+align-items:center;
+
+padding:10px 15px;
+
+background:#181818;
+
+color:white;
+
+font-size:13px;
+
+font-weight:600;
+
+}
+
+.copy-btn{
+
+background:transparent;
+
+border:none;
+
+color:#ddd;
+
+cursor:pointer;
+
+}
+
+.copy-btn:hover{
+
+color:white;
+
+}
+
+.inline-code{
+
+background:#222;
+
+padding:2px 5px;
+
+border-radius:4px;
+
+font-family:monospace;
+
+}
+
 /* Responsive */
 @media (max-width: 760px) {
   .current-persona-name { display: none; }

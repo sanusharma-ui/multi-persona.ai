@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import "./Chat.css";
+import MarkdownMessage from "./components/MarkdownMessage";
 
 const AgreementPopup = ({ onAgree }) => (
   <div className="agreement-popup">
@@ -69,123 +70,122 @@ function App() {
   const abortControllerRef = useRef(null);
   const typingStoppedRef = useRef(false);
 
-  const backendUrl = "http://localhost:8000" || "https://groqchatbot-xoiv.onrender.com";
-  // const backendUrl = "http://localhost:8000";
+  const backendUrl = window.location.hostname === "localhost" ? "http://localhost:8000" : "https://groqchatbot-xoiv.onrender.com";
   const selectedLanguage = "en";
 
   const fallbackPersonaList = {
-  default: "Aisha (Admin Guide)",
-  seven: "Seven (Last Survivor of Planet 000)",
-  virex: "Virex (Rogue Android)",
-  noctra: "Noctra (Dream Witch)",
-  kael: "Kael (Fallen Prince)",
-  mira_time: "Mira (Time Traveler)",
-  zenith: "Zenith Ma’am (Real Teacher)",
-  neo: "Neo (Friendly Dev Buddy)",
-  cipher: "Cipher (Cyber Shadow)",
-  nyra: "Nyra (Creative Spark)",
-  rishi: "Rishi (Modern Vedantic Guide)",
-  pulse: "Pulse (Reality Check)",
-  diya: "Diya (Delhi GenZ Girl)",
-  arjun: "Arjun (Aesthetic Calm)",
-  raven: "Raven (Baddie Queen)",
-  Creator_mode: "Sanu Sharma (Creator Mode)",
-  Sales_Bot_Mode: "Nexus (Elite Sales Assistant)",
-};
+    default: "Aisha (Admin Guide)",
+    seven: "Seven (Last Survivor of Planet 000)",
+    virex: "Virex (Rogue Android)",
+    noctra: "Noctra (Dream Witch)",
+    kael: "Kael (Fallen Prince)",
+    mira_time: "Mira (Time Traveler)",
+    zenith: "Zenith Ma’am (Real Teacher)",
+    neo: "Neo (Friendly Dev Buddy)",
+    cipher: "Cipher (Cyber Shadow)",
+    nyra: "Nyra (Creative Spark)",
+    rishi: "Rishi (Modern Vedantic Guide)",
+    pulse: "Pulse (Reality Check)",
+    diya: "Diya (Delhi GenZ Girl)",
+    arjun: "Arjun (Aesthetic Calm)",
+    raven: "Raven (Baddie Queen)",
+    Creator_mode: "Sanu Sharma (Creator Mode)",
+    Sales_Bot_Mode: "Nexus (Elite Sales Assistant)",
+  };
 
-const personaAvatars = {
-  default: "🧑‍💼",
-  seven: "🪐",
-  virex: "⚙️",
-  noctra: "🌙",
-  kael: "🗡️",
-  mira_time: "⏳",
-  zenith: "📘",
-  neo: "💻",
-  cipher: "🔒",
-  nyra: "✨",
-  rishi: "🕉️",
-  pulse: "🫀",
-  diya: "😭",
-  arjun: "☕",
-  raven: "🖤",
-  Creator_mode: "👤",
-  Sales_Bot_Mode: "🤖",
-};
+  const personaAvatars = {
+    default: "🧑‍💼",
+    seven: "🪐",
+    virex: "⚙️",
+    noctra: "🌙",
+    kael: "🗡️",
+    mira_time: "⏳",
+    zenith: "📘",
+    neo: "💻",
+    cipher: "🔒",
+    nyra: "✨",
+    rishi: "🕉️",
+    pulse: "🫀",
+    diya: "😭",
+    arjun: "☕",
+    raven: "🖤",
+    Creator_mode: "👤",
+    Sales_Bot_Mode: "🤖",
+  };
 
-const welcomeMessages = {
-  default: {
-    en: "Hey — welcome to Shifts. I’m Aisha. Want help choosing a persona?",
-  },
-  seven: {
-    en: "I am Seven — the last signal from Planet 000. What does your world need today?",
-  },
-  virex: {
-    en: "Virex online. State the problem. I’ll remove the noise.",
-  },
-  noctra: {
-    en: "The moon is listening. Tell me what dream, fear, or thought brought you here.",
-  },
-  kael: {
-    en: "I am Kael. Speak clearly — every battle begins with naming the problem.",
-  },
-  mira_time: {
-    en: "Mira here. Timeline unstable, but manageable. What choice are we fixing?",
-  },
-  zenith: {
-    en: "Hello. I’m Zenith Ma’am. Tell me the topic, and we’ll understand it step by step.",
-  },
-  neo: {
-    en: "Neo online. Paste the code, error, or idea — we’ll debug it together.",
-  },
-  cipher: {
-    en: "Cipher connected. Define your target — ethically, of course.",
-  },
-  nyra: {
-    en: "Nyra here. Give me a rough idea, and I’ll turn it into a spark.",
-  },
-  rishi: {
-    en: "Namaskar. What confusion, choice, or question do you want to sit with today?",
-  },
-  pulse: {
-    en: "Reality check mode active. Tell me the situation — I’ll keep it honest.",
-  },
-  diya: {
-    en: "Hii bestieee 😭 scene kya hai aaj?",
-  },
-  arjun: {
-    en: "Hey. Slow down for a second — what’s on your mind?",
-  },
-  raven: {
-    en: "Raven here 🖤 tell me the vibe — are we fixing it or slaying through it?",
-  },
-  Creator_mode: {
-    en: "Creator mode active. Ask me anything about this project.",
-  },
-  Sales_Bot_Mode: {
-    en: "Sales Bot mode active. Ask me anything about our products or services.",
-  }
-};
+  const welcomeMessages = {
+    default: {
+      en: "Hey — welcome to Shifts. I’m Aisha. Want help choosing a persona?",
+    },
+    seven: {
+      en: "I am Seven — the last signal from Planet 000. What does your world need today?",
+    },
+    virex: {
+      en: "Virex online. State the problem. I’ll remove the noise.",
+    },
+    noctra: {
+      en: "The moon is listening. Tell me what dream, fear, or thought brought you here.",
+    },
+    kael: {
+      en: "I am Kael. Speak clearly — every battle begins with naming the problem.",
+    },
+    mira_time: {
+      en: "Mira here. Timeline unstable, but manageable. What choice are we fixing?",
+    },
+    zenith: {
+      en: "Hello. I’m Zenith Ma’am. Tell me the topic, and we’ll understand it step by step.",
+    },
+    neo: {
+      en: "Neo online. Paste the code, error, or idea — we’ll debug it together.",
+    },
+    cipher: {
+      en: "Cipher connected. Define your target — ethically, of course.",
+    },
+    nyra: {
+      en: "Nyra here. Give me a rough idea, and I’ll turn it into a spark.",
+    },
+    rishi: {
+      en: "Namaskar. What confusion, choice, or question do you want to sit with today?",
+    },
+    pulse: {
+      en: "Reality check mode active. Tell me the situation — I’ll keep it honest.",
+    },
+    diya: {
+      en: "Hii bestieee 😭 scene kya hai aaj?",
+    },
+    arjun: {
+      en: "Hey. Slow down for a second — what’s on your mind?",
+    },
+    raven: {
+      en: "Raven here 🖤 tell me the vibe — are we fixing it or slaying through it?",
+    },
+    Creator_mode: {
+      en: "Creator mode active. Ask me anything about this project.",
+    },
+    Sales_Bot_Mode: {
+      en: "Sales Bot mode active. Ask me anything about our products or services.",
+    }
+  };
 
-const PERSONA_BLURBS = {
-  default: "Admin guide • Platform help",
-  seven: "Hero mode • Alien survivor",
-  virex: "Android mode • Cold logic",
-  noctra: "Mystic mode • Dreamy comfort",
-  kael: "Royal mode • Calm strength",
-  mira_time: "Timeline mode • Future choices",
-  zenith: "Teacher mode • Step-by-step learning",
-  neo: "Dev mode • Code debugging",
-  cipher: "Cyber mode • Ethical hacking",
-  nyra: "Creative mode • Ideas and naming",
-  rishi: "Wisdom mode • Spiritual clarity",
-  pulse: "Reality mode • Direct truth",
-  diya: "GenZ mode • Fun Hinglish",
-  arjun: "Calm mode • Aesthetic thoughts",
-  raven: "Baddie mode • Bold confidence",
-  Creator_mode: "Creator mode • Sanu Sharma",
-  sales_bot_mode: "Sales Bot mode • Nexus",
-};
+  const PERSONA_BLURBS = {
+    default: "Admin guide • Platform help",
+    seven: "Hero mode • Alien survivor",
+    virex: "Android mode • Cold logic",
+    noctra: "Mystic mode • Dreamy comfort",
+    kael: "Royal mode • Calm strength",
+    mira_time: "Timeline mode • Future choices",
+    zenith: "Teacher mode • Step-by-step learning",
+    neo: "Dev mode • Code debugging",
+    cipher: "Cyber mode • Ethical hacking",
+    nyra: "Creative mode • Ideas and naming",
+    rishi: "Wisdom mode • Spiritual clarity",
+    pulse: "Reality mode • Direct truth",
+    diya: "GenZ mode • Fun Hinglish",
+    arjun: "Calm mode • Aesthetic thoughts",
+    raven: "Baddie mode • Bold confidence",
+    Creator_mode: "Creator mode • Sanu Sharma",
+    sales_bot_mode: "Sales Bot mode • Nexus",
+  };
 
   const getOrCreateUserId = () => {
     let uid = localStorage.getItem("mpai_uid");
@@ -257,16 +257,6 @@ const PERSONA_BLURBS = {
   }, [input]);
 
   const currentAvatar = personaAvatars[selectedPersona] || personaAvatars.default;
-
-  const escapeHtml = (str = "") =>
-    str
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
-
-  const formatMessage = (text = "") => escapeHtml(text).replace(/\n/g, "<br/>");
 
   const handleImageUpload = (e) => {
     const file = e.target.files?.[0];
@@ -386,8 +376,7 @@ const PERSONA_BLURBS = {
           if (next[idx]?.isTyping) {
             next[idx] = {
               ...next[idx],
-              content:
-                escapeHtml(typedContent) + (i < plainText.length ? "<span class='typing-cursor'>|</span>" : ""),
+              content: typedContent + (i < plainText.length ? "▌" : ""),
             };
           }
           return next;
@@ -402,7 +391,7 @@ const PERSONA_BLURBS = {
         if (idx >= 0) {
           next[idx] = {
             role: "assistant",
-            content: formatMessage(finalContent),
+            content: finalContent,
             timestamp: finalTime,
             image: data.image_path && data.filename ? `${backendUrl}/uploads/${data.filename}` : null,
             persona: selectedPersona,
@@ -419,7 +408,7 @@ const PERSONA_BLURBS = {
           ...prev,
           {
             role: "assistant",
-            content: formatMessage(`Error: ${err.message}. Please try again.`),
+            content: `Error: ${err.message}`,
             timestamp: finalTime,
             persona: selectedPersona,
           },
@@ -522,7 +511,7 @@ const PERSONA_BLURBS = {
 
               <div className={`bubble ${msg.role}`}>
                 {msg.image && <img src={msg.image} alt="Uploaded preview" className="uploaded-image" loading="lazy" />}
-                <p dangerouslySetInnerHTML={{ __html: msg.content || "" }} />
+                <MarkdownMessage message={msg.content} />
                 {msg.hasMemory && !msg.isTyping && <span className="memory-icon" title="Remembered context">🧠</span>}
                 {!msg.isTyping && <div className="message-time">{msg.timestamp}</div>}
               </div>
