@@ -4,10 +4,20 @@ import MarkdownMessage from "./components/MarkdownMessage";
 
 const AgreementPopup = ({ onAgree }) => (
   <div className="agreement-popup">
-    <div className="popup-overlay" role="dialog" aria-modal="true" aria-labelledby="notice-title">
+    <div
+      className="popup-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="notice-title"
+    >
       <div className="popup-content">
         <div className="popup-icon-wrapper" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -15,8 +25,12 @@ const AgreementPopup = ({ onAgree }) => (
             />
           </svg>
         </div>
-        <h2 id="notice-title" className="popup-title">Important Notice</h2>
-        <div className="popup-text">This AI system is created strictly for:</div>
+        <h2 id="notice-title" className="popup-title">
+          Important Notice
+        </h2>
+        <div className="popup-text">
+          This AI system is created strictly for:
+        </div>
         <div className="popup-list">
           <ul>
             <li>Entertainment & Roleplay</li>
@@ -32,12 +46,22 @@ const AgreementPopup = ({ onAgree }) => (
           </ul>
         </div>
         <div className="popup-text highlight-text">
-          If you feel emotional distress or mental breakdown: Please seek REAL human help immediately.
+          If you feel emotional distress or mental breakdown: Please seek REAL
+          human help immediately.
         </div>
         <button className="popup-agree-btn" onClick={onAgree}>
           <span>I AGREE & CONTINUE</span>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M14 5l7 7m0 0l-7 7m7-7H3"
+            />
           </svg>
         </button>
       </div>
@@ -47,7 +71,7 @@ const AgreementPopup = ({ onAgree }) => (
 
 function App() {
   const [hasAgreed, setHasAgreed] = useState(
-    () => localStorage.getItem("ai-agreement-accepted") === "true"
+    () => localStorage.getItem("ai-agreement-accepted") === "true",
   );
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -56,12 +80,14 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(
-    () => localStorage.getItem("darkMode") === "true"
+    () => localStorage.getItem("darkMode") === "true",
   );
   const [selectedPersona, setSelectedPersona] = useState(
-    localStorage.getItem("selectedPersona") || "default"
+    localStorage.getItem("selectedPersona") || "default",
   );
-  const [currentPersonaName, setCurrentPersonaName] = useState("Aisha (Professional Admin)");
+  const [currentPersonaName, setCurrentPersonaName] = useState(
+    "Aisha (Professional Admin)",
+  );
   const [personaList, setPersonaList] = useState({});
   const [coldStart, setColdStart] = useState(false);
 
@@ -70,7 +96,10 @@ function App() {
   const abortControllerRef = useRef(null);
   const typingStoppedRef = useRef(false);
 
-  const backendUrl = window.location.hostname === "localhost" ? "http://localhost:8000" : "https://groqchatbot-xoiv.onrender.com";
+  const backendUrl =
+    window.location.hostname === "localhost"
+      ? "http://localhost:8000"
+      : "https://groqchatbot-xoiv.onrender.com";
   const selectedLanguage = "en";
 
   const fallbackPersonaList = {
@@ -164,7 +193,7 @@ function App() {
     },
     Sales_Bot_Mode: {
       en: "Sales Bot mode active. Ask me anything about our products or services.",
-    }
+    },
   };
 
   const PERSONA_BLURBS = {
@@ -190,7 +219,9 @@ function App() {
   const getOrCreateUserId = () => {
     let uid = localStorage.getItem("mpai_uid");
     if (!uid) {
-      uid = crypto?.randomUUID?.() || `uid_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+      uid =
+        crypto?.randomUUID?.() ||
+        `uid_${Date.now()}_${Math.random().toString(36).slice(2)}`;
       localStorage.setItem("mpai_uid", uid);
     }
     return uid;
@@ -203,7 +234,7 @@ function App() {
         key,
         label: fallbackPersonaList[key],
       })),
-    []
+    [],
   );
 
   useEffect(() => {
@@ -214,16 +245,24 @@ function App() {
         if (!isMounted) return;
         if (data?.modes) {
           setPersonaList(data.modes);
-          setCurrentPersonaName(data.modes[selectedPersona] || fallbackPersonaList[selectedPersona] || fallbackPersonaList.default);
+          setCurrentPersonaName(
+            data.modes[selectedPersona] ||
+              fallbackPersonaList[selectedPersona] ||
+              fallbackPersonaList.default,
+          );
         } else {
           setPersonaList(fallbackPersonaList);
-          setCurrentPersonaName(fallbackPersonaList[selectedPersona] || fallbackPersonaList.default);
+          setCurrentPersonaName(
+            fallbackPersonaList[selectedPersona] || fallbackPersonaList.default,
+          );
         }
       })
       .catch(() => {
         if (!isMounted) return;
         setPersonaList(fallbackPersonaList);
-        setCurrentPersonaName(fallbackPersonaList[selectedPersona] || fallbackPersonaList.default);
+        setCurrentPersonaName(
+          fallbackPersonaList[selectedPersona] || fallbackPersonaList.default,
+        );
       });
     return () => {
       isMounted = false;
@@ -246,7 +285,10 @@ function App() {
   }, [selectedPersona, personaList]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "end",
+    });
   }, [messages, loading, isStreaming]);
 
   useEffect(() => {
@@ -256,7 +298,8 @@ function App() {
     ta.style.height = `${Math.min(ta.scrollHeight, 150)}px`;
   }, [input]);
 
-  const currentAvatar = personaAvatars[selectedPersona] || personaAvatars.default;
+  const currentAvatar =
+    personaAvatars[selectedPersona] || personaAvatars.default;
 
   const handleImageUpload = (e) => {
     const file = e.target.files?.[0];
@@ -287,7 +330,10 @@ function App() {
     if (!input.trim() && !image) return;
 
     const text = input.trim();
-    const timestamp = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    const timestamp = new Date().toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
 
     if (messages.length === 0) setColdStart(true);
     setLoading(true);
@@ -319,12 +365,15 @@ function App() {
         formData.append("language", selectedLanguage);
         formData.append("mode", selectedPersona);
 
-        response = await fetch(`${backendUrl}/chat/image?mode=${selectedPersona}`, {
-          method: "POST",
-          headers: { "x-user-id": userId },
-          body: formData,
-          signal: abortControllerRef.current.signal,
-        });
+        response = await fetch(
+          `${backendUrl}/chat/image?mode=${selectedPersona}`,
+          {
+            method: "POST",
+            headers: { "x-user-id": userId },
+            body: formData,
+            signal: abortControllerRef.current.signal,
+          },
+        );
       } else {
         response = await fetch(`${backendUrl}/chat?mode=${selectedPersona}`, {
           method: "POST",
@@ -346,7 +395,10 @@ function App() {
 
       const rawReply = data.reply || "No response received.";
       const plainText = String(rawReply).replace(/<[^>]*>/g, "");
-      const finalTime = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      const finalTime = new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
 
       setMessages((prev) => [
         ...prev,
@@ -381,6 +433,12 @@ function App() {
           }
           return next;
         });
+        if (i % 4 === 0) {
+          messagesEndRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "end",
+          });
+        }
       }
 
       const finalContent = typingStoppedRef.current ? typedContent : rawReply;
@@ -393,7 +451,10 @@ function App() {
             role: "assistant",
             content: finalContent,
             timestamp: finalTime,
-            image: data.image_path && data.filename ? `${backendUrl}/uploads/${data.filename}` : null,
+            image:
+              data.image_path && data.filename
+                ? `${backendUrl}/uploads/${data.filename}`
+                : null,
             persona: selectedPersona,
             hasMemory: !typingStoppedRef.current,
             isTyping: false,
@@ -403,7 +464,10 @@ function App() {
       });
     } catch (err) {
       if (err.name !== "AbortError") {
-        const finalTime = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+        const finalTime = new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
         setMessages((prev) => [
           ...prev,
           {
@@ -464,7 +528,12 @@ function App() {
               ))}
             </select>
 
-            <button className="top-action" onClick={clearChat} title="Clear chat" aria-label="Clear chat">
+            <button
+              className="top-action"
+              onClick={clearChat}
+              title="Clear chat"
+              aria-label="Clear chat"
+            >
               Clear
             </button>
 
@@ -500,20 +569,39 @@ function App() {
             <div className="empty-state">
               <div className="empty-title">How can I help?</div>
               <div className="empty-subtitle">
-                {welcomeMessages[selectedPersona]?.en || welcomeMessages.default.en}
+                {welcomeMessages[selectedPersona]?.en ||
+                  welcomeMessages.default.en}
               </div>
             </div>
           )}
 
           {messages.map((msg, i) => (
-            <div key={`${msg.role}-${i}-${msg.timestamp || ""}`} className={`message-row ${msg.role}`}>
-              {msg.role === "assistant" && <div className="assistant-avatar">{currentAvatar}</div>}
+            <div
+              key={`${msg.role}-${i}-${msg.timestamp || ""}`}
+              className={`message-row ${msg.role}`}
+            >
+              {msg.role === "assistant" && (
+                <div className="assistant-avatar">{currentAvatar}</div>
+              )}
 
               <div className={`bubble ${msg.role}`}>
-                {msg.image && <img src={msg.image} alt="Uploaded preview" className="uploaded-image" loading="lazy" />}
+                {msg.image && (
+                  <img
+                    src={msg.image}
+                    alt="Uploaded preview"
+                    className="uploaded-image"
+                    loading="lazy"
+                  />
+                )}
                 <MarkdownMessage message={msg.content} />
-                {msg.hasMemory && !msg.isTyping && <span className="memory-icon" title="Remembered context">🧠</span>}
-                {!msg.isTyping && <div className="message-time">{msg.timestamp}</div>}
+                {msg.hasMemory && !msg.isTyping && (
+                  <span className="memory-icon" title="Remembered context">
+                    🧠
+                  </span>
+                )}
+                {!msg.isTyping && (
+                  <div className="message-time">{msg.timestamp}</div>
+                )}
               </div>
             </div>
           ))}
@@ -522,7 +610,11 @@ function App() {
             <div className="message-row assistant">
               <div className="assistant-avatar">{currentAvatar}</div>
               <div className="bubble assistant typing-bubble">
-                <div className="typing-dots"><span></span><span></span><span></span></div>
+                <div className="typing-dots">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
               </div>
             </div>
           )}
@@ -533,10 +625,18 @@ function App() {
 
       <div className="input-shell">
         <div className="quick-actions">
-          <button className="quick-btn" onClick={regenerateLast} disabled={loading || isStreaming}>
+          <button
+            className="quick-btn"
+            onClick={regenerateLast}
+            disabled={loading || isStreaming}
+          >
             Regenerate
           </button>
-          <button className="quick-btn danger" onClick={stopResponse} disabled={!loading && !isStreaming}>
+          <button
+            className="quick-btn danger"
+            onClick={stopResponse}
+            disabled={!loading && !isStreaming}
+          >
             Stop response
           </button>
         </div>
@@ -560,8 +660,18 @@ function App() {
 
           <div className="composer-row">
             <label className="icon-btn file-btn" title="Upload image">
-              <input type="file" accept="image/*" onChange={handleImageUpload} disabled={loading || isStreaming} />
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                disabled={loading || isStreaming}
+              />
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
                 <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
               </svg>
             </label>
@@ -588,7 +698,12 @@ function App() {
               className="send-btn"
               aria-label="Send message"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.3"
+              >
                 <line x1="22" y1="2" x2="11" y2="13" />
                 <polygon points="22 2 15 22 11 13 2 9 22 2" />
               </svg>
@@ -603,7 +718,12 @@ function App() {
         title="Send feedback"
         aria-label="Send feedback"
       >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
           <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
         </svg>
       </a>
