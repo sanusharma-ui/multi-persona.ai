@@ -16,7 +16,9 @@ Thumbs.db
 # Logs
 *.log
 
-
 node_modules/
 dist/
 build/
+
+# Emotion engine memory (per-user/persona runtime state)
+backend/emotion/memory/*.json

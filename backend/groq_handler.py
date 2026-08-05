@@ -17,7 +17,7 @@ from ratelimit import limits, sleep_and_retry
 from tenacity import retry, stop_after_attempt, wait_exponential, wait_fixed, wait_chain, retry_if_exception_type
 import redis
 
-from backend.personas import PERSONAS
+from backend.personas import PERSONAS, EMOTION_AWARE_PERSONAS
 from backend.knowledge_fetcher import fetch_knowledge_context, should_fetch_knowledge
 from .safety_engine import (
     detect_mood,
@@ -31,7 +31,7 @@ from .safety_engine import (
     DEFLECTION_RESPONSES,
     CRISIS_RESPONSES,
 )
-
+from .emotion.emotion_engine import EmotionEngine
 # --------------------
 # Logging
 # --------------------
@@ -83,6 +83,8 @@ if not GROQ_API_KEY:
 groq_client = Groq(api_key=GROQ_API_KEY)
 logger.info("Groq client initialized.")
 logger.info("Groq image fallback model: %s", GROQ_IMAGE_FALLBACK_MODEL)
+emotion_engine = EmotionEngine(use_llm_extractor=False, llm_client=groq_client)
+logger.info("Emotion engine initialized.")
 
 # --------------------
 # Redis setup
@@ -295,6 +297,7 @@ def _is_aisha_mode(persona_key: str) -> bool:
 # --------------------
 # Build messages
 # --------------------
+# Replace original build_messages() function in groq_handler.py (under "# Build messages")
 def build_messages(
     user_message: str,
     persona_key: str = "default",
@@ -304,10 +307,27 @@ def build_messages(
     knowledge_context: Optional[str] = None,
     knowledge_meta: Optional[Dict[str, Any]] = None,
 ) -> Tuple[List[Dict[str, Any]], str]:
+    # NOTE: Ensure these exist at top-level in file:
+    # from .personas import PERSONAS, EMOTION_AWARE_PERSONAS
+    # from .emotion_engine import EmotionEngine
+    # emotion_engine = EmotionEngine(use_llm_extractor=False, llm_client=groq_client)
+
     mem = load_persona_memory(persona_key, user_id=user_id)
     recent_conv = mem.get("conversations", [])[-10:]
 
     system_prompt = PERSONAS.get(persona_key, PERSONAS["default"])["system_prompt"]
+
+    # Emotion block must come BEFORE souls backstory and only for allowed personas.
+    if persona_key in EMOTION_AWARE_PERSONAS:
+        try:
+            emotion_prompt = emotion_engine.get_injected_prompt(
+                persona_key=persona_key,
+                user_id=user_id,
+                user_message=user_message,
+            )
+            system_prompt += "\n\n" + emotion_prompt
+        except Exception as e:
+            logger.warning("Emotion engine injection failed, continuing without it: %s", e)
 
     try:
         from .souls_static import STATIC_SOULS
@@ -403,7 +423,6 @@ def build_messages(
         )
 
     return messages, get_memory_path(persona_key, user_id=user_id)
-
 
 # --------------------
 # Cache
