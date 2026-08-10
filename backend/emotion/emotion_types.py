@@ -21,6 +21,7 @@ DEFAULT_EMOTION_STATE = {
     "surprise": 0.00,
     "excitement": 0.40,
     "frustration": 0.00, # Added for better coding/debugging interactions
+    "relief": 0.00,
 
     # -------------------------
     # Personality Modifiers (Slow changing)
@@ -45,6 +46,9 @@ DEFAULT_EMOTION_STATE = {
     # Cognitive / Metadata
     # -------------------------
     "current_mood": "neutral",
+    "perceived_user_mood": "neutral",
+    "response_strategy": "steady",
+    "emotional_context": "No strong emotional signal detected.",
     "last_updated": None,
 }
 

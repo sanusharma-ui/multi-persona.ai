@@ -15,6 +15,7 @@ DECAY_RATE = {
     "surprise": 0.70,    # Surprise fades very fast
     "excitement": 0.92,
     "frustration": 0.88,
+    "relief": 0.86,
 }
 
 # Personality modifiers decay MUCH slower than raw emotions -
@@ -111,6 +112,7 @@ def determine_mood(state: dict) -> str:
     energy = _g(state, "energy", 0.8)
     frustration = _g(state, "frustration")
     burnout = _g(state, "burnout")
+    relief = _g(state, "relief")
 
     # Complex states first
     if burnout > 0.75 and energy < 0.30:
@@ -129,6 +131,8 @@ def determine_mood(state: dict) -> str:
         return "sad"
     if excitement > 0.80:
         return "excited"
+    if relief > 0.65 and anger < 0.25 and sadness < 0.35:
+        return "relieved"
     if joy > 0.70:
         return "happy"
     if energy < 0.30:

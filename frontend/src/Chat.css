@@ -238,7 +238,7 @@ body {
 
 .message-row {
   display: flex;
-  align-items: flex-end;
+  align-items: flex-start;
   gap: 8px;
   animation: fadeUp .22s ease;
 }
@@ -255,13 +255,14 @@ body {
 .assistant-avatar {
   width: 28px;
   height: 28px;
-  border-radius: 9px;
+  border-radius: 8px;
   border: 1px solid var(--line);
   background: var(--surface-2);
   display: grid;
   place-items: center;
   flex-shrink: 0;
   font-size: 13px;
+  margin-top: 2px;
 }
 
 .bubble {
@@ -278,11 +279,26 @@ body {
 
 .bubble p { margin: 0; }
 
+.bubble.assistant p + p,
+.bubble.assistant ul,
+.bubble.assistant ol,
+.bubble.assistant pre {
+  margin-top: 8px;
+}
+
+.bubble.assistant ul,
+.bubble.assistant ol {
+  padding-left: 20px;
+}
+
 .bubble.assistant {
-  background: var(--assistant);
-  border-color: var(--line);
+  max-width: min(82%, 780px);
+  background: transparent;
+  border-color: transparent;
   color: var(--text);
-  border-bottom-left-radius: 6px;
+  box-shadow: none;
+  padding: 2px 2px 10px;
+  border-radius: 0;
 }
 
 .bubble.user {
@@ -321,8 +337,13 @@ body {
   text-align: right;
 }
 
+.bubble.assistant .message-time {
+  text-align: left;
+  color: var(--muted);
+}
+
 .typing-bubble {
-  padding: 12px;
+  padding: 8px 2px;
 }
 
 .typing-dots {
@@ -674,7 +695,7 @@ body {
 
 overflow:hidden;
 
-border-radius:12px;
+border-radius:8px;
 
 margin-top:10px;
 
@@ -740,6 +761,7 @@ font-family:monospace;
   .persona-select { max-width: 145px; font-size: .76rem; }
   .chat-messages { padding: 12px 10px 176px; }
   .bubble { max-width: 92%; font-size: .9rem; }
+  .bubble.assistant { max-width: calc(100% - 38px); }
   .quick-actions { justify-content: stretch; }
   .quick-btn { flex: 1; }
   .floating-feedback { right: 10px; bottom: 92px; }

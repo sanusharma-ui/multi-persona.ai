@@ -444,6 +444,7 @@ def make_cache_key(
     mem: Dict[str, Any],
     knowledge_signature: str = "no-knowledge",
     image_signature: str = "no-image",
+    emotion_signature: str = "no-emotion",
 ) -> str:
     raw = (
         f"{persona_key}:"
@@ -451,6 +452,7 @@ def make_cache_key(
         f"{_context_signature(mem)}:"
         f"{knowledge_signature}:"
         f"{image_signature}:"
+        f"{emotion_signature}:"
         f"{user_message}"
     )
 
@@ -873,19 +875,6 @@ def generate_response_impl(
 
         image_signature = make_image_signature(image_path)
 
-        cache_key = make_cache_key(
-            user_message=clean_user_message,
-            persona_key=persona_key,
-            user_id=user_id,
-            mem=mem,
-            knowledge_signature=knowledge_result.get("kb_sig", "no-knowledge"),
-            image_signature=image_signature,
-        )
-
-        cached = get_cached_response(cache_key)
-        if cached:
-            return cached
-
         mood = detect_mood(clean_user_message) if clean_user_message else "neutral"
 
         messages, _ = build_messages(
@@ -897,6 +886,27 @@ def generate_response_impl(
             knowledge_context=knowledge_result.get("context") if knowledge_result.get("found") else None,
             knowledge_meta=knowledge_result,
         )
+
+        emotion_signature = "no-emotion"
+        if persona_key in EMOTION_AWARE_PERSONAS:
+            try:
+                emotion_signature = emotion_engine.get_cache_signature(persona_key, user_id)
+            except Exception as e:
+                logger.warning("Emotion cache signature failed: %s", e)
+
+        cache_key = make_cache_key(
+            user_message=clean_user_message,
+            persona_key=persona_key,
+            user_id=user_id,
+            mem=mem,
+            knowledge_signature=knowledge_result.get("kb_sig", "no-knowledge"),
+            image_signature=image_signature,
+            emotion_signature=emotion_signature,
+        )
+
+        cached = get_cached_response(cache_key)
+        if cached:
+            return cached
 
         if os.getenv("HIGH_TRAFFIC", "false").lower() == "true":
             time.sleep(0.1)

@@ -22,14 +22,10 @@ USER_ID = "test_user_raven_001"
 # Escalating: pehle neutral, phir negative, phir positive - taaki dono
 # directions mein mood shift dikhe.
 MESSAGES = [
-    "hi raven",
-    "yaar aaj bahut bura din tha, sab kuch wrong ho raha hai",
-    "tu bhi kaam nahi karti properly, useless hai bas",
-    "sorry yaar mood off tha, tu toh best hai fr",
-    "you're amazing, love talking to you",
-    "thanks raven, feeling better now",
+    "Raven, seriously? You messed this up again.",
+    "Don't talk to me like that. I'm really pissed off right now.",
+    "Okay... I'm still angry, but let's fix this.",
 ]
-
 
 def print_state(label: str):
     state = load_emotion_state(PERSONA, USER_ID)
