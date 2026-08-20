@@ -119,7 +119,7 @@ function App() {
     arjun: "Arjun (Aesthetic Calm)",
     raven: "Raven (Baddie Queen)",
     Creator_mode: "Sanu Sharma (Creator Mode)",
-    RTI_Agent_Mode: "RTI Agent (Legal Assistance)",
+
   };
 
   const personaAvatars = {
@@ -139,7 +139,7 @@ function App() {
     arjun: "☕",
     raven: "🖤",
     Creator_mode: "👤",
-    RTI_Agent_Mode: "📝",
+  
   };
 
   const welcomeMessages = {
@@ -191,9 +191,7 @@ function App() {
     Creator_mode: {
       en: "Creator mode active. Ask me anything about this project.",
     },
-    RTI_Agent_Mode: {
-      en: "RTI Agent mode active. I can help you draft precise RTI requests.",
-    },
+   
   };
 
   const PERSONA_BLURBS = {
@@ -213,7 +211,6 @@ function App() {
     arjun: "Calm mode • Aesthetic thoughts",
     raven: "Baddie mode • Bold confidence",
     Creator_mode: "Creator mode • Sanu Sharma",
-    RTI_Agent_Mode: "RTI Agent mode • Legal assistance",
   };
 
   const SUGGESTION_CHIPS = {
@@ -233,7 +230,7 @@ function App() {
     arjun: ["Help me slow down", "Share a calming thought", "What should I reflect on?"],
     raven: ["Hype me up", "Rate my vibe", "Give me a pep talk"],
     Creator_mode: ["How was Shifts built?", "What's the tech stack?", "Tell me about the creator"],
-    RTI_Agent_Mode: ["Draft an RTI request", "What information can I ask for?", "Help me with legal wording"]
+
   };
 
   const getOrCreateUserId = () => {
