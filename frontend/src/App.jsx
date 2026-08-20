@@ -123,7 +123,7 @@ function App() {
   };
 
   const personaAvatars = {
-    default: "🧑‍💼",
+    default: "👩‍💻",
     seven: "🪐",
     virex: "⚙️",
     noctra: "🌙",
@@ -214,6 +214,26 @@ function App() {
     raven: "Baddie mode • Bold confidence",
     Creator_mode: "Creator mode • Sanu Sharma",
     sales_bot_mode: "Sales Bot mode • Nexus",
+  };
+
+  const SUGGESTION_CHIPS = {
+    default: ["What can you do?", "Help me pick a persona", "Tell me about Shifts"],
+    seven: ["What happened to Planet 000?", "Tell me about your mission", "How did you survive?"],
+    virex: ["Run a system diagnostic", "Analyze this problem", "Optimize my approach"],
+    noctra: ["Tell me about tonight's moon", "I had a strange dream", "Read my energy"],
+    kael: ["Tell me of your kingdom", "I need courage", "What honor demands"],
+    mira_time: ["What does the timeline say?", "Help me choose wisely", "Show me the future"],
+    zenith: ["Teach me something new", "Explain this concept", "Quiz me on a topic"],
+    neo: ["Debug this code", "Best practices for React", "Explain this algorithm"],
+    cipher: ["Teach me about security", "How would you breach this?", "Explain encryption"],
+    nyra: ["I need a creative name", "Help brainstorm ideas", "Write something poetic"],
+    rishi: ["What does the Gita say?", "Help me find clarity", "A lesson for today"],
+    pulse: ["Give me a reality check", "Am I overthinking this?", "Be brutally honest"],
+    diya: ["Kya scene hai aaj?", "Tell me some gossip", "Bestie advice chahiye"],
+    arjun: ["Help me slow down", "Share a calming thought", "What should I reflect on?"],
+    raven: ["Hype me up", "Rate my vibe", "Give me a pep talk"],
+    Creator_mode: ["How was Shifts built?", "What's the tech stack?", "Tell me about the creator"],
+    Sales_Bot_Mode: ["What products do you offer?", "Tell me about pricing", "I need a demo"],
   };
 
   const getOrCreateUserId = () => {
@@ -414,31 +434,39 @@ function App() {
       setLoading(false);
       setIsStreaming(true);
 
+      const words = plainText.split(/(\s+)/);
       let typedContent = "";
-      const stepDelay = 14;
+      const baseDelay = 20;
 
-      for (let i = 0; i <= plainText.length; i++) {
+      for (let i = 0; i < words.length; i++) {
         if (typingStoppedRef.current) break;
-        await new Promise((r) => setTimeout(r, stepDelay));
-
-        typedContent = plainText.slice(0, i);
+        
+        typedContent += words[i];
+        const isLast = i === words.length - 1;
+        
         setMessages((prev) => {
           const next = [...prev];
           const idx = next.length - 1;
           if (next[idx]?.isTyping) {
             next[idx] = {
               ...next[idx],
-              content: typedContent + (i < plainText.length ? "▌" : ""),
+              content: typedContent,
+              showCursor: !isLast,
             };
           }
           return next;
         });
-        if (i % 4 === 0) {
+        
+        if (i % 3 === 0) {
           messagesEndRef.current?.scrollIntoView({
             behavior: "smooth",
             block: "end",
           });
         }
+        
+        // Variable delay — faster for whitespace, slower for words
+        const delay = words[i].trim() ? baseDelay : 5;
+        await new Promise((r) => setTimeout(r, delay));
       }
 
       const finalContent = typingStoppedRef.current ? typedContent : rawReply;
@@ -502,7 +530,7 @@ function App() {
   if (!hasAgreed) return <AgreementPopup onAgree={handleAgree} />;
 
   return (
-    <div className={`app ${isDarkMode ? "dark" : ""}`}>
+    <div className={`app ${isDarkMode ? "dark" : ""} persona-${selectedPersona}`}>
       <header className="header">
         <div className="header-content">
           <div className="header-left">
@@ -567,10 +595,27 @@ function App() {
 
           {messages.length === 0 && (
             <div className="empty-state">
+              <div className="empty-avatar">{currentAvatar}</div>
               <div className="empty-title">How can I help?</div>
               <div className="empty-subtitle">
                 {welcomeMessages[selectedPersona]?.en ||
                   welcomeMessages.default.en}
+              </div>
+              <div className="suggestion-chips">
+                {(SUGGESTION_CHIPS[selectedPersona] || SUGGESTION_CHIPS.default).map(
+                  (chip) => (
+                    <button
+                      key={chip}
+                      className="suggestion-chip"
+                      onClick={() => {
+                        setInput(chip);
+                        setTimeout(() => sendMessage(), 0);
+                      }}
+                    >
+                      {chip}
+                    </button>
+                  ),
+                )}
               </div>
             </div>
           )}
@@ -594,6 +639,7 @@ function App() {
                   />
                 )}
                 <MarkdownMessage message={msg.content} />
+                {msg.showCursor && <span className="streaming-cursor" />}
                 {msg.hasMemory && !msg.isTyping && (
                   <span className="memory-icon" title="Remembered context">
                     🧠
@@ -606,7 +652,7 @@ function App() {
             </div>
           ))}
 
-          {(loading || isStreaming) && (
+          {loading && !isStreaming && (
             <div className="message-row assistant">
               <div className="assistant-avatar">{currentAvatar}</div>
               <div className="bubble assistant typing-bubble">
@@ -630,6 +676,7 @@ function App() {
             onClick={regenerateLast}
             disabled={loading || isStreaming}
           >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
             Regenerate
           </button>
           <button
@@ -637,14 +684,15 @@ function App() {
             onClick={stopResponse}
             disabled={!loading && !isStreaming}
           >
-            Stop response
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/></svg>
+            Stop
           </button>
         </div>
 
         <div className="composer">
           {imagePreview && (
             <div className="preview-container">
-              <img src={imagePreview} alt="Preview" className="preview-image" />
+               <img src={imagePreview} alt="Preview" className="preview-image" />
               <button
                 className="remove-preview"
                 onClick={() => {
