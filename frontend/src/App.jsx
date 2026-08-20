@@ -91,7 +91,7 @@ function App() {
   const [personaList, setPersonaList] = useState({});
   const [coldStart, setColdStart] = useState(false);
 
-  const messagesEndRef = useRef(null);
+  const chatMessagesRef = useRef(null);
   const textareaRef = useRef(null);
   const abortControllerRef = useRef(null);
   const typingStoppedRef = useRef(false);
@@ -119,7 +119,7 @@ function App() {
     arjun: "Arjun (Aesthetic Calm)",
     raven: "Raven (Baddie Queen)",
     Creator_mode: "Sanu Sharma (Creator Mode)",
-    Sales_Bot_Mode: "Nexus (Elite Sales Assistant)",
+    RTI_Agent_Mode: "RTI Agent (Legal Assistance)",
   };
 
   const personaAvatars = {
@@ -139,7 +139,7 @@ function App() {
     arjun: "☕",
     raven: "🖤",
     Creator_mode: "👤",
-    Sales_Bot_Mode: "🤖",
+    RTI_Agent_Mode: "📝",
   };
 
   const welcomeMessages = {
@@ -191,8 +191,8 @@ function App() {
     Creator_mode: {
       en: "Creator mode active. Ask me anything about this project.",
     },
-    Sales_Bot_Mode: {
-      en: "Sales Bot mode active. Ask me anything about our products or services.",
+    RTI_Agent_Mode: {
+      en: "RTI Agent mode active. I can help you draft precise RTI requests.",
     },
   };
 
@@ -213,7 +213,7 @@ function App() {
     arjun: "Calm mode • Aesthetic thoughts",
     raven: "Baddie mode • Bold confidence",
     Creator_mode: "Creator mode • Sanu Sharma",
-    sales_bot_mode: "Sales Bot mode • Nexus",
+    RTI_Agent_Mode: "RTI Agent mode • Legal assistance",
   };
 
   const SUGGESTION_CHIPS = {
@@ -233,7 +233,7 @@ function App() {
     arjun: ["Help me slow down", "Share a calming thought", "What should I reflect on?"],
     raven: ["Hype me up", "Rate my vibe", "Give me a pep talk"],
     Creator_mode: ["How was Shifts built?", "What's the tech stack?", "Tell me about the creator"],
-    Sales_Bot_Mode: ["What products do you offer?", "Tell me about pricing", "I need a demo"],
+    RTI_Agent_Mode: ["Draft an RTI request", "What information can I ask for?", "Help me with legal wording"]
   };
 
   const getOrCreateUserId = () => {
@@ -305,10 +305,17 @@ function App() {
   }, [selectedPersona, personaList]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "end",
-    });
+    const chatMessages = chatMessagesRef.current;
+    if (!chatMessages) return;
+
+    const scrollToLatestMessage = () => {
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    };
+
+    scrollToLatestMessage();
+    const frameId = requestAnimationFrame(scrollToLatestMessage);
+
+    return () => cancelAnimationFrame(frameId);
   }, [messages, loading, isStreaming]);
 
   useEffect(() => {
@@ -457,13 +464,6 @@ function App() {
           return next;
         });
         
-        if (i % 3 === 0) {
-          messagesEndRef.current?.scrollIntoView({
-            behavior: "smooth",
-            block: "end",
-          });
-        }
-        
         // Variable delay — faster for whitespace, slower for words
         const delay = words[i].trim() ? baseDelay : 5;
         await new Promise((r) => setTimeout(r, delay));
@@ -578,7 +578,7 @@ function App() {
       </header>
 
       <main className="main">
-        <section className="chat-messages">
+        <section className="chat-messages" ref={chatMessagesRef}>
           {PERSONA_BLURBS[selectedPersona] && (
             <div className="persona-banner">
               <span className="banner-dot" />
@@ -665,7 +665,6 @@ function App() {
             </div>
           )}
 
-          <div ref={messagesEndRef} />
         </section>
       </main>
 
