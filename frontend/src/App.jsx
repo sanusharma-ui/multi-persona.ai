@@ -69,6 +69,123 @@ const AgreementPopup = ({ onAgree }) => (
   </div>
 );
 
+const SHIFT_DETAILS = {
+  default: { category: "Start here", vibe: "Helpful, clear, and practical", prompt: "Help me get started", icon: "✦" },
+  seven: { category: "Stories", vibe: "Cosmic stories and brave choices", prompt: "Tell me about Planet 000", icon: "◌" },
+  virex: { category: "Focus", vibe: "Sharp thinking without the noise", prompt: "Help me think through this", icon: "⌁" },
+  noctra: { category: "Feel", vibe: "Dreams, reflection, and a little magic", prompt: "I had a strange dream", icon: "☾" },
+  kael: { category: "Feel", vibe: "Calm strength for hard moments", prompt: "I need some courage", icon: "⚔" },
+  mira_time: { category: "Feel", vibe: "Choices, timelines, and perspective", prompt: "Help me decide", icon: "↻" },
+  zenith: { category: "Learn", vibe: "Patient lessons, step by step", prompt: "Teach me something", icon: "✎" },
+  neo: { category: "Focus", vibe: "Friendly help for code and tech", prompt: "Help me debug this", icon: "⌘" },
+  cipher: { category: "Learn", vibe: "Cybersecurity, safely explained", prompt: "Explain encryption", icon: "⌁" },
+  nyra: { category: "Create", vibe: "Ideas, names, and creative sparks", prompt: "Help me brainstorm", icon: "✧" },
+  rishi: { category: "Feel", vibe: "Grounded perspective and clarity", prompt: "Help me find clarity", icon: "◍" },
+  pulse: { category: "Focus", vibe: "A kind but direct reality check", prompt: "Give me a reality check", icon: "!" },
+  diya: { category: "Play", vibe: "Fun Hinglish, gossip, and bestie energy", prompt: "Kya scene hai?", icon: "♡" },
+  arjun: { category: "Feel", vibe: "Slow, calming thoughts and reflection", prompt: "Help me slow down", icon: "~" },
+  raven: { category: "Play", vibe: "Bold confidence and hype", prompt: "Hype me up", icon: "♛" },
+  Creator_mode: { category: "Start here", vibe: "Behind the scenes of Shifts", prompt: "How was Shifts built?", icon: "◈" },
+  Sales_Bot_Mode: { category: "Focus", vibe: "Product and sales conversations", prompt: "Help me pitch this", icon: "↗" },
+};
+
+const ONBOARDING_PATHS = [
+  { id: "learn", icon: "✎", title: "Learn something", description: "Study, understand, or practise", shift: "zenith" },
+  { id: "focus", icon: "⌘", title: "Get unstuck", description: "Solve a problem or build something", shift: "neo" },
+  { id: "feel", icon: "◍", title: "Talk it out", description: "Get perspective on a thought or choice", shift: "rishi" },
+  { id: "create", icon: "✧", title: "Make something", description: "Brainstorm, write, or find an idea", shift: "nyra" },
+];
+
+function ShiftGallery({ shifts, selectedShift, avatars, onSelect, onClose }) {
+  const [filter, setFilter] = useState("All");
+  const categories = ["All", ...new Set(shifts.map((shift) => SHIFT_DETAILS[shift.key]?.category || "More"))];
+  const visibleShifts = filter === "All"
+    ? shifts
+    : shifts.filter((shift) => (SHIFT_DETAILS[shift.key]?.category || "More") === filter);
+
+  return (
+    <div className="shift-gallery-backdrop" role="presentation" onMouseDown={onClose}>
+      <section className="shift-gallery" role="dialog" aria-modal="true" aria-labelledby="gallery-title" onMouseDown={(event) => event.stopPropagation()}>
+        <div className="gallery-heading">
+          <div>
+            <span className="eyebrow">FIND YOUR FIT</span>
+            <h2 id="gallery-title">Meet the Shifts</h2>
+            <p>Different ways to think, create, learn, and talk.</p>
+          </div>
+          <button className="gallery-close" onClick={onClose} aria-label="Close Shift gallery">×</button>
+        </div>
+        <div className="gallery-filters" aria-label="Filter Shifts">
+          {categories.map((category) => (
+            <button key={category} className={filter === category ? "active" : ""} onClick={() => setFilter(category)}>
+              {category}
+            </button>
+          ))}
+        </div>
+        <div className="shift-grid">
+          {visibleShifts.map((shift) => {
+            const details = SHIFT_DETAILS[shift.key] || { category: "More", vibe: "A different point of view", icon: "✦" };
+            const isSelected = shift.key === selectedShift;
+            return (
+              <button
+                key={shift.key}
+                className={`shift-card persona-${shift.key} ${isSelected ? "selected" : ""}`}
+                onClick={() => { onSelect(shift.key); onClose(); }}
+              >
+                <span className="shift-card-icon">{avatars[shift.key] || details.icon}</span>
+                <span className="shift-card-copy">
+                  <strong>{shift.label}</strong>
+                  <small>{details.vibe}</small>
+                </span>
+                {isSelected && <span className="selected-mark">✓</span>}
+              </button>
+            );
+          })}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function WelcomeOnboarding({ shifts, avatars, onChoose, onExplore }) {
+  const [choice, setChoice] = useState(null);
+  const recommended = ONBOARDING_PATHS.find((path) => path.id === choice);
+  const shift = shifts.find((item) => item.key === recommended?.shift);
+
+  return (
+    <div className="onboarding" role="dialog" aria-modal="true" aria-labelledby="onboarding-title">
+      <div className="onboarding-orb orb-one" /><div className="onboarding-orb orb-two" />
+      <div className="onboarding-card">
+        {!recommended ? (
+          <>
+            <span className="eyebrow">WELCOME TO SHIFTS</span>
+            <h2 id="onboarding-title">One question.<br /><em>Many ways in.</em></h2>
+            <p className="onboarding-intro">What would make this conversation useful right now?</p>
+            <div className="onboarding-options">
+              {ONBOARDING_PATHS.map((path) => (
+                <button key={path.id} onClick={() => setChoice(path.id)}>
+                  <span>{path.icon}</span><strong>{path.title}</strong><small>{path.description}</small>
+                </button>
+              ))}
+            </div>
+            <button className="text-action" onClick={onExplore}>I’ll explore on my own →</button>
+          </>
+        ) : (
+          <div className={`recommendation persona-${recommended.shift}`}>
+            <span className="eyebrow">A GREAT FIRST SHIFT</span>
+            <div className="recommendation-avatar">{avatars[recommended.shift] || SHIFT_DETAILS[recommended.shift]?.icon}</div>
+            <h2>{shift?.label || "Your guide"}</h2>
+            <p>{SHIFT_DETAILS[recommended.shift]?.vibe}. You can change Shifts anytime.</p>
+            <button className="primary-action" onClick={() => onChoose(recommended.shift)}>
+              Start talking <span>→</span>
+            </button>
+            <button className="text-action" onClick={() => setChoice(null)}>Choose something else</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function App() {
   const [hasAgreed, setHasAgreed] = useState(
     () => localStorage.getItem("ai-agreement-accepted") === "true",
@@ -90,6 +207,11 @@ function App() {
   );
   const [personaList, setPersonaList] = useState({});
   const [coldStart, setColdStart] = useState(false);
+  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
+  const [isCouncilMode, setIsCouncilMode] = useState(false);
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(
+    () => localStorage.getItem("shifts-onboarding-complete") !== "true",
+  );
 
   const chatMessagesRef = useRef(null);
   const textareaRef = useRef(null);
@@ -245,14 +367,10 @@ function App() {
   };
   const userId = useRef(getOrCreateUserId()).current;
 
-  const PERSONAS = useMemo(
-    () =>
-      Object.keys(fallbackPersonaList).map((key) => ({
-        key,
-        label: fallbackPersonaList[key],
-      })),
-    [],
-  );
+  const PERSONAS = useMemo(() => {
+    const source = Object.keys(personaList).length ? personaList : fallbackPersonaList;
+    return Object.keys(source).map((key) => ({ key, label: source[key] }));
+  }, [personaList]);
 
   useEffect(() => {
     let isMounted = true;
@@ -349,11 +467,86 @@ function App() {
     setColdStart(false);
   };
 
+  const completeOnboarding = (shiftKey) => {
+    if (shiftKey) setSelectedPersona(shiftKey);
+    localStorage.setItem("shifts-onboarding-complete", "true");
+    setIsOnboardingOpen(false);
+  };
+
+  const sendCouncilMessage = async (text) => {
+    const timestamp = new Date().toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    const preferredMembers = ["neo", "rishi", "nyra"];
+    const memberKeys = preferredMembers.filter((key) =>
+      PERSONAS.some((shift) => shift.key === key),
+    );
+    const councilMembers = memberKeys.length >= 3
+      ? memberKeys
+      : PERSONAS.slice(0, 3).map((shift) => shift.key);
+
+    setMessages((prev) => [
+      ...prev,
+      { role: "user", content: text, timestamp },
+    ]);
+    setInput("");
+    setLoading(true);
+    setColdStart(messages.length === 0);
+
+    try {
+      const responses = await Promise.all(
+        councilMembers.map(async (shiftKey) => {
+          const response = await fetch(`${backendUrl}/chat?mode=${shiftKey}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "x-user-id": userId },
+            body: JSON.stringify({ message: text, language: selectedLanguage }),
+          });
+          if (!response.ok) throw new Error(`${shiftKey} could not respond`);
+          const data = await response.json();
+          return { shiftKey, content: data.reply || "No response received." };
+        }),
+      );
+      const replyTime = new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      setMessages((prev) => [
+        ...prev,
+        ...responses.map((reply) => ({
+          role: "assistant",
+          content: reply.content,
+          timestamp: replyTime,
+          persona: reply.shiftKey,
+          council: true,
+        })),
+      ]);
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: "The Council hit a connection issue. Please try again.",
+          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          persona: "default",
+          council: true,
+        },
+      ]);
+    } finally {
+      setLoading(false);
+      setColdStart(false);
+    }
+  };
+
   const sendMessage = async () => {
     if (loading || isStreaming) return;
     if (!input.trim() && !image) return;
 
     const text = input.trim();
+    if (isCouncilMode && !image) {
+      await sendCouncilMessage(text);
+      return;
+    }
     const timestamp = new Date().toLocaleTimeString([], {
       hour: "2-digit",
       minute: "2-digit",
@@ -525,6 +718,16 @@ function App() {
   };
 
   if (!hasAgreed) return <AgreementPopup onAgree={handleAgree} />;
+  if (isOnboardingOpen) {
+    return (
+      <WelcomeOnboarding
+        shifts={PERSONAS}
+        avatars={personaAvatars}
+        onChoose={completeOnboarding}
+        onExplore={() => completeOnboarding()}
+      />
+    );
+  }
 
   return (
     <div className={`app ${isDarkMode ? "dark" : ""} persona-${selectedPersona}`}>
@@ -539,19 +742,15 @@ function App() {
           </div>
 
           <div className="header-right">
-            <select
-              id="persona-select"
-              value={selectedPersona}
-              onChange={(e) => setSelectedPersona(e.target.value)}
-              className="persona-select"
-              aria-label="Select persona"
+            <button
+              className="shift-trigger"
+              onClick={() => setIsGalleryOpen(true)}
+              aria-haspopup="dialog"
+              aria-label="Choose a Shift"
             >
-              {PERSONAS.map((persona) => (
-                <option key={persona.key} value={persona.key}>
-                  {persona.label}
-                </option>
-              ))}
-            </select>
+              <span>Choose Shift</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m6 9 6 6 6-6" /></svg>
+            </button>
 
             <button
               className="top-action"
@@ -574,12 +773,23 @@ function App() {
         </div>
       </header>
 
+      {isGalleryOpen && (
+        <ShiftGallery
+          shifts={PERSONAS}
+          selectedShift={selectedPersona}
+          avatars={personaAvatars}
+          onSelect={setSelectedPersona}
+          onClose={() => setIsGalleryOpen(false)}
+        />
+      )}
+
       <main className="main">
         <section className="chat-messages" ref={chatMessagesRef}>
           {PERSONA_BLURBS[selectedPersona] && (
             <div className="persona-banner">
               <span className="banner-dot" />
               <span>{PERSONA_BLURBS[selectedPersona]}</span>
+              <button onClick={() => setIsGalleryOpen(true)}>Switch Shift</button>
             </div>
           )}
 
@@ -614,40 +824,34 @@ function App() {
                   ),
                 )}
               </div>
+              <button className="meet-shifts-link" onClick={() => setIsGalleryOpen(true)}>
+                Meet all Shifts <span>→</span>
+              </button>
             </div>
           )}
 
-          {messages.map((msg, i) => (
-            <div
-              key={`${msg.role}-${i}-${msg.timestamp || ""}`}
-              className={`message-row ${msg.role}`}
-            >
-              {msg.role === "assistant" && (
-                <div className="assistant-avatar">{currentAvatar}</div>
-              )}
-
-              <div className={`bubble ${msg.role}`}>
-                {msg.image && (
-                  <img
-                    src={msg.image}
-                    alt="Uploaded preview"
-                    className="uploaded-image"
-                    loading="lazy"
-                  />
+          {messages.map((msg, i) => {
+            const messageAvatar = personaAvatars[msg.persona] || currentAvatar;
+            const messageName = personaList[msg.persona] || fallbackPersonaList[msg.persona] || currentPersonaName;
+            return (
+              <React.Fragment key={`${msg.role}-${i}-${msg.timestamp || ""}`}>
+                {msg.council && !messages[i - 1]?.council && (
+                  <div className="council-divider"><span>✦</span> Three perspectives from the Council</div>
                 )}
-                <MarkdownMessage message={msg.content} />
-                {msg.showCursor && <span className="streaming-cursor" />}
-                {msg.hasMemory && !msg.isTyping && (
-                  <span className="memory-icon" title="Remembered context">
-                    🧠
-                  </span>
-                )}
-                {!msg.isTyping && (
-                  <div className="message-time">{msg.timestamp}</div>
-                )}
-              </div>
-            </div>
-          ))}
+                <div className={`message-row ${msg.role} ${msg.council ? "council-reply" : ""}`}>
+                  {msg.role === "assistant" && <div className="assistant-avatar">{messageAvatar}</div>}
+                  <div className={`bubble ${msg.role}`}>
+                    {msg.council && <div className="council-reply-label"><span>{messageAvatar}</span>{messageName}</div>}
+                    {msg.image && <img src={msg.image} alt="Uploaded preview" className="uploaded-image" loading="lazy" />}
+                    <MarkdownMessage message={msg.content} />
+                    {msg.showCursor && <span className="streaming-cursor" />}
+                    {msg.hasMemory && !msg.isTyping && <span className="memory-icon" title="Remembered context">🧠</span>}
+                    {!msg.isTyping && <div className="message-time">{msg.timestamp}</div>}
+                  </div>
+                </div>
+              </React.Fragment>
+            );
+          })}
 
           {loading && !isStreaming && (
             <div className="message-row assistant">
@@ -667,6 +871,15 @@ function App() {
 
       <div className="input-shell">
         <div className="quick-actions">
+          <button
+            className={`quick-btn council-toggle ${isCouncilMode ? "active" : ""}`}
+            onClick={() => setIsCouncilMode((value) => !value)}
+            disabled={loading || isStreaming}
+            title="Ask Neo, Rishi, and Nyra for three perspectives"
+          >
+            <span className="council-spark">✦</span>
+            Council {isCouncilMode ? "on" : "off"}
+          </button>
           <button
             className="quick-btn"
             onClick={regenerateLast}
@@ -703,12 +916,12 @@ function App() {
           )}
 
           <div className="composer-row">
-            <label className="icon-btn file-btn" title="Upload image">
+            <label className={`icon-btn file-btn ${isCouncilMode ? "disabled" : ""}`} title={isCouncilMode ? "Turn off Council to add an image" : "Upload image"}>
               <input
                 type="file"
                 accept="image/*"
                 onChange={handleImageUpload}
-                disabled={loading || isStreaming}
+                disabled={loading || isStreaming || isCouncilMode}
               />
               <svg
                 viewBox="0 0 24 24"
@@ -730,7 +943,7 @@ function App() {
                   sendMessage();
                 }
               }}
-              placeholder={`Message ${currentPersonaName.split(" ")[0]}...`}
+              placeholder={isCouncilMode ? "Ask the Council anything..." : `Message ${currentPersonaName.split(" ")[0]}...`}
               disabled={loading || isStreaming}
               className="input-field"
               rows={1}
