@@ -608,7 +608,7 @@ def safe_gemini_call(
         config=types.GenerateContentConfig(
             temperature=0.7,
             top_p=0.9,
-            max_output_tokens=1500,
+            max_output_tokens=2500,
         ),
     )
 
@@ -650,7 +650,7 @@ def safe_gemini_image_call(
         config=types.GenerateContentConfig(
             temperature=0.6,
             top_p=0.9,
-            max_output_tokens=1500,
+            max_output_tokens=2500,
         ),
     )
 
@@ -682,7 +682,7 @@ def safe_groq_call(
         model=model,
         messages=messages,
         temperature=0.7,
-        max_tokens=1500,
+        max_tokens=2500,
         top_p=0.9,
     )
 
@@ -714,7 +714,7 @@ def safe_groq_image_call(
         model=model,
         messages=messages,
         temperature=0.6,
-        max_tokens=1500,
+        max_tokens=2500,
         top_p=0.9,
     )
 
