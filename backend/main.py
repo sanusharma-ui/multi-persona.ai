@@ -20,6 +20,7 @@ from backend.groq_handler import (
     load_persona_memory,
     save_persona_memory
 )
+from backend.identity import normalize_user_id
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -58,10 +59,7 @@ MAX_CHARS = 2000  # general chat ke liye best
 def get_user_id(req: Request) -> str:
     if not req:
         return "anonymous"
-    uid = req.headers.get("x-user-id")
-    if uid and uid.strip():
-        return uid.strip()[:80]
-    return "anonymous"
+    return normalize_user_id(req.headers.get("x-user-id"))
 
 def get_user_ip(req: Request) -> str:
     if not req:

@@ -8,6 +8,9 @@ import os
 import json
 import tempfile
 import time
+from pathlib import Path
+
+from backend.identity import normalize_persona_key, normalize_user_id
 from .emotion_types import create_default_state
 
 BASE_DIR = os.path.dirname(__file__)
@@ -16,8 +19,16 @@ EMOTION_MEMORY_DIR = os.path.join(BASE_DIR, "memory")
 os.makedirs(EMOTION_MEMORY_DIR, exist_ok=True)
 
 def get_emotion_path(persona_key: str, user_id: str) -> str:
-    filename = f"{persona_key}__{user_id}.json"
-    return os.path.join(EMOTION_MEMORY_DIR, filename)
+    safe_persona_key = normalize_persona_key(persona_key)
+    safe_user_id = normalize_user_id(user_id)
+    filename = f"{safe_persona_key}__{safe_user_id}.json"
+
+    memory_dir = Path(EMOTION_MEMORY_DIR).resolve()
+    path = (memory_dir / filename).resolve()
+    if path.parent != memory_dir:
+        raise ValueError("Emotion memory path escaped its storage directory.")
+
+    return str(path)
 
 def load_emotion_state(persona_key: str, user_id: str) -> dict:
     path = get_emotion_path(persona_key, user_id)

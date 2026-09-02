@@ -18,6 +18,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential, wait_fixed, wa
 import redis
 
 from backend.personas import PERSONAS, EMOTION_AWARE_PERSONAS
+from backend.identity import normalize_user_id
 from backend.knowledge_fetcher import fetch_knowledge_context, should_fetch_knowledge
 from .safety_engine import (
     detect_mood,
@@ -145,12 +146,7 @@ MAX_KNOWLEDGE_CHARS = int(os.getenv("MAX_KNOWLEDGE_CHARS", "2600"))
 # Helpers
 # --------------------
 def _safe_user_id(user_id: str) -> str:
-    uid = (user_id or "anonymous").strip()
-    if not uid:
-        uid = "anonymous"
-
-    uid = "".join(c for c in uid if c.isalnum() or c in ("-", "_"))[:80]
-    return uid or "anonymous"
+    return normalize_user_id(user_id)
 
 
 def _redis_mem_key(persona_key: str, user_id: str) -> str:
