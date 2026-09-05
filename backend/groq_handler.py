@@ -779,7 +779,6 @@ def call_llm_with_fallback(messages: List[Dict[str, Any]]) -> str:
 
     raise RuntimeError("All text providers failed.")
 
-
 # --------------------
 # Rate-limited wrapper
 # --------------------

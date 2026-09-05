@@ -1,5 +1,9 @@
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import "./Chat.css";
+import useConversations from "./useConversations";
+import ConversationHistory from "./components/ConversationHistory";
+import useChatRequests from "./useChatRequests";
+import { readPreference, writePreference } from "./preferences";
 import MarkdownMessage from "./components/MarkdownMessage";
 
 const AgreementPopup = ({ onAgree }) => (
@@ -188,38 +192,41 @@ function WelcomeOnboarding({ shifts, avatars, onChoose, onExplore }) {
 
 function App() {
   const [hasAgreed, setHasAgreed] = useState(
-    () => localStorage.getItem("ai-agreement-accepted") === "true",
+    () => readPreference("ai-agreement-accepted") === "true",
   );
-  const [messages, setMessages] = useState([]);
+  const history = useConversations();
+  const { messages } = history;
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const closeHistory = useCallback(() => setHistoryOpen(false), []);
+  const [composerError, setComposerError] = useState("");
   const [input, setInput] = useState("");
   const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [isStreaming, setIsStreaming] = useState(false);
+
+  const isStreaming = false;
   const [isDarkMode, setIsDarkMode] = useState(
-    () => localStorage.getItem("darkMode") === "true",
+    () => readPreference("darkMode") === "true",
   );
   const [selectedPersona, setSelectedPersona] = useState(
-    localStorage.getItem("selectedPersona") || "default",
+    readPreference("selectedPersona") || "default",
   );
   const [currentPersonaName, setCurrentPersonaName] = useState(
     "Aisha (Professional Admin)",
   );
   const [personaList, setPersonaList] = useState({});
-  const [coldStart, setColdStart] = useState(false);
+
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [isCouncilMode, setIsCouncilMode] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(
-    () => localStorage.getItem("shifts-onboarding-complete") !== "true",
+    () => readPreference("shifts-onboarding-complete") !== "true",
   );
 
   const chatMessagesRef = useRef(null);
   const textareaRef = useRef(null);
-  const abortControllerRef = useRef(null);
-  const typingStoppedRef = useRef(false);
+  const uploadVersion = useRef(0);
 
   const backendUrl =
-    window.location.hostname === "localhost"
+    ["localhost", "127.0.0.1"].includes(window.location.hostname)
       ? "http://localhost:8000"
       : "https://groqchatbot-xoiv.onrender.com";
   const selectedLanguage = "en";
@@ -356,16 +363,19 @@ function App() {
   };
 
   const getOrCreateUserId = () => {
-    let uid = localStorage.getItem("mpai_uid");
+    let uid = readPreference("mpai_uid");
     if (!uid) {
       uid =
-        crypto?.randomUUID?.() ||
+        globalThis.crypto?.randomUUID?.() ||
         `uid_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-      localStorage.setItem("mpai_uid", uid);
+      writePreference("mpai_uid", uid);
     }
     return uid;
   };
-  const userId = useRef(getOrCreateUserId()).current;
+  const [userId] = useState(getOrCreateUserId);
+  const requests = useChatRequests({ history, backendUrl, userId, language: selectedLanguage });
+  const { loading } = requests;
+  const coldStart = loading && messages.filter((m) => m.role === "user").length === 1;
 
   const PERSONAS = useMemo(() => {
     const source = Object.keys(personaList).length ? personaList : fallbackPersonaList;
@@ -405,18 +415,17 @@ function App() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem("darkMode", String(isDarkMode));
+    writePreference("darkMode", String(isDarkMode));
     document.documentElement.classList.toggle("dark", isDarkMode);
   }, [isDarkMode]);
 
   useEffect(() => {
-    localStorage.setItem("selectedPersona", selectedPersona);
+    writePreference("selectedPersona", selectedPersona);
     const name =
       personaList[selectedPersona] ||
       fallbackPersonaList[selectedPersona] ||
       fallbackPersonaList.default;
     setCurrentPersonaName(name);
-    setMessages([]);
   }, [selectedPersona, personaList]);
 
   useEffect(() => {
@@ -443,277 +452,84 @@ function App() {
   const currentAvatar =
     personaAvatars[selectedPersona] || personaAvatars.default;
 
-  const handleImageUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (!file || !file.type.startsWith("image/")) return;
-    setImage(file);
+  const handleImageUpload = (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    const version = ++uploadVersion.current;
+    setImage(null);
+    setImagePreview(null);
+    if (!["image/jpeg", "image/png", "image/gif", "image/webp"].includes(file.type) || file.size > 5 * 1024 * 1024) {
+      setComposerError("Choose a JPEG, PNG, GIF or WebP image up to 5 MB.");
+      return;
+    }
     const reader = new FileReader();
-    reader.onloadend = () => setImagePreview(reader.result);
+    reader.onload = () => {
+      if (uploadVersion.current !== version) return;
+      setImage(file);
+      setImagePreview(reader.result);
+      setComposerError("");
+    };
+    reader.onerror = () => setComposerError("Could not read this image. Please choose it again.");
     reader.readAsDataURL(file);
   };
 
-  const stopResponse = () => {
-    typingStoppedRef.current = true;
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    setIsStreaming(false);
-    setLoading(false);
+  const stopResponse = requests.stop;
+
+  const changeConversation = (action) => {
+    stopResponse();
+    uploadVersion.current += 1;
+    setImage(null);
+    setImagePreview(null);
+    setInput("");
+    setComposerError("");
+    action();
+    setHistoryOpen(false);
   };
 
   const clearChat = () => {
+    if (window.confirm("Clear this conversation and start with fresh AI context? This cannot be undone.")) {
+      changeConversation(history.clear);
+    }
+  };
+
+  const chooseShift = (key) => {
     stopResponse();
-    setMessages([]);
-    setColdStart(false);
+    setSelectedPersona(key);
   };
 
   const completeOnboarding = (shiftKey) => {
     if (shiftKey) setSelectedPersona(shiftKey);
-    localStorage.setItem("shifts-onboarding-complete", "true");
+    writePreference("shifts-onboarding-complete", "true");
     setIsOnboardingOpen(false);
   };
 
-  const sendCouncilMessage = async (text) => {
-    const timestamp = new Date().toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-    const preferredMembers = ["neo", "rishi", "nyra"];
-    const memberKeys = preferredMembers.filter((key) =>
-      PERSONAS.some((shift) => shift.key === key),
-    );
-    const councilMembers = memberKeys.length >= 3
-      ? memberKeys
-      : PERSONAS.slice(0, 3).map((shift) => shift.key);
-
-    setMessages((prev) => [
-      ...prev,
-      { role: "user", content: text, timestamp },
-    ]);
-    setInput("");
-    setLoading(true);
-    setColdStart(messages.length === 0);
-
-    try {
-      const responses = await Promise.all(
-        councilMembers.map(async (shiftKey) => {
-          const response = await fetch(`${backendUrl}/chat?mode=${shiftKey}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "x-user-id": userId },
-            body: JSON.stringify({ message: text, language: selectedLanguage }),
-          });
-          if (!response.ok) throw new Error(`${shiftKey} could not respond`);
-          const data = await response.json();
-          return { shiftKey, content: data.reply || "No response received." };
-        }),
-      );
-      const replyTime = new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-      setMessages((prev) => [
-        ...prev,
-        ...responses.map((reply) => ({
-          role: "assistant",
-          content: reply.content,
-          timestamp: replyTime,
-          persona: reply.shiftKey,
-          council: true,
-        })),
-      ]);
-    } catch {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: "The Council hit a connection issue. Please try again.",
-          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-          persona: "default",
-          council: true,
-        },
-      ]);
-    } finally {
-      setLoading(false);
-      setColdStart(false);
-    }
-  };
-
-  const sendMessage = async () => {
-    if (loading || isStreaming) return;
-    if (!input.trim() && !image) return;
-
-    const text = input.trim();
-    if (isCouncilMode && !image) {
-      await sendCouncilMessage(text);
+  const sendMessage = (override) => {
+    const text = typeof override === "string" ? override.trim() : input.trim();
+    if ((!text && !imagePreview) || loading) return;
+    if (text.length > 2000) {
+      setComposerError("Keep your message within 2,000 characters.");
       return;
     }
-    const timestamp = new Date().toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-
-    if (messages.length === 0) setColdStart(true);
-    setLoading(true);
-    typingStoppedRef.current = false;
-
-    setMessages((prev) => [
-      ...prev,
-      {
-        role: "user",
-        content: text || "Sent an image.",
-        timestamp,
-        image: imagePreview,
-      },
-    ]);
-
+    const preferred = ["neo", "rishi", "nyra"].filter((key) => PERSONAS.some((p) => p.key === key));
+    const members = isCouncilMode && !imagePreview
+      ? (preferred.length === 3 ? preferred : PERSONAS.slice(0, 3).map((p) => p.key))
+      : [selectedPersona];
+    requests.send({ text, preview: imagePreview, members });
+    uploadVersion.current += 1;
     setInput("");
     setImage(null);
     setImagePreview(null);
-
-    abortControllerRef.current = new AbortController();
-
-    try {
-      let response;
-
-      if (image) {
-        const formData = new FormData();
-        formData.append("file", image);
-        if (text) formData.append("message", text);
-        formData.append("language", selectedLanguage);
-        formData.append("mode", selectedPersona);
-
-        response = await fetch(
-          `${backendUrl}/chat/image?mode=${selectedPersona}`,
-          {
-            method: "POST",
-            headers: { "x-user-id": userId },
-            body: formData,
-            signal: abortControllerRef.current.signal,
-          },
-        );
-      } else {
-        response = await fetch(`${backendUrl}/chat?mode=${selectedPersona}`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-user-id": userId,
-          },
-          body: JSON.stringify({
-            message: text,
-            language: selectedLanguage,
-            mode: selectedPersona,
-          }),
-          signal: abortControllerRef.current.signal,
-        });
-      }
-
-      if (!response.ok) throw new Error(`Server error: ${response.status}`);
-      const data = await response.json();
-
-      const rawReply = data.reply || "No response received.";
-      const plainText = String(rawReply).replace(/<[^>]*>/g, "");
-      const finalTime = new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: "",
-          isTyping: true,
-          timestamp: finalTime,
-          persona: selectedPersona,
-        },
-      ]);
-
-      setLoading(false);
-      setIsStreaming(true);
-
-      const words = plainText.split(/(\s+)/);
-      let typedContent = "";
-      const baseDelay = 20;
-
-      for (let i = 0; i < words.length; i++) {
-        if (typingStoppedRef.current) break;
-        
-        typedContent += words[i];
-        const isLast = i === words.length - 1;
-        
-        setMessages((prev) => {
-          const next = [...prev];
-          const idx = next.length - 1;
-          if (next[idx]?.isTyping) {
-            next[idx] = {
-              ...next[idx],
-              content: typedContent,
-              showCursor: !isLast,
-            };
-          }
-          return next;
-        });
-        
-        // Variable delay — faster for whitespace, slower for words
-        const delay = words[i].trim() ? baseDelay : 5;
-        await new Promise((r) => setTimeout(r, delay));
-      }
-
-      const finalContent = typingStoppedRef.current ? typedContent : rawReply;
-
-      setMessages((prev) => {
-        const next = [...prev];
-        const idx = next.length - 1;
-        if (idx >= 0) {
-          next[idx] = {
-            role: "assistant",
-            content: finalContent,
-            timestamp: finalTime,
-            image:
-              data.image_path && data.filename
-                ? `${backendUrl}/uploads/${data.filename}`
-                : null,
-            persona: selectedPersona,
-            hasMemory: !typingStoppedRef.current,
-            isTyping: false,
-          };
-        }
-        return next;
-      });
-    } catch (err) {
-      if (err.name !== "AbortError") {
-        const finalTime = new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        });
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: "assistant",
-            content: `Error: ${err.message}`,
-            timestamp: finalTime,
-            persona: selectedPersona,
-          },
-        ]);
-      }
-    } finally {
-      setLoading(false);
-      setIsStreaming(false);
-      setColdStart(false);
-      abortControllerRef.current = null;
-      typingStoppedRef.current = false;
-    }
+    setComposerError("");
   };
 
   const regenerateLast = () => {
-    const lastUser = [...messages].reverse().find((m) => m.role === "user");
-    if (!lastUser || loading || isStreaming) return;
-    setInput(lastUser.content === "Sent an image." ? "" : lastUser.content);
-    setTimeout(() => sendMessage(), 0);
+    const lastReply = [...messages].reverse().find((m) => m.role === "assistant" && m.request);
+    if (lastReply) requests.send({ ...lastReply.request, retryId: lastReply.id });
   };
 
   const handleAgree = () => {
-    localStorage.setItem("ai-agreement-accepted", "true");
+    writePreference("ai-agreement-accepted", "true");
     setHasAgreed(true);
   };
 
@@ -742,6 +558,7 @@ function App() {
           </div>
 
           <div className="header-right">
+            <button className="top-action" onClick={() => setHistoryOpen(true)} aria-haspopup="dialog">History</button>
             <button
               className="shift-trigger"
               onClick={() => setIsGalleryOpen(true)}
@@ -773,12 +590,14 @@ function App() {
         </div>
       </header>
 
+      {historyOpen && <ConversationHistory history={history} onClose={closeHistory} onAction={changeConversation} />}
+
       {isGalleryOpen && (
         <ShiftGallery
           shifts={PERSONAS}
           selectedShift={selectedPersona}
           avatars={personaAvatars}
-          onSelect={setSelectedPersona}
+          onSelect={chooseShift}
           onClose={() => setIsGalleryOpen(false)}
         />
       )}
@@ -814,10 +633,7 @@ function App() {
                     <button
                       key={chip}
                       className="suggestion-chip"
-                      onClick={() => {
-                        setInput(chip);
-                        setTimeout(() => sendMessage(), 0);
-                      }}
+                      onClick={() => sendMessage(chip)}
                     >
                       {chip}
                     </button>
@@ -834,16 +650,17 @@ function App() {
             const messageAvatar = personaAvatars[msg.persona] || currentAvatar;
             const messageName = personaList[msg.persona] || fallbackPersonaList[msg.persona] || currentPersonaName;
             return (
-              <React.Fragment key={`${msg.role}-${i}-${msg.timestamp || ""}`}>
+              <React.Fragment key={msg.id || `${msg.role}-${i}`}>
                 {msg.council && !messages[i - 1]?.council && (
                   <div className="council-divider"><span>✦</span> Three perspectives from the Council</div>
                 )}
                 <div className={`message-row ${msg.role} ${msg.council ? "council-reply" : ""}`}>
                   {msg.role === "assistant" && <div className="assistant-avatar">{messageAvatar}</div>}
                   <div className={`bubble ${msg.role}`}>
-                    {msg.council && <div className="council-reply-label"><span>{messageAvatar}</span>{messageName}</div>}
+                    {msg.role === "assistant" && <div className="council-reply-label"><span>{messageAvatar}</span>{messageName}</div>}
                     {msg.image && <img src={msg.image} alt="Uploaded preview" className="uploaded-image" loading="lazy" />}
-                    <MarkdownMessage message={msg.content} />
+                    <div aria-live={msg.pending ? "polite" : "off"}><MarkdownMessage message={msg.content} /></div>
+                    {msg.failed && msg.request && <button className="quick-btn" disabled={loading} onClick={() => requests.send({ ...msg.request, retryId: msg.id })}>Retry response</button>}
                     {msg.showCursor && <span className="streaming-cursor" />}
                     {msg.hasMemory && !msg.isTyping && <span className="memory-icon" title="Remembered context">🧠</span>}
                     {!msg.isTyping && <div className="message-time">{msg.timestamp}</div>}
@@ -853,7 +670,7 @@ function App() {
             );
           })}
 
-          {loading && !isStreaming && (
+          {loading && !messages.some((m) => m.pending) && (
             <div className="message-row assistant">
               <div className="assistant-avatar">{currentAvatar}</div>
               <div className="bubble assistant typing-bubble">
@@ -870,6 +687,7 @@ function App() {
       </main>
 
       <div className="input-shell">
+        {(composerError || history.storageError) && <p className="chat-notice" role="alert">{composerError || history.storageError}</p>}
         <div className="quick-actions">
           <button
             className={`quick-btn council-toggle ${isCouncilMode ? "active" : ""}`}
@@ -883,7 +701,7 @@ function App() {
           <button
             className="quick-btn"
             onClick={regenerateLast}
-            disabled={loading || isStreaming}
+            disabled={loading || !messages.some((m) => m.request)}
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
             Regenerate
@@ -905,6 +723,7 @@ function App() {
               <button
                 className="remove-preview"
                 onClick={() => {
+                  uploadVersion.current += 1;
                   setImage(null);
                   setImagePreview(null);
                 }}
@@ -919,7 +738,7 @@ function App() {
             <label className={`icon-btn file-btn ${isCouncilMode ? "disabled" : ""}`} title={isCouncilMode ? "Turn off Council to add an image" : "Upload image"}>
               <input
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/png,image/gif,image/webp"
                 onChange={handleImageUpload}
                 disabled={loading || isStreaming || isCouncilMode}
               />
@@ -938,7 +757,7 @@ function App() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
+                if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
                   e.preventDefault();
                   sendMessage();
                 }

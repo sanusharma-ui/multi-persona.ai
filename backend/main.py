@@ -1,7 +1,12 @@
 import sys
 import os
 import traceback
-from fastapi import FastAPI, HTTPException, File, UploadFile, Request
+import hashlib
+import tempfile
+import io
+from fastapi import FastAPI, HTTPException, File, Form, UploadFile, Request
+from starlette.concurrency import run_in_threadpool
+from PIL import Image, UnidentifiedImageError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -41,6 +46,7 @@ app.add_middleware(
         "http://127.0.0.1:5500",
         "http://127.0.0.1:8000",
         "http://localhost:5173",
+        "http://127.0.0.1:5173",
         "https://multi-persona-ai.vercel.app",
     ],
     allow_credentials=True,
@@ -48,7 +54,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-UPLOAD_DIR = Path("/tmp/uploads")
+UPLOAD_DIR = Path(tempfile.gettempdir()) / "shifts-uploads"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 MAX_CHARS = 2000  # general chat ke liye best
@@ -60,6 +66,17 @@ def get_user_id(req: Request) -> str:
     if not req:
         return "anonymous"
     return normalize_user_id(req.headers.get("x-user-id"))
+
+
+def get_chat_user_id(req: Request) -> str:
+    """Isolate chat and emotion context without changing legacy memory clients."""
+    user_id = get_user_id(req)
+    conversation = req.headers.get("x-conversation-id") if req else None
+    if not conversation:
+        return user_id
+    if len(conversation) > 128 or not all(c.isascii() and (c.isalnum() or c in "-_") for c in conversation):
+        raise HTTPException(status_code=400, detail="Invalid conversation identifier.")
+    return "chat_" + hashlib.sha256(f"{user_id}:{conversation}".encode()).hexdigest()
 
 def get_user_ip(req: Request) -> str:
     if not req:
@@ -141,9 +158,9 @@ def chat(payload: ChatRequest, mode: str = "default", reset: bool = False, req: 
             detail=f"Message too long! Max {MAX_CHARS} characters allowed."
         )
 
+    user_id = get_chat_user_id(req)
     try:
         user_ip = get_user_ip(req)
-        user_id = get_user_id(req)
 
         if reset:
             logger.info(f"Resetting memory for persona={mode}, user_id={user_id}")
@@ -167,14 +184,14 @@ def chat(payload: ChatRequest, mode: str = "default", reset: bool = False, req: 
 
     except Exception as e:
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Server error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Could not generate a response. Please retry.") from e
 
 # IMAGE CHAT ROUTE (supports mode)
 @app.post("/chat/image")
 async def chat_image(
     file: UploadFile = File(...),
-    message: Optional[str] = None,
-    language: str = "en",
+    message: Optional[str] = Form(None),
+    language: str = Form("en"),
     mode: str = "default",
     req: Request = None
 ):
@@ -182,30 +199,38 @@ async def chat_image(
     if file.content_type not in allowed:
         raise HTTPException(status_code=400, detail="Only JPEG, PNG, GIF, WebP allowed!")
 
-    content = await file.read()
+    user_id = get_chat_user_id(req)
+    # Accept older query-string clients as well as the frontend multipart fields.
+    if req:
+        message = message if message is not None else req.query_params.get("message")
+        language = req.query_params.get("language", language)
+    user_text = message.strip() if message and message.strip() else "Describe this image."
+    if len(user_text) > MAX_CHARS:
+        raise HTTPException(status_code=400, detail=f"Message too long! Max {MAX_CHARS} characters allowed.")
+    mode = mode if mode in PERSONAS else "default"
+    content = await file.read(5 * 1024 * 1024 + 1)
     if len(content) > 5 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="Image too big! Max 5MB.")
+
+    try:
+        with Image.open(io.BytesIO(content)) as uploaded:
+            if uploaded.format not in {"JPEG", "PNG", "GIF", "WEBP"}:
+                raise ValueError("Unsupported image format")
+            uploaded.verify()
+    except (UnidentifiedImageError, OSError, ValueError, Image.DecompressionBombError) as exc:
+        raise HTTPException(status_code=400, detail="This image is invalid or unsupported. Choose another image.") from exc
 
     ext = mimetypes.guess_extension(file.content_type) or ".jpg"
     filename = f"{uuid.uuid4()}{ext}"
     file_path = UPLOAD_DIR / filename
 
-    with open(file_path, "wb") as f:
-        f.write(content)
-
-    user_text = message.strip() if message and message.strip() else "Describe this image."
-
-    if len(user_text) > MAX_CHARS:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Message too long! Max {MAX_CHARS} characters allowed."
-        )
-
     try:
+        with open(file_path, "wb") as f:
+            f.write(content)
         user_ip = get_user_ip(req)
-        user_id = get_user_id(req)
 
-        reply = generate_response(
+        reply = await run_in_threadpool(
+            generate_response,
             user_message=user_text,
             persona_key=mode if mode in PERSONAS else "default",
             language=language,
@@ -216,8 +241,6 @@ async def chat_image(
 
         return {
             "reply": reply,
-            "image_path": f"uploads/{filename}",
-            "filename": filename,
             "mode": mode,
             "display_name": PERSONAS.get(mode, PERSONAS["default"])["name"],
             "user_id": user_id
@@ -225,11 +248,11 @@ async def chat_image(
 
     except Exception as e:
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Vision error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Could not process the image. Please retry.") from e
 
     finally:
         if file_path.exists():
             file_path.unlink()
 
 # Serve images
-app.mount("/uploads", StaticFiles(directory="/tmp/uploads"), name="uploads")
+app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
