@@ -9,7 +9,9 @@ export default function useConversations() {
       const saved = JSON.parse(localStorage.getItem("shifts-conversations-v1"));
       if (Array.isArray(saved?.chats) && saved.chats.length && saved.chats.every((c) => c && typeof c.id === "string" && typeof c.context === "string" && typeof c.title === "string" && Array.isArray(c.messages) && c.messages.every((m) => m && typeof m.content === "string"))) {
         return { ...saved, active: saved.chats.some((c) => c.id === saved.active) ? saved.active : saved.chats[0].id,
-          chats: saved.chats.map((c) => ({ ...c, messages: c.messages.map((m) => m.pending ? { ...m, pending: false, failed: true, content: "Response interrupted. Retry when ready." } : m) })) };
+          chats: saved.chats.map((c) => ({ ...c, messages: c.messages.map((m) => m.pending || m.isTyping
+            ? { ...m, pending: false, isTyping: false, failed: true, stopped: true,
+                content: m.isTyping && m.content ? m.content : "Response interrupted. Retry when ready." } : m) })) };
       }
     } catch { /* Start fresh if storage is unavailable or invalid. */ }
     const chat = fresh();
@@ -18,17 +20,22 @@ export default function useConversations() {
   const [storageError, setStorageError] = useState("");
   const current = useRef(store);
   const conflict = useRef(false);
-  const commit = (update) => {
+  const commit = (update, { persist = true } = {}) => {
     const next = update(current.current);
     current.current = next;
     setStore(next);
-    if (conflict.current) return;
+    if (conflict.current || !persist) return;
     try {
       localStorage.setItem("shifts-conversations-v1", JSON.stringify(next));
       setStorageError("");
     } catch { setStorageError("This conversation could not be saved. Browser storage may be full or unavailable; keep this tab open to retain it."); }
   };
   useEffect(() => {
+    const saveOnExit = () => {
+      if (conflict.current) return;
+      try { localStorage.setItem("shifts-conversations-v1", JSON.stringify(current.current)); }
+      catch { /* Normal commits already surface storage errors to the user. */ }
+    };
     const sync = (event) => {
       if (event.key === "shifts-conversations-v1" || event.key === null) {
         conflict.current = true;
@@ -36,15 +43,19 @@ export default function useConversations() {
       }
     };
     window.addEventListener("storage", sync);
-    return () => window.removeEventListener("storage", sync);
+    window.addEventListener("pagehide", saveOnExit);
+    return () => {
+      window.removeEventListener("storage", sync);
+      window.removeEventListener("pagehide", saveOnExit);
+    };
   }, []);
   const active = store.chats.find((c) => c.id === store.active);
-  const setMessages = (update) => commit((s) => ({ ...s, chats: s.chats.map((c) => {
+  const setMessages = (update, options) => commit((s) => ({ ...s, chats: s.chats.map((c) => {
     if (c.id !== s.active) return c;
     const messages = typeof update === "function" ? update(c.messages) : update;
     const first = messages.find((m) => m.role === "user");
     return { ...c, messages, updated: Date.now(), title: c.title === "New conversation" && first ? first.content.slice(0, 60) : c.title };
-  }) }));
+  }) }), options);
   const create = () => commit((s) => { const chat = fresh(); return { active: chat.id, chats: [chat, ...s.chats] }; });
   const select = (id) => commit((s) => ({ ...s, active: id }));
   const rename = (id, title) => commit((s) => ({ ...s, chats: s.chats.map((c) => c.id === id ? { ...c, title: title.trim().slice(0, 100) || c.title } : c) }));

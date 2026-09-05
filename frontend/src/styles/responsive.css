@@ -1,0 +1,71 @@
+/* FOCUS STYLES */
+.persona-select:focus-visible,
+.top-action:focus-visible,
+.theme-toggle:focus-visible,
+.quick-btn:focus-visible,
+.send-btn:focus-visible,
+.icon-btn:focus-within,
+.popup-agree-btn:focus-visible,
+.remove-preview:focus-visible {
+  box-shadow: 0 0 0 2px var(--brand-glow);
+  border-color: var(--brand);
+  outline: none;
+}
+.input-field:focus { outline: none; }
+
+/* GLOBAL ANIMATIONS */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .header-content { padding: 0 12px; }
+  .current-persona-name { display: none; }
+  .shift-trigger { font-size: 0.74rem; padding: 0 8px 0 10px; }
+  .chat-messages { padding: 16px 12px 130px; gap: 16px; }
+  .bubble.user { max-width: 88%; font-size: 0.88rem; }
+  .suggestion-chips { grid-template-columns: 1fr; gap: 8px; }
+  .suggestion-chip { min-height: 48px; padding: 10px 12px; }
+  .quick-actions { justify-content: flex-start; gap: 5px; }
+  .quick-btn { font-size: 0.7rem; padding: 0 8px; }
+  .floating-feedback { display: none; }
+  .empty-state { padding: 20px 8px; }
+  .empty-title { font-size: 1.55rem; }
+  .composer-hint { justify-content: center; }
+  .composer-hint span:first-child { display: none; }
+  .shift-gallery-backdrop { padding: 12px; }
+  .shift-gallery { padding: 20px 14px; border-radius: 20px; }
+  .onboarding-card { margin: auto 0; border-radius: 22px; }
+}
+
+@media (max-width: 480px) {
+  .header { height: 52px; }
+  .header-left { gap: 8px; }
+  .header-avatar { width: 28px; height: 28px; font-size: 13px; }
+  .header-title { font-size: 0.9rem; }
+  .top-action { padding: 0 8px; font-size: 0.7rem; }
+  .shift-trigger { padding: 0 7px 0 9px; font-size: 0.7rem; }
+  .shift-trigger span { display: inline; }
+  .composer { border-radius: 16px; padding: 5px 6px; }
+  .bubble.user { max-width: 92%; }
+  .message-row { gap: 8px; }
+  .assistant-avatar { width: 24px; height: 24px; font-size: 12px; }
+  .shift-grid { grid-template-columns: 1fr; }
+  .shift-card { min-height: 76px; padding: 10px; }
+  .shift-card-icon { width: 34px; height: 34px; border-radius: 10px; font-size: 15px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

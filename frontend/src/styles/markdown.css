@@ -1,0 +1,69 @@
+/* CODE BLOCKS */
+.code-block {
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  margin: 12px 0;
+  border: 1px solid var(--line);
+  background: #1e1e2e;
+}
+.dark .code-block {
+  border-color: #2a2a3a;
+}
+.code-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 14px;
+  background: #181825;
+  color: #cdd6f4;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.code-lang {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.code-lang-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--brand);
+}
+.copy-btn {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px;
+  color: #a6adc8;
+  cursor: pointer;
+  padding: 4px 10px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  transition: all var(--transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.copy-btn:hover {
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+}
+.copy-btn.copied {
+  color: #a6e3a1;
+  border-color: rgba(166, 227, 161, 0.3);
+}
+.inline-code {
+  background: var(--brand-light);
+  color: var(--brand);
+  padding: 2px 7px;
+  border-radius: 5px;
+  font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
+  font-size: 0.88em;
+  font-weight: 500;
+}
+.dark .inline-code {
+  background: rgba(255,255,255,0.08);
+  color: #e2e8f0;
+}

@@ -40,6 +40,6 @@ npm.cmd run build
 - Each conversation and Shift has separate backend context. Switching Shifts retains the visible transcript; a Shift recalls its own turns in that conversation.
 - Clear starts a fresh context. Clear/delete do not erase historical server memory files or Redis entries; server retention and account-level deletion are outside this upgrade.
 - Stop cancels browser requests and rejects late UI updates. It cannot guarantee cancellation of already-running provider generation or its server memory write. Retry can issue another provider request.
-- Complete replies are rendered immediately when received; the former artificial word-by-word delay was removed. This is not token streaming.
+- The subsequent UI update restores the original word-by-word reply animation. See `frontend/ARCHITECTURE.md` for the updated structure and checks. This is not network token streaming.
 - Regenerate replaces the displayed reply and resends its original input. The existing backend still appends the new turn to its memory; conversation branching is not introduced here.
 - Deploy the backend changes together with the frontend: older backends ignore the conversation header and lack the multipart prompt fix.

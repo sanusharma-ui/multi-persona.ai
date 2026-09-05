@@ -1,0 +1,232 @@
+/* =========================================================
+   INPUT SHELL & QUICK ACTIONS
+   ========================================================= */
+.input-shell {
+  position: relative;
+  flex-shrink: 0;
+  z-index: 25;
+  padding: 6px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  background: linear-gradient(to top, var(--bg-persona, var(--bg)) 70%, transparent);
+}
+
+.chat-notice {
+  width: min(760px, 100%);
+  font-size: 0.78rem;
+  color: #ef4444;
+  text-align: center;
+}
+
+/* QUICK ACTIONS (Council, Regenerate, Stop) */
+.quick-actions {
+  width: min(760px, 100%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: flex-start;
+}
+
+.quick-btn {
+  height: 28px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 65%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: var(--text-secondary);
+  padding: 0 10px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.quick-btn:hover:not(:disabled) {
+  border-color: var(--brand);
+  background: var(--brand-light);
+  color: var(--brand);
+}
+.quick-btn.danger {
+  color: #ef4444;
+  border-color: color-mix(in srgb, #ef4444 25%, var(--line));
+}
+.quick-btn.danger:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: #ef4444;
+}
+.quick-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.quick-actions .danger {
+  margin-left: auto;
+}
+
+/* =========================================================
+   COMPOSER BAR
+   ========================================================= */
+.composer {
+  width: min(760px, 100%);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--surface) 85%, transparent);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.07);
+  padding: 6px 8px;
+  transition: all var(--transition);
+}
+.composer:focus-within {
+  border-color: color-mix(in srgb, var(--brand) 65%, var(--line));
+  box-shadow: 0 8px 32px var(--brand-light), 0 0 0 2px var(--brand-light);
+}
+
+/* PREVIEW CONTAINER */
+.preview-container {
+  position: relative;
+  display: inline-block;
+  margin: 4px 6px 8px;
+  animation: fadeInUp 0.25s ease;
+}
+.preview-image {
+  height: 56px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+}
+.remove-preview {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 18px;
+  height: 18px;
+  border: none;
+  border-radius: 999px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 10px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: all var(--transition);
+  box-shadow: var(--shadow-sm);
+}
+.remove-preview:hover {
+  transform: scale(1.1);
+}
+
+/* COMPOSER ROW */
+.composer-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.icon-btn:hover {
+  background: var(--surface-2);
+  color: var(--brand);
+}
+.file-btn {
+  position: relative;
+  flex-shrink: 0;
+}
+.file-btn input {
+  display: block;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+.file-btn input:disabled {
+  cursor: not-allowed;
+}
+.icon-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* INPUT FIELD */
+.input-field {
+  width: 100%;
+  border: none;
+  outline: none;
+  resize: none;
+  max-height: 150px;
+  min-height: 36px;
+  padding: 8px 6px;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.92rem;
+  line-height: 1.5;
+  font-family: inherit;
+  transition: height 0.15s ease;
+}
+.input-field::placeholder {
+  color: var(--muted);
+}
+
+/* SEND BUTTON */
+.send-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: none;
+  background: var(--brand);
+  color: white;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  transition: all var(--transition-spring);
+}
+.send-btn:hover:not(:disabled) {
+  background: var(--brand-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px var(--brand-glow);
+}
+.send-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+.send-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+.send-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* COMPOSER HINT FOOTER */
+.composer-hint {
+  width: min(760px, 100%);
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 0.62rem;
+  padding: 0 8px;
+  opacity: 0.8;
+}
+.composer-hint a {
+  color: inherit;
+  margin-left: 6px;
+  text-underline-offset: 3px;
+}

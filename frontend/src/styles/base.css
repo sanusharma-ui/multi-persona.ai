@@ -1,0 +1,367 @@
+/* CSS CUSTOM PROPERTIES */
+:root {
+  --bg: #f8fafc;
+  --bg-persona: #f8fafc;
+  --surface: rgba(255, 255, 255, 0.82);
+  --surface-2: #f1f5f9;
+  --surface-3: #e2e8f0;
+  --text: #0f172a;
+  --text-secondary: #334155;
+  --muted: #64748b;
+  --line: rgba(148, 163, 184, 0.22);
+  --brand: #6366f1;
+  --brand-light: rgba(99, 102, 241, 0.12);
+  --brand-hover: #4f46e5;
+  --brand-glow: rgba(99, 102, 241, 0.22);
+  --ambient-1: rgba(99, 102, 241, 0.09);
+  --ambient-2: rgba(129, 140, 248, 0.05);
+  --assistant-bg: transparent;
+  --user-bg: var(--brand);
+  --user-text: #ffffff;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.06);
+  --shadow-lg: 0 12px 36px rgba(0,0,0,0.08);
+  --radius: 16px;
+  --radius-sm: 10px;
+  --radius-xs: 6px;
+  --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-spring: 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.dark {
+  --bg: #0d0f14;
+  --bg-persona: #0d0f14;
+  --surface: rgba(19, 22, 31, 0.75);
+  --surface-2: rgba(27, 31, 44, 0.85);
+  --surface-3: #252a3a;
+  --text: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --muted: #64748b;
+  --line: rgba(255, 255, 255, 0.08);
+  --brand: #818cf8;
+  --brand-light: rgba(129, 140, 248, 0.14);
+  --brand-hover: #6366f1;
+  --brand-glow: rgba(129, 140, 248, 0.22);
+  --ambient-1: rgba(99, 102, 241, 0.18);
+  --ambient-2: rgba(129, 140, 248, 0.10);
+  --assistant-bg: transparent;
+  --user-bg: var(--surface-2);
+  --user-text: #f8fafc;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.4);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,0.5);
+}
+
+/* =========================================================
+   PERSONA PALETTES & AMBIENT ATMOSPHERES
+   ========================================================= */
+
+/* 1. Default (Aisha) */
+.persona-default {
+  --brand: #6366f1;
+  --brand-light: rgba(99, 102, 241, 0.14);
+  --brand-hover: #4f46e5;
+  --brand-glow: rgba(99, 102, 241, 0.25);
+  --ambient-1: rgba(99, 102, 241, 0.10);
+  --ambient-2: rgba(129, 140, 248, 0.06);
+}
+.dark.persona-default, .dark .persona-default {
+  --bg-persona: #0c0e17;
+  --brand: #818cf8;
+  --ambient-1: rgba(99, 102, 241, 0.20);
+  --ambient-2: rgba(129, 140, 248, 0.12);
+}
+
+/* 2. Seven (Cosmic Alien Survivor) */
+.persona-seven {
+  --brand: #14b8a6;
+  --brand-light: rgba(20, 184, 166, 0.14);
+  --brand-hover: #0d9488;
+  --brand-glow: rgba(20, 184, 166, 0.28);
+  --ambient-1: rgba(20, 184, 166, 0.12);
+  --ambient-2: rgba(6, 182, 212, 0.06);
+}
+.dark.persona-seven, .dark .persona-seven {
+  --bg-persona: #071316;
+  --ambient-1: rgba(20, 184, 166, 0.22);
+  --ambient-2: rgba(6, 182, 212, 0.14);
+}
+
+/* 3. Virex (Rogue Android) */
+.persona-virex {
+  --brand: #38bdf8;
+  --brand-light: rgba(56, 189, 248, 0.14);
+  --brand-hover: #0284c7;
+  --brand-glow: rgba(56, 189, 248, 0.25);
+  --ambient-1: rgba(56, 189, 248, 0.10);
+  --ambient-2: rgba(100, 116, 139, 0.08);
+}
+.dark.persona-virex, .dark .persona-virex {
+  --bg-persona: #0b1118;
+  --ambient-1: rgba(56, 189, 248, 0.18);
+  --ambient-2: rgba(71, 85, 105, 0.16);
+}
+
+/* 4. Noctra (Dream Witch) */
+.persona-noctra {
+  --brand: #a855f7;
+  --brand-light: rgba(168, 85, 247, 0.14);
+  --brand-hover: #9333ea;
+  --brand-glow: rgba(168, 85, 247, 0.28);
+  --ambient-1: rgba(168, 85, 247, 0.12);
+  --ambient-2: rgba(217, 70, 239, 0.07);
+}
+.dark.persona-noctra, .dark .persona-noctra {
+  --bg-persona: #110a1b;
+  --ambient-1: rgba(168, 85, 247, 0.24);
+  --ambient-2: rgba(217, 70, 239, 0.15);
+}
+
+/* 5. Kael (Fallen Prince) */
+.persona-kael {
+  --brand: #f59e0b;
+  --brand-light: rgba(245, 158, 11, 0.14);
+  --brand-hover: #d97706;
+  --brand-glow: rgba(245, 158, 11, 0.28);
+  --ambient-1: rgba(245, 158, 11, 0.11);
+  --ambient-2: rgba(234, 88, 12, 0.06);
+}
+.dark.persona-kael, .dark .persona-kael {
+  --bg-persona: #151007;
+  --ambient-1: rgba(245, 158, 11, 0.22);
+  --ambient-2: rgba(234, 88, 12, 0.13);
+}
+
+/* 6. Mira (Time Traveler) */
+.persona-mira_time {
+  --brand: #06b6d4;
+  --brand-light: rgba(6, 182, 212, 0.14);
+  --brand-hover: #0891b2;
+  --brand-glow: rgba(6, 182, 212, 0.28);
+  --ambient-1: rgba(6, 182, 212, 0.12);
+  --ambient-2: rgba(14, 165, 233, 0.06);
+}
+.dark.persona-mira_time, .dark .persona-mira_time {
+  --bg-persona: #061318;
+  --ambient-1: rgba(6, 182, 212, 0.22);
+  --ambient-2: rgba(14, 165, 233, 0.14);
+}
+
+/* 7. Zenith (Real Teacher) */
+.persona-zenith {
+  --brand: #10b981;
+  --brand-light: rgba(16, 185, 129, 0.14);
+  --brand-hover: #059669;
+  --brand-glow: rgba(16, 185, 129, 0.28);
+  --ambient-1: rgba(16, 185, 129, 0.11);
+  --ambient-2: rgba(5, 150, 105, 0.06);
+}
+.dark.persona-zenith, .dark .persona-zenith {
+  --bg-persona: #07140e;
+  --ambient-1: rgba(16, 185, 129, 0.20);
+  --ambient-2: rgba(5, 150, 105, 0.13);
+}
+
+/* 8. Neo (Dev Buddy) */
+.persona-neo {
+  --brand: #22c55e;
+  --brand-light: rgba(34, 197, 94, 0.14);
+  --brand-hover: #16a34a;
+  --brand-glow: rgba(34, 197, 94, 0.28);
+  --ambient-1: rgba(34, 197, 94, 0.11);
+  --ambient-2: rgba(16, 185, 129, 0.06);
+}
+.dark.persona-neo, .dark .persona-neo {
+  --bg-persona: #07140a;
+  --ambient-1: rgba(34, 197, 94, 0.21);
+  --ambient-2: rgba(16, 185, 129, 0.13);
+}
+
+/* 9. Cipher (Cyber Shadow) */
+.persona-cipher {
+  --brand: #ef4444;
+  --brand-light: rgba(239, 68, 68, 0.14);
+  --brand-hover: #dc2626;
+  --brand-glow: rgba(239, 68, 68, 0.28);
+  --ambient-1: rgba(239, 68, 68, 0.10);
+  --ambient-2: rgba(244, 63, 94, 0.05);
+}
+.dark.persona-cipher, .dark .persona-cipher {
+  --bg-persona: #16080a;
+  --ambient-1: rgba(239, 68, 68, 0.22);
+  --ambient-2: rgba(244, 63, 94, 0.13);
+}
+
+/* 10. Nyra (Creative Spark) */
+.persona-nyra {
+  --brand: #ec4899;
+  --brand-light: rgba(236, 72, 153, 0.14);
+  --brand-hover: #db2777;
+  --brand-glow: rgba(236, 72, 153, 0.28);
+  --ambient-1: rgba(236, 72, 153, 0.12);
+  --ambient-2: rgba(168, 85, 247, 0.06);
+}
+.dark.persona-nyra, .dark .persona-nyra {
+  --bg-persona: #170914;
+  --ambient-1: rgba(236, 72, 153, 0.23);
+  --ambient-2: rgba(168, 85, 247, 0.14);
+}
+
+/* 11. Rishi (Modern Vedantic Guide) */
+.persona-rishi {
+  --brand: #f97316;
+  --brand-light: rgba(249, 115, 22, 0.14);
+  --brand-hover: #ea580c;
+  --brand-glow: rgba(249, 115, 22, 0.28);
+  --ambient-1: rgba(249, 115, 22, 0.12);
+  --ambient-2: rgba(245, 158, 11, 0.06);
+}
+.dark.persona-rishi, .dark .persona-rishi {
+  --bg-persona: #160d05;
+  --ambient-1: rgba(249, 115, 22, 0.23);
+  --ambient-2: rgba(245, 158, 11, 0.13);
+}
+
+/* 12. Pulse (Reality Check) */
+.persona-pulse {
+  --brand: #f43f5e;
+  --brand-light: rgba(244, 63, 94, 0.14);
+  --brand-hover: #e11d48;
+  --brand-glow: rgba(244, 63, 94, 0.28);
+  --ambient-1: rgba(244, 63, 94, 0.12);
+  --ambient-2: rgba(239, 68, 68, 0.06);
+}
+.dark.persona-pulse, .dark .persona-pulse {
+  --bg-persona: #16080d;
+  --ambient-1: rgba(244, 63, 94, 0.22);
+  --ambient-2: rgba(239, 68, 68, 0.13);
+}
+
+/* 13. Diya (Delhi GenZ) */
+.persona-diya {
+  --brand: #d946ef;
+  --brand-light: rgba(217, 70, 239, 0.14);
+  --brand-hover: #c026d3;
+  --brand-glow: rgba(217, 70, 239, 0.28);
+  --ambient-1: rgba(217, 70, 239, 0.12);
+  --ambient-2: rgba(236, 72, 153, 0.07);
+}
+.dark.persona-diya, .dark .persona-diya {
+  --bg-persona: #140818;
+  --ambient-1: rgba(217, 70, 239, 0.23);
+  --ambient-2: rgba(236, 72, 153, 0.14);
+}
+
+/* 14. Arjun (Aesthetic Calm) */
+.persona-arjun {
+  --brand: #0ea5e9;
+  --brand-light: rgba(14, 165, 233, 0.14);
+  --brand-hover: #0284c7;
+  --brand-glow: rgba(14, 165, 233, 0.28);
+  --ambient-1: rgba(14, 165, 233, 0.11);
+  --ambient-2: rgba(6, 182, 212, 0.06);
+}
+.dark.persona-arjun, .dark .persona-arjun {
+  --bg-persona: #071219;
+  --ambient-1: rgba(14, 165, 233, 0.21);
+  --ambient-2: rgba(6, 182, 212, 0.13);
+}
+
+/* 15. Raven (Baddie Queen) */
+.persona-raven {
+  --brand: #a855f7;
+  --brand-light: rgba(168, 85, 247, 0.14);
+  --brand-hover: #9333ea;
+  --brand-glow: rgba(168, 85, 247, 0.28);
+  --ambient-1: rgba(168, 85, 247, 0.11);
+  --ambient-2: rgba(244, 63, 94, 0.06);
+}
+.dark.persona-raven, .dark .persona-raven {
+  --bg-persona: #0f0a15;
+  --ambient-1: rgba(168, 85, 247, 0.21);
+  --ambient-2: rgba(244, 63, 94, 0.13);
+}
+
+/* 16. Creator Mode (Sanu Sharma) */
+.persona-Creator_mode {
+  --brand: #8b5cf6;
+  --brand-light: rgba(139, 92, 246, 0.14);
+  --brand-hover: #7c3aed;
+  --brand-glow: rgba(139, 92, 246, 0.28);
+  --ambient-1: rgba(139, 92, 246, 0.12);
+  --ambient-2: rgba(99, 102, 241, 0.07);
+}
+.dark.persona-Creator_mode, .dark .persona-Creator_mode {
+  --bg-persona: #100a1c;
+  --ambient-1: rgba(139, 92, 246, 0.24);
+  --ambient-2: rgba(99, 102, 241, 0.15);
+}
+
+/* 17. Sales Bot Mode */
+.persona-Sales_Bot_Mode {
+  --brand: #059669;
+  --brand-light: rgba(5, 150, 105, 0.14);
+  --brand-hover: #047857;
+  --brand-glow: rgba(5, 150, 105, 0.28);
+  --ambient-1: rgba(5, 150, 105, 0.11);
+  --ambient-2: rgba(16, 185, 129, 0.06);
+}
+.dark.persona-Sales_Bot_Mode, .dark .persona-Sales_Bot_Mode {
+  --bg-persona: #07130e;
+  --ambient-1: rgba(5, 150, 105, 0.20);
+  --ambient-2: rgba(16, 185, 129, 0.13);
+}
+
+/* RESET & BASE */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+html, body, #root {
+  height: 100%;
+}
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg-persona, var(--bg));
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+  min-width: 320px;
+}
+
+/* APP CONTAINER WITH DYNAMIC AMBIENT LIGHTING */
+.app {
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  background: 
+    radial-gradient(ellipse 950px 520px at 50% -70px, var(--ambient-1), transparent 72%),
+    radial-gradient(ellipse 650px 420px at 90% 80%, var(--ambient-2), transparent 68%),
+    var(--bg-persona, var(--bg));
+  transition: background 0.6s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.6s ease;
+}
+
+/* Custom subtle scrollbar so no harsh line cuts across screen */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 999px;
+  transition: background var(--transition);
+}
+:hover::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--muted) 28%, transparent);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--muted) 50%, transparent);
+}

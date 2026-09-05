@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { newId } from "./useConversations";
+import { revealResponse } from "../lib/revealResponse";
 
 export default function useChatRequests({ history, backendUrl, userId, language }) {
   const [loading, setLoading] = useState(false);
@@ -8,8 +9,9 @@ export default function useChatRequests({ history, backendUrl, userId, language 
     activeRequest.current?.abort();
     activeRequest.current = null;
     setLoading(false);
-    history.setMessages((prev) => prev.map((m) => m.pending
-      ? { ...m, pending: false, failed: true, content: "Response stopped. You can retry." } : m));
+    history.setMessages((prev) => prev.map((m) => m.pending || m.isTyping
+      ? { ...m, pending: false, isTyping: false, stopped: true, failed: true,
+          content: m.isTyping && m.content ? m.content : "Response stopped. You can retry." } : m));
   };
   useEffect(() => () => {
     activeRequest.current?.abort();
@@ -31,9 +33,13 @@ export default function useChatRequests({ history, backendUrl, userId, language 
       ? prev.map((m) => m.id === retryId ? replies[0] : m)
       : [...prev, { id: newId(), role: "user", content: text || "Sent an image.", image: preview, timestamp }, ...replies]);
     setLoading(true);
-    const timer = setTimeout(() => controller.abort(), 120000);
     try {
       await Promise.allSettled(replies.map(async (reply) => {
+        const memberController = new AbortController();
+        const cancelMember = () => memberController.abort();
+        controller.signal.addEventListener("abort", cancelMember, { once: true });
+        if (controller.signal.aborted) cancelMember();
+        const timer = setTimeout(cancelMember, 120000);
         try {
           const headers = { "x-user-id": userId, "x-conversation-id": context };
           let body;
@@ -50,24 +56,34 @@ export default function useChatRequests({ history, backendUrl, userId, language 
             body = JSON.stringify({ message: text, language });
             path = "/chat?mode=" + encodeURIComponent(reply.persona);
           }
-          const response = await fetch(backendUrl + path, { method: "POST", headers, body, signal: controller.signal });
+          const response = await fetch(backendUrl + path, { method: "POST", headers, body, signal: memberController.signal });
           const data = await response.json().catch(() => ({}));
+          clearTimeout(timer);
           if (!response.ok) throw new Error(typeof data.detail === "string" ? data.detail : "Request failed (" + response.status + "). Please retry.");
           if (!data.reply) throw new Error("No response received. Please retry.");
           if (activeRequest.current !== controller) return;
+          await revealResponse(String(data.reply), memberController.signal, (content) => {
+            if (activeRequest.current !== controller) return;
+            history.setMessages((prev) => prev.map((m) => m.id === reply.id
+              ? { ...m, pending: false, isTyping: true, failed: false, content } : m), { persist: false });
+          });
+          if (activeRequest.current !== controller) return;
+          if (memberController.signal.aborted) throw new DOMException("Response timed out", "AbortError");
           history.setMessages((prev) => prev.map((m) => m.id === reply.id
-            ? { ...m, pending: false, failed: false, content: data.reply } : m));
+            ? { ...m, pending: false, isTyping: false, failed: false, content: String(data.reply) } : m));
         } catch (error) {
           if (activeRequest.current !== controller) return;
           const content = error.name === "AbortError"
             ? "The response took too long. Please retry."
             : error.message === "Failed to fetch" ? "Connection failed. Check your connection and retry." : error.message;
           history.setMessages((prev) => prev.map((m) => m.id === reply.id
-            ? { ...m, pending: false, failed: true, content } : m));
+            ? { ...m, pending: false, isTyping: false, failed: true, content } : m));
+        } finally {
+          clearTimeout(timer);
+          controller.signal.removeEventListener("abort", cancelMember);
         }
       }));
     } finally {
-      clearTimeout(timer);
       if (activeRequest.current === controller) {
         activeRequest.current = null;
         setLoading(false);
