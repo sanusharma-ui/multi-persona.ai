@@ -20,12 +20,12 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from backend.groq_handler import (
     generate_response,
-    PERSONAS,
     ensure_persona_memory,
     load_persona_memory,
     save_persona_memory
 )
 from backend.identity import normalize_user_id
+from backend.character_service import characters
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -110,7 +110,7 @@ def home(req: Request):
     return {
         "status": "Aisha is ready!",
         "hint": "POST /chat or /chat/image",
-        "available_modes": list(PERSONAS.keys()),
+        "available_modes": list(characters.modes()),
         "user_id": user_id
     }
 
@@ -120,7 +120,7 @@ def health():
 
 @app.get("/modes/list")
 def list_modes():
-    return {"modes": {k: v["name"] for k, v in PERSONAS.items()}}
+    return {"modes": characters.modes()}
 
 # Per-user memory view (default persona)
 @app.get("/memory")
@@ -147,8 +147,7 @@ def memory_update(payload: UpdateUserMeta, req: Request):
 # CHAT ROUTE (supports mode and reset)
 @app.post("/chat")
 def chat(payload: ChatRequest, mode: str = "default", reset: bool = False, req: Request = None):
-    if mode not in PERSONAS:
-        mode = "default"
+    mode = characters.resolve(mode)
     if not payload.message.strip():
         raise HTTPException(status_code=400, detail="Empty message!")
 
@@ -178,7 +177,7 @@ def chat(payload: ChatRequest, mode: str = "default", reset: bool = False, req: 
         return {
             "reply": reply,
             "mode": mode,
-            "display_name": PERSONAS[mode]["name"],
+            "display_name": characters.persona(mode)["name"],
             "user_id": user_id
         }
 
@@ -207,7 +206,7 @@ async def chat_image(
     user_text = message.strip() if message and message.strip() else "Describe this image."
     if len(user_text) > MAX_CHARS:
         raise HTTPException(status_code=400, detail=f"Message too long! Max {MAX_CHARS} characters allowed.")
-    mode = mode if mode in PERSONAS else "default"
+    mode = characters.resolve(mode)
     content = await file.read(5 * 1024 * 1024 + 1)
     if len(content) > 5 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="Image too big! Max 5MB.")
@@ -232,7 +231,7 @@ async def chat_image(
         reply = await run_in_threadpool(
             generate_response,
             user_message=user_text,
-            persona_key=mode if mode in PERSONAS else "default",
+            persona_key=mode,
             language=language,
             image_path=str(file_path),
             user_ip=user_ip,
@@ -242,7 +241,7 @@ async def chat_image(
         return {
             "reply": reply,
             "mode": mode,
-            "display_name": PERSONAS.get(mode, PERSONAS["default"])["name"],
+            "display_name": characters.persona(mode)["name"],
             "user_id": user_id
         }
 

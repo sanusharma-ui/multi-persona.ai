@@ -75,7 +75,8 @@ def test_image_form_prompt_language_and_cleanup(api):
     assert "filename" not in response.json()
 
 
-@pytest.mark.parametrize("content,message", [(b"not an image", "Hello"), (b"x" * (5 * 1024 * 1024 + 1), "Hello"), (b"irrelevant", "x" * 2001)])
+@pytest.mark.parametrize("content,message", [(b"not an image", "Hello"), (b"x" * (5 * 1024 * 1024 + 1), "Hello"), (b"irrelevant", "x" * 2001)],
+                         ids=["invalid-image", "oversized-image", "oversized-message"])
 def test_invalid_upload_never_reaches_provider(api, content, message):
     client, handler, module = api
     response = client.post("/chat/image", data={"message": message}, files={"file": ("image.png", content, "image/png")})

@@ -1325,6 +1325,23 @@ PERSONA_TO_COMIC_KEY = {
 COMIC_CHARACTER_KEYS = frozenset(COMICS)
 
 
+# Retrieval vocabulary is authoring data. Add a section and its phrases here;
+# character_service.py discovers the section without character-specific branches.
+TOPIC_KEYWORDS = {
+    "public_summary": ("who are you", "who is", "about yourself", "introduction", "kaun ho", "kaun hai"),
+    "location": ("where do you live", "where are you", "live", "location", "home", "hometown", "stay",
+                 "kahan", "kaha", "rehte", "rehti", "ghar", "jagah"),
+    "current_life": ("current life", "daily life", "life", "these days", "doing now", "aaj kal", "aajkal", "zindagi"),
+    "story_arc": ("story", "arc", "mission", "journey", "happened next", "kahani", "kya hua"),
+    "habits": ("habit", "habits", "routine", "hobby", "hobbies", "aadat", "aadatein", "roz"),
+    "relationships": ("relationship", "relationships", "friend", "friends", "family", "father", "mother",
+                      "rival", "connection", "think of", "think about", "dost", "dosti", "rishta"),
+    "secrets": ("secret", "secrets", "hidden", "raaz", "chhupa"),
+    "canon_facts": ("canon", "lore", "history", "past", "origin", "backstory", "itihaas"),
+    "entry_scene": ("entry scene", "opening scene", "enter your world", "start episode", "meet you"),
+}
+
+
 # Optional tiny access helpers. These perform no retrieval, ranking, memory,
 # tool-calling, or LLM logic; replace/remove them freely.
 def get_comic(character_key: str) -> dict | None:

@@ -2,7 +2,7 @@
 
 Keep this file intentionally lean.
 Deep lore, locations, timelines, secrets, relationships, ongoing story arcs,
-and world canon should live in comics.py and be retrieved on demand.
+and world canon should live in comic.py and be retrieved on demand.
 """
 
 from __future__ import annotations
@@ -22,8 +22,8 @@ EMOTION_AWARE_PERSONAS = {
 }
 
 
-# Characters that may consult comics.py through whatever lookup layer you build.
-# This set is metadata only; persona.py does not import or load comics.py.
+# Legacy metadata only; runtime eligibility comes from each persona's comic_key.
+# personas.py does not import or load comic.py.
 COMIC_AWARE_PERSONAS = {
     "default",
     "seven",

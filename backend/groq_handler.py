@@ -18,6 +18,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential, wait_fixed, wa
 import redis
 
 from backend.personas import PERSONAS, EMOTION_AWARE_PERSONAS
+from backend.character_service import characters, LoreResult
 from backend.identity import normalize_user_id
 from backend.knowledge_fetcher import fetch_knowledge_context, should_fetch_knowledge
 from .safety_engine import (
@@ -301,18 +302,20 @@ def build_messages(
     user_id: str = "anonymous",
     knowledge_context: Optional[str] = None,
     knowledge_meta: Optional[Dict[str, Any]] = None,
+    lore_result: Optional[LoreResult] = None,
 ) -> Tuple[List[Dict[str, Any]], str]:
     # NOTE: Ensure these exist at top-level in file:
     # from .personas import PERSONAS, EMOTION_AWARE_PERSONAS
     # from .emotion_engine import EmotionEngine
     # emotion_engine = EmotionEngine(use_llm_extractor=False, llm_client=groq_client)
 
+    persona_key = characters.resolve(persona_key)
     mem = load_persona_memory(persona_key, user_id=user_id)
     recent_conv = mem.get("conversations", [])[-10:]
 
-    system_prompt = PERSONAS.get(persona_key, PERSONAS["default"])["system_prompt"]
+    system_prompt = characters.persona(persona_key)["system_prompt"]
 
-    # Emotion block must come BEFORE souls backstory and only for allowed personas.
+    # Emotion influences delivery; identity and canon come from the character service.
     if persona_key in EMOTION_AWARE_PERSONAS:
         try:
             emotion_prompt = emotion_engine.get_injected_prompt(
@@ -324,14 +327,10 @@ def build_messages(
         except Exception as e:
             logger.warning("Emotion engine injection failed, continuing without it: %s", e)
 
-    try:
-        from .souls_static import STATIC_SOULS
-
-        backstory = (STATIC_SOULS.get(persona_key, "") or "").strip()
-        if backstory:
-            system_prompt += "\n\n=== CHARACTER SOUL ===\n" + backstory
-    except Exception:
-        pass
+    if lore_result is None:
+        lore_result = characters.retrieve(user_message, persona_key, recent_conv)
+    if lore_result.context:
+        system_prompt += "\n\n" + lore_result.context
 
     messages: List[Dict[str, Any]] = [
         {
@@ -440,6 +439,7 @@ def make_cache_key(
     knowledge_signature: str = "no-knowledge",
     image_signature: str = "no-image",
     emotion_signature: str = "no-emotion",
+    prompt_signature: str = "",
 ) -> str:
     raw = (
         f"{persona_key}:"
@@ -448,6 +448,7 @@ def make_cache_key(
         f"{knowledge_signature}:"
         f"{image_signature}:"
         f"{emotion_signature}:"
+        f"{prompt_signature}:"
         f"{user_message}"
     )
 
@@ -806,8 +807,7 @@ def generate_response_impl(
         if not clean_user_message and not has_image:
             return "It seems your message is empty. Please provide some input to continue."
 
-        if persona_key not in PERSONAS:
-            persona_key = "default"
+        persona_key = characters.resolve(persona_key)
 
         if is_user_rate_limited(user_ip, limit=20, period=60):
             return "Please slow down a bit. You've reached the message limit for the moment. Try again in one minute."
@@ -853,8 +853,10 @@ def generate_response_impl(
             "reason": "not-requested",
         }
 
-        # Knowledge fetch only for text, not image.
-        if _is_aisha_mode(persona_key) and not has_image and should_fetch_knowledge(clean_user_message, persona_key):
+        lore_result = characters.retrieve(clean_user_message, persona_key, mem.get("conversations", [])[-10:])
+
+        # Fictional canon must not be sourced from real-world web knowledge.
+        if not lore_result.requested and _is_aisha_mode(persona_key) and not has_image and should_fetch_knowledge(clean_user_message, persona_key):
             try:
                 knowledge_result = fetch_knowledge_context(clean_user_message)
             except Exception as e:
@@ -879,6 +881,7 @@ def generate_response_impl(
             user_id=user_id,
             knowledge_context=knowledge_result.get("context") if knowledge_result.get("found") else None,
             knowledge_meta=knowledge_result,
+            lore_result=lore_result,
         )
 
         emotion_signature = "no-emotion"
@@ -896,6 +899,10 @@ def generate_response_impl(
             knowledge_signature=knowledge_result.get("kb_sig", "no-knowledge"),
             image_signature=image_signature,
             emotion_signature=emotion_signature,
+            prompt_signature=hashlib.sha256(json.dumps(
+                {"language": language, "system": [m["content"] for m in messages if m["role"] == "system"]},
+                ensure_ascii=False, sort_keys=True,
+            ).encode("utf-8")).hexdigest(),
         )
 
         cached = get_cached_response(cache_key)
