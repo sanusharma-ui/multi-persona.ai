@@ -3,6 +3,7 @@ export default function ChatHeader({ currentAvatar, currentPersonaName, setHisto
       <header className="header">
         <div className="header-content">
           <div className="header-left">
+            <img className="brand-logo" src="/shifts.png" alt="Shifts" />
             <div className="header-avatar">{currentAvatar}</div>
             <div className="brand-wrap">
               <h1 className="header-title">Shifts</h1>
