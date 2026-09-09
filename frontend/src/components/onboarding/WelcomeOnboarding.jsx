@@ -13,8 +13,8 @@ export default function WelcomeOnboarding({ shifts, avatars, onChoose, onExplore
         {!recommended ? (
           <>
             <span className="eyebrow">WELCOME TO SHIFTS</span>
-            <h2 id="onboarding-title">One question.<br /><em>Many ways in.</em></h2>
-            <p className="onboarding-intro">What would make this conversation useful right now?</p>
+            <h2 id="onboarding-title">One universe.<br /><em>Many stories.</em></h2>
+            <p className="onboarding-intro">Shifts — An Interactive Comic Universe Powered by AI</p>
             <div className="onboarding-options">
               {ONBOARDING_PATHS.map((path) => (
                 <button key={path.id} onClick={() => setChoice(path.id)}>
@@ -26,12 +26,12 @@ export default function WelcomeOnboarding({ shifts, avatars, onChoose, onExplore
           </>
         ) : (
           <div className={`recommendation persona-${recommended.shift}`}>
-            <span className="eyebrow">A GREAT FIRST SHIFT</span>
+            <span className="eyebrow">YOUR FIRST CHARACTER</span>
             <div className="recommendation-avatar">{avatars[recommended.shift] || SHIFT_DETAILS[recommended.shift]?.icon}</div>
             <h2>{shift?.label || "Your guide"}</h2>
-            <p>{SHIFT_DETAILS[recommended.shift]?.vibe}. You can change Shifts anytime.</p>
+            <p>{SHIFT_DETAILS[recommended.shift]?.vibe}. Discover their world, one conversation at a time.</p>
             <button className="primary-action" onClick={() => onChoose(recommended.shift)}>
-              Start talking <span>→</span>
+              Meet your Shift <span>→</span>
             </button>
             <button className="text-action" onClick={() => setChoice(null)}>Choose something else</button>
           </div>

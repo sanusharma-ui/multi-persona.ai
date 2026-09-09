@@ -29,8 +29,8 @@ export default function ChatMessages({ messages, conversationId, selectedPersona
         {coldStart && <div className="cold-start" role="status"><div className="spinner" />Getting your response ready. The first reply may take a little longer.</div>}
         {!messages.length && <div className="empty-state">
           <div className="empty-avatar">{currentAvatar}</div>
-          <span className="empty-eyebrow">A LITTLE SPACE TO THINK</span>
-          <h2 className="empty-title">Where shall we begin?</h2>
+          <span className="empty-eyebrow">A CONVERSATION INTO THEIR WORLD</span>
+          <h2 className="empty-title">Every story starts somewhere.</h2>
           <p className="empty-subtitle">{welcomeMessages[selectedPersona]?.en || welcomeMessages.default.en}</p>
           <div className="suggestion-chips">
             {(SUGGESTION_CHIPS[selectedPersona] || SUGGESTION_CHIPS.default).map((chip) =>

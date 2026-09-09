@@ -13,9 +13,9 @@ export default function ShiftGallery({ shifts, selectedShift, avatars, onSelect,
       <section className="shift-gallery" role="dialog" aria-modal="true" aria-labelledby="gallery-title" onMouseDown={(event) => event.stopPropagation()}>
         <div className="gallery-heading">
           <div>
-            <span className="eyebrow">FIND YOUR FIT</span>
+            <span className="eyebrow">EXPLORE THE UNIVERSE</span>
             <h2 id="gallery-title">Meet the Shifts</h2>
-            <p>Different ways to think, create, learn, and talk.</p>
+            <p>Meet the characters. Discover their lives, connections, and stories.</p>
           </div>
           <button className="gallery-close" onClick={onClose} aria-label="Close Shift gallery">×</button>
         </div>
