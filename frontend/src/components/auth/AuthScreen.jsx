@@ -96,6 +96,7 @@ export default function AuthScreen({ auth }) {
         <div className="auth-glow-orb auth-glow-1" />
         <div className="auth-glow-orb auth-glow-2" />
         <div className="auth-glow-orb auth-glow-3" />
+        <div className="auth-glow-orb auth-glow-4" />
         <div className="auth-grid-pattern" />
       </div>
       <div className="auth-shell">
