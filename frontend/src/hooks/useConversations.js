@@ -3,10 +3,11 @@ import { useEffect, useRef, useState } from "react";
 export const newId = () => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 const fresh = () => ({ id: newId(), context: newId(), title: "New conversation", messages: [], updated: Date.now() });
 
-export default function useConversations() {
+export default function useConversations(userId) {
+  const storageKey = `shifts-conversations-v2:${userId}`;
   const [store, setStore] = useState(() => {
     try {
-      const saved = JSON.parse(localStorage.getItem("shifts-conversations-v1"));
+      const saved = JSON.parse(localStorage.getItem(storageKey));
       if (Array.isArray(saved?.chats) && saved.chats.length && saved.chats.every((c) => c && typeof c.id === "string" && typeof c.context === "string" && typeof c.title === "string" && Array.isArray(c.messages) && c.messages.every((m) => m && typeof m.content === "string"))) {
         return { ...saved, active: saved.chats.some((c) => c.id === saved.active) ? saved.active : saved.chats[0].id,
           chats: saved.chats.map((c) => ({ ...c, messages: c.messages.map((m) => m.pending || m.isTyping
@@ -26,18 +27,18 @@ export default function useConversations() {
     setStore(next);
     if (conflict.current || !persist) return;
     try {
-      localStorage.setItem("shifts-conversations-v1", JSON.stringify(next));
+      localStorage.setItem(storageKey, JSON.stringify(next));
       setStorageError("");
     } catch { setStorageError("This conversation could not be saved. Browser storage may be full or unavailable; keep this tab open to retain it."); }
   };
   useEffect(() => {
     const saveOnExit = () => {
       if (conflict.current) return;
-      try { localStorage.setItem("shifts-conversations-v1", JSON.stringify(current.current)); }
+      try { localStorage.setItem(storageKey, JSON.stringify(current.current)); }
       catch { /* Normal commits already surface storage errors to the user. */ }
     };
     const sync = (event) => {
-      if (event.key === "shifts-conversations-v1" || event.key === null) {
+      if (event.key === storageKey || event.key === null) {
         conflict.current = true;
         setStorageError("Chat history changed in another tab. Saving is paused here to protect those changes. Copy any new messages before reloading this tab.");
       }
@@ -48,7 +49,7 @@ export default function useConversations() {
       window.removeEventListener("storage", sync);
       window.removeEventListener("pagehide", saveOnExit);
     };
-  }, []);
+  }, [storageKey]);
   const active = store.chats.find((c) => c.id === store.active);
   const setMessages = (update, options) => commit((s) => ({ ...s, chats: s.chats.map((c) => {
     if (c.id !== s.active) return c;

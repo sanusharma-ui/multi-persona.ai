@@ -5,11 +5,11 @@ import { readPreference, writePreference } from "../lib/preferences";
 import { fallbackPersonaList, personaAvatars } from "../data/shifts";
 import { backendUrl } from "../lib/config";
 
-export default function useChatController() {
+export default function useChatController(userId) {
   const [hasAgreed, setHasAgreed] = useState(
     () => readPreference("ai-agreement-accepted") === "true",
   );
-  const history = useConversations();
+  const history = useConversations(userId);
   const { messages } = history;
   const [historyOpen, setHistoryOpen] = useState(false);
   const closeHistory = useCallback(() => setHistoryOpen(false), []);
@@ -35,17 +35,6 @@ export default function useChatController() {
 
   const selectedLanguage = "en";
 
-  const getOrCreateUserId = () => {
-    let uid = readPreference("mpai_uid");
-    if (!uid) {
-      uid =
-        globalThis.crypto?.randomUUID?.() ||
-        `uid_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-      writePreference("mpai_uid", uid);
-    }
-    return uid;
-  };
-  const [userId] = useState(getOrCreateUserId);
   const requests = useChatRequests({ history, backendUrl, userId, language: selectedLanguage });
   const { loading } = requests;
   const isStreaming = messages.some((message) => message.isTyping);

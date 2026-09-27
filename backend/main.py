@@ -8,7 +8,7 @@ from fastapi import FastAPI, HTTPException, File, Form, UploadFile, Request
 from starlette.concurrency import run_in_threadpool
 from PIL import Image, UnidentifiedImageError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Optional, List, Dict
 from pathlib import Path
@@ -20,11 +20,10 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from backend.groq_handler import (
     generate_response,
-    ensure_persona_memory,
     load_persona_memory,
     save_persona_memory
 )
-from backend.identity import normalize_user_id
+from backend.auth import authenticate
 from backend.character_service import characters
 
 # Setup logging
@@ -37,7 +36,17 @@ app = FastAPI(
     version="2.2"
 )
 
-# CORS CONFIG
+@app.middleware("http")
+async def require_account(request: Request, call_next):
+    if request.url.path not in {"/", "/health", "/modes/list", "/docs", "/docs/oauth2-redirect", "/openapi.json", "/redoc"}:
+        try:
+            request.state.user_id = await authenticate(request)
+        except HTTPException as exc:
+            return JSONResponse({"detail": exc.detail}, status_code=exc.status_code, headers=exc.headers)
+    return await call_next(request)
+
+
+# CORS wraps authentication so preflight and unauthorized responses keep CORS headers.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -48,7 +57,7 @@ app.add_middleware(
         "http://localhost:5173",
         "http://127.0.0.1:5173",
         "https://multi-persona-ai.vercel.app",
-    ],
+    ] + [origin.strip() for origin in os.getenv("FRONTEND_ORIGINS", "").split(",") if origin.strip()],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -63,9 +72,10 @@ MAX_CHARS = 2000  # general chat ke liye best
 # Helpers (user_id + IP)
 # -------------------------
 def get_user_id(req: Request) -> str:
-    if not req:
-        return "anonymous"
-    return normalize_user_id(req.headers.get("x-user-id"))
+    user_id = getattr(req.state, "user_id", None) if req else None
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Please sign in to continue.")
+    return user_id
 
 
 def get_chat_user_id(req: Request) -> str:
@@ -105,13 +115,10 @@ class UpdateUserMeta(BaseModel):
 # -------------------------
 @app.get("/")
 def home(req: Request):
-    user_id = get_user_id(req)
-    ensure_persona_memory("default", user_id=user_id)
     return {
         "status": "Aisha is ready!",
         "hint": "POST /chat or /chat/image",
-        "available_modes": list(characters.modes()),
-        "user_id": user_id
+        "available_modes": list(characters.modes())
     }
 
 @app.get("/health")
@@ -253,5 +260,4 @@ async def chat_image(
         if file_path.exists():
             file_path.unlink()
 
-# Serve images
-app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
+# Uploaded images are temporary inputs, never publicly served.

@@ -1,4 +1,6 @@
-export default function ChatHeader({ currentAvatar, currentPersonaName, setHistoryOpen, setIsGalleryOpen, clearChat, isDarkMode, setIsDarkMode }) {
+import AccountMenu from "../auth/AccountMenu";
+
+export default function ChatHeader({ currentAvatar, currentPersonaName, setHistoryOpen, setIsGalleryOpen, clearChat, isDarkMode, setIsDarkMode, user, onBeforeSignOut }) {
   return (
       <header className="header">
         <div className="header-content">
@@ -40,6 +42,7 @@ export default function ChatHeader({ currentAvatar, currentPersonaName, setHisto
             >
               {isDarkMode ? "☀️" : "🌙"}
             </button>
+            <AccountMenu user={user} onBeforeSignOut={onBeforeSignOut} />
           </div>
         </div>
       </header>

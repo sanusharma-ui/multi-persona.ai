@@ -16,6 +16,9 @@ The project is designed as both a usable chat experience and a developer-friendl
 - Optional knowledge retrieval for the Aisha persona
 - Markdown rendering, syntax highlighting, copy actions, typing simulation, and message regeneration
 - Light and dark frontend modes with browser persistence
+- Supabase email/password and Google sign-in, email confirmation, password recovery, and account-scoped browser history
+
+Authentication must be configured before using chat. Follow [the Supabase setup guide](docs/AUTH_SETUP.md) for the frontend/backend environment values, Google provider, redirects, and email delivery.
 
 ## Personas
 
@@ -60,8 +63,8 @@ FastAPI backend
 
 The main request path is:
 
-1. The frontend sends a message with a persona key and `x-user-id` header.
-2. FastAPI validates the persona and message length.
+1. The frontend sends a message with a persona key and a Supabase bearer access token.
+2. FastAPI verifies the token with Supabase, derives the account ID from the verified user, and validates the persona and message length. Client-supplied `x-user-id` values are ignored.
 3. The safety engine checks the request before generation.
 4. The backend loads the relevant persona memory and builds the prompt.
 5. Groq generates the response.
@@ -84,7 +87,7 @@ The main request path is:
 ```bash
 curl -X POST "http://localhost:8000/chat?mode=neo" \
   -H "Content-Type: application/json" \
-  -H "x-user-id: local-dev-user" \
+  -H "Authorization: Bearer YOUR_SUPABASE_ACCESS_TOKEN" \
   -d '{"message":"Help me debug this Python function.","language":"en"}'
 ```
 
@@ -92,7 +95,7 @@ curl -X POST "http://localhost:8000/chat?mode=neo" \
 
 ```bash
 curl -X POST "http://localhost:8000/chat/image?mode=default" \
-  -H "x-user-id: local-dev-user" \
+  -H "Authorization: Bearer YOUR_SUPABASE_ACCESS_TOKEN" \
   -F "file=@./example.png" \
   -F "message=What do you see in this image?" \
   -F "language=en"
@@ -110,8 +113,9 @@ Important request limits:
 ### Requirements
 
 - Python 3.10 or newer
-- Node.js 18 or newer and npm
+- Node.js 22.12 or newer and npm
 - A Groq API key
+- A Supabase project with email and Google authentication configured
 - Redis only if you want Redis-backed memory
 
 ### 1. Configure the backend
@@ -140,10 +144,12 @@ Install backend dependencies:
 pip install -r backend/requirements.txt
 ```
 
-Create `backend/.env`:
+Create `.env` in the repository root (see `.env.example`):
 
 ```env
 GROQ_API_KEY=your_groq_api_key
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_PUBLISHABLE_KEY=your_publishable_key
 ```
 
 ### 2. Start the API
@@ -158,7 +164,7 @@ The API will be available at `http://localhost:8000`. Interactive API documentat
 
 ### 3. Start the frontend
 
-In a second terminal:
+Copy `frontend/.env.example` to `frontend/.env.local` and fill in the same Supabase project URL and publishable key. In a second terminal:
 
 ```bash
 cd frontend
@@ -168,7 +174,7 @@ npm run dev
 
 Open the local Vite URL shown in the terminal, normally `http://localhost:5173`.
 
-The current frontend selects `http://localhost:8000` on localhost. On a non-localhost deployment it uses the production backend URL defined in `frontend/src/App.jsx`; update that value when deploying your own backend.
+Set `VITE_API_URL` to your deployed API URL. Without this override, `frontend/src/lib/config.js` selects the local API on localhost and the existing Render API on other hosts. Restart Vite after changing frontend environment variables; production deployments require a rebuild.
 
 ## Environment Variables
 

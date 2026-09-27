@@ -8,9 +8,18 @@ import ChatHeader from "./components/chat/ChatHeader";
 import ChatMessages from "./components/chat/ChatMessages";
 import ChatComposer from "./components/chat/ChatComposer";
 import FeedbackLink from "./components/layout/FeedbackLink";
+import useAuth from "./hooks/useAuth";
+import AuthScreen from "./components/auth/AuthScreen";
 
 export default function App() {
-  const chat = useChatController();
+  const auth = useAuth();
+  if (auth.loading) return <div className="auth-loading" role="status"><img src="/shifts.png" alt="Shifts" /><p>Getting your space ready…</p></div>;
+  if (!auth.session || auth.recovery) return <AuthScreen auth={auth} />;
+  return <ChatApp key={auth.session.user.id} user={auth.session.user} />;
+}
+
+function ChatApp({ user }) {
+  const chat = useChatController(user.id);
   if (!chat.hasAgreed) return <AgreementPopup onAgree={chat.handleAgree} />;
   if (chat.isOnboardingOpen) return (
     <WelcomeOnboarding shifts={chat.PERSONAS} avatars={personaAvatars}
@@ -20,6 +29,7 @@ export default function App() {
   return (
     <div className={`app ${chat.isDarkMode ? "dark" : ""} persona-${chat.selectedPersona}`}>
       <ChatHeader currentAvatar={chat.currentAvatar} currentPersonaName={chat.currentPersonaName}
+        user={user} onBeforeSignOut={chat.stopResponse}
         setHistoryOpen={chat.setHistoryOpen} setIsGalleryOpen={chat.setIsGalleryOpen}
         clearChat={chat.clearChat} isDarkMode={chat.isDarkMode} setIsDarkMode={chat.setIsDarkMode} />
       {chat.historyOpen && <ConversationHistory history={chat.history} onClose={chat.closeHistory} onAction={chat.changeConversation} />}

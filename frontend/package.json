@@ -7,19 +7,21 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
+    "test:auth": "playwright test",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.117.2",
     "react": "^19.2.0",
+    "react-copy-to-clipboard": "^5.1.0",
     "react-dom": "^19.2.0",
-
     "react-markdown": "^10.1.0",
     "react-syntax-highlighter": "^15.6.1",
-    "remark-gfm": "^4.0.1",
-    "react-copy-to-clipboard": "^5.1.0"
+    "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@playwright/test": "^1.63.0",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",

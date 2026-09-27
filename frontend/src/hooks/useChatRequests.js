@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { newId } from "./useConversations";
 import { revealResponse } from "../lib/revealResponse";
+import { getAccessToken, supabase } from "../lib/auth";
 
 export default function useChatRequests({ history, backendUrl, userId, language }) {
   const [loading, setLoading] = useState(false);
@@ -41,7 +42,9 @@ export default function useChatRequests({ history, backendUrl, userId, language 
         if (controller.signal.aborted) cancelMember();
         const timer = setTimeout(cancelMember, 120000);
         try {
-          const headers = { "x-user-id": userId, "x-conversation-id": context };
+          const token = await getAccessToken(userId);
+          if (activeRequest.current !== controller) return;
+          const headers = { Authorization: `Bearer ${token}`, "x-conversation-id": context };
           let body;
           let path;
           if (preview) {
@@ -59,6 +62,12 @@ export default function useChatRequests({ history, backendUrl, userId, language 
           const response = await fetch(backendUrl + path, { method: "POST", headers, body, signal: memberController.signal });
           const data = await response.json().catch(() => ({}));
           clearTimeout(timer);
+          if (activeRequest.current !== controller) return;
+          if (response.status === 401) {
+            // A revoked session must return to login, including sessions in other tabs.
+            await supabase.auth.signOut({ scope: "local" });
+            throw new Error("Your session has expired. Please sign in again.");
+          }
           if (!response.ok) throw new Error(typeof data.detail === "string" ? data.detail : "Request failed (" + response.status + "). Please retry.");
           if (!data.reply) throw new Error("No response received. Please retry.");
           if (activeRequest.current !== controller) return;
