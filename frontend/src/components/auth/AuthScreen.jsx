@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { authError, authRedirect, supabase } from "../../lib/auth";
 
 function GoogleIcon() {
@@ -67,6 +67,8 @@ const copy = {
 };
 
 export default function AuthScreen({ auth }) {
+  const pageRef = useRef(null);
+  const panelRef = useRef(null);
   const [view, setView] = useState(auth.recovery ? "reset" : "login");
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
@@ -83,6 +85,19 @@ export default function AuthScreen({ auth }) {
   const newPassword = screen === "signup" || screen === "reset";
   const unavailable = !supabase;
   const invalidReset = screen === "reset" && (!auth.session || Boolean(auth.error));
+
+  useEffect(() => {
+    const page = pageRef.current;
+    const panel = panelRef.current;
+    if (!page || !panel) return;
+    const top = screen === "signup"
+      ? page.scrollTop + panel.getBoundingClientRect().top - page.getBoundingClientRect().top - 24
+      : 0;
+    page.scrollTo({
+      top: Math.max(0, top),
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
+    });
+  }, [screen]);
 
   function navigate(next) {
     setView(next);
@@ -186,25 +201,8 @@ export default function AuthScreen({ auth }) {
   }
 
   return (
-    <main className="auth-page">
-      {/* Multiverse Persona Badges (Seven, Neo, Nyra) matching mockup */}
-      <div className="auth-personas" aria-hidden="true">
-        <div className="auth-persona-badge persona-seven">
-          <span className="persona-name">SEVEN</span>
-          <span className="persona-line" />
-          <span className="persona-role">THE GUIDE</span>
-        </div>
-        <div className="auth-persona-badge persona-neo">
-          <span className="persona-name">NEO</span>
-          <span className="persona-line" />
-          <span className="persona-role">THE BUILDER</span>
-        </div>
-        <div className="auth-persona-badge persona-nyra">
-          <span className="persona-name">NYRA</span>
-          <span className="persona-line" />
-          <span className="persona-role">THE DREAMER</span>
-        </div>
-      </div>
+    <main className="auth-page" ref={pageRef}>
+      <div className="auth-atmosphere" aria-hidden="true"><i /><i /><i /></div>
 
       <div className="auth-shell">
         <aside className="auth-story" aria-label="Welcome to Shifts">
@@ -235,8 +233,13 @@ export default function AuthScreen({ auth }) {
           </div>
         </aside>
 
-        <section className="auth-panel" aria-label="Your account">
-          <div className="auth-form-wrap">
+        <section className="auth-panel" aria-label="Your account" ref={panelRef}>
+          <div className="auth-panel-intro" aria-hidden="true">
+            <span className="auth-orbit"><span /></span>
+            <span>YOUR WORLD AWAITS</span>
+            <span className="auth-intro-line" />
+          </div>
+          <div className="auth-form-wrap" key={screen}>
             {(screen === "forgot" || screen === "reset") && (
               <span className="auth-kicker">
                 <span className="auth-kicker-dot" />
@@ -273,7 +276,7 @@ export default function AuthScreen({ auth }) {
                       <span>{busy === "google" ? "Connecting to Google…" : "Continue with Google"}</span>
                     </button>
                     <div className="auth-divider">
-                      <span>or</span>
+                      <span>or continue with email</span>
                     </div>
                   </>
                 )}

@@ -9,16 +9,17 @@
   --auth-accent: #8b5cf6;
   --auth-brand: #6366f1;
 
-  min-height: 100vh;
-  min-height: 100dvh;
+  height: 100vh;
+  height: 100dvh;
   position: relative;
   overflow-x: hidden;
   overflow-y: auto;
-  background: #090a10 url('/shift_image.png') center center / cover no-repeat;
+  background: linear-gradient(90deg, rgba(9, 14, 27, 0.35), rgba(9, 14, 27, 0.12) 45%, rgba(9, 14, 27, 0.48)), #090a10 url('/shift_image.png') center center / cover no-repeat;
+  isolation: isolate;
   color: var(--auth-ink);
   padding: clamp(20px, 4vh, 44px) clamp(20px, 4vw, 48px);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   box-sizing: border-box;
 }
@@ -108,9 +109,10 @@
    Layout Shell: Left Story + Right Standalone Frosted Glass Card
    -------------------------------------------------------------------------- */
 .auth-shell {
+  flex-shrink: 0;
   position: relative;
   z-index: 5;
-  width: min(1220px, 100%);
+  width: min(1180px, 100%);
   margin: auto;
   display: flex;
   justify-content: space-between;
@@ -123,6 +125,9 @@
    Left Showcase Section (Ethereal Editorial Typography)
    -------------------------------------------------------------------------- */
 .auth-story {
+  --story-ink: #202b46;
+  --story-muted: #35415a;
+  --story-accent: #563d78;
   flex: 1;
   max-width: 520px;
   display: flex;
@@ -145,7 +150,7 @@
   align-items: center;
   gap: 10px;
   text-decoration: none;
-  color: #0f172a;
+  color: var(--story-ink);
   font-size: 26px;
   font-weight: 700;
   letter-spacing: -0.6px;
@@ -160,15 +165,15 @@
 }
 
 .auth-brand-dot {
-  color: var(--auth-accent);
+  color: var(--story-accent);
 }
 
 .auth-brand-subtitle {
   font-size: 9.5px;
   font-weight: 700;
   letter-spacing: 2.2px;
-  color: #475569;
-  padding-left: 2px;
+  color: var(--story-muted);
+  padding-left: 42px;
 }
 
 .auth-story-body {
@@ -182,36 +187,36 @@
   font-size: 9.5px;
   font-weight: 700;
   letter-spacing: 1.8px;
-  color: #334155;
+  color: var(--story-muted);
 }
 
 .auth-eyebrow-line {
   width: 18px;
   height: 2px;
-  background: #0f172a;
+  background: var(--story-accent);
   border-radius: 1px;
 }
 
 .auth-story h1 {
   margin: 18px 0 0;
-  font-size: clamp(38px, 4.4vw, 54px);
+  font-size: clamp(40px, 4.6vw, 66px);
   font-weight: 700;
   line-height: 1.12;
   letter-spacing: -1.8px;
-  color: #0f172a;
+  color: var(--story-ink);
+  text-shadow: 0 1px 12px rgba(225, 230, 245, 0.22);
 }
 
 .auth-story h1 em {
-  font-style: normal;
-  background: linear-gradient(135deg, #9333ea 0%, #7c3aed 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 0 16px rgba(147, 51, 234, 0.35));
+  font-family: Georgia, 'Times New Roman', serif;
+  font-style: italic;
+  font-weight: 400;
+  color: var(--story-accent);
 }
 
 .auth-tagline {
   margin-top: 28px;
-  color: #475569;
+  color: var(--story-muted);
   font-size: 14px;
   font-weight: 600;
   letter-spacing: 0.3px;
@@ -221,23 +226,71 @@
    Right Floating Glassmorphic Login Card
    -------------------------------------------------------------------------- */
 .auth-panel {
-  width: min(436px, 100%);
+  width: min(448px, 100%);
   flex-shrink: 0;
-  border-radius: 14px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.015) 50%, rgba(255, 255, 255, 0.04) 100%);
+  border-radius: 28px;
+  position: relative;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.17), rgba(255, 255, 255, 0.025) 55%, rgba(255, 255, 255, 0.08));
   backdrop-filter: blur(10px) saturate(140%);
   -webkit-backdrop-filter: blur(10px) saturate(140%);
   border: 1px solid rgba(255, 255, 255, 0.18);
   box-shadow:
     0 16px 45px rgba(0, 0, 0, 0.25),
     inset 0 1px 1px rgba(255, 255, 255, 0.35);
-  padding: 38px 34px;
+  padding: 30px 34px;
   box-sizing: border-box;
 }
 
 .auth-form-wrap {
   width: 100%;
+  animation: auth-arrive 450ms ease-out both;
 }
+
+.auth-panel-intro {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  color: #e2e8f0;
+  font-size: 9px;
+  letter-spacing: 2px;
+  font-weight: 600;
+}
+
+.auth-intro-line { height: 1px; flex: 1; background: rgba(255, 255, 255, 0.22); }
+.auth-orbit {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 50%;
+}
+.auth-orbit > span { width: 8px; height: 8px; border-radius: 50%; background: #fff; box-shadow: 0 0 16px #ddd6fe; }
+.auth-orbit::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border: 1px solid transparent;
+  border-top-color: #e9e2ff;
+  border-bottom-color: rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  animation: auth-orbit-turn 12s linear infinite;
+}
+.auth-atmosphere { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+.auth-atmosphere i { position: absolute; width: 4px; height: 4px; border-radius: 50%; background: #fff; box-shadow: 0 0 16px 3px rgba(255, 255, 255, 0.4); animation: auth-drift 9s ease-in-out infinite alternate; }
+.auth-atmosphere i:nth-child(1) { left: 15%; top: 22%; }
+.auth-atmosphere i:nth-child(2) { left: 54%; top: 68%; animation-delay: -3s; }
+.auth-atmosphere i:nth-child(3) { left: 86%; top: 12%; animation-delay: -6s; }
+.auth-brand-block { animation: auth-arrive 700ms ease-out both; }
+.auth-story-body { animation: auth-arrive 850ms 120ms ease-out both; }
+.auth-panel { animation: auth-arrive 850ms 220ms ease-out both; }
+.auth-input-wrapper:focus-within .auth-input-icon { color: #fff; }
+
+@keyframes auth-arrive { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes auth-orbit-turn { to { transform: rotate(360deg); } }
+@keyframes auth-drift { from { opacity: 0.2; transform: translateY(10px); } to { opacity: 0.8; transform: translateY(-20px); } }
 
 .auth-kicker {
   display: inline-flex;
@@ -310,7 +363,7 @@
 
 /* Google OAuth Button - Clean White Glassmorphic Pill */
 .auth-google {
-  min-height: 46px;
+  min-height: 48px;
   width: 100%;
   display: flex;
   justify-content: center;
@@ -319,15 +372,15 @@
   border-radius: 10px;
   font-size: 13px !important;
   font-weight: 600 !important;
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.09);
   border: 1px solid rgba(255, 255, 255, 0.5);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
-  color: #0f172a;
+  color: #ffffff;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .auth-google:hover:not(:disabled) {
-  background: #f8fafc;
+  background: rgba(255, 255, 255, 0.18);
   transform: translateY(-1px);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
 }
@@ -387,6 +440,7 @@
 }
 
 .auth-input-icon {
+  z-index: 1;
   position: absolute;
   left: 14px;
   display: flex;
@@ -398,11 +452,11 @@
 .auth-form input {
   width: 100%;
   min-width: 0;
-  height: 44px;
+  height: 48px;
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 9px;
   padding: 0 14px 0 40px;
-  background: rgba(255, 255, 255, 0.035);
+  background: rgba(10, 16, 30, 0.18);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   color: #ffffff;
@@ -417,7 +471,7 @@
 }
 
 .auth-form input::placeholder {
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(255, 255, 255, 0.65);
 }
 
 .auth-form input:focus {
@@ -456,7 +510,7 @@
 .auth-link {
   padding: 0;
   border: 0;
-  color: #c084fc;
+  color: #eee8ff;
   background: transparent;
   font-size: inherit !important;
   font-weight: 500 !important;
@@ -497,7 +551,7 @@
 
 /* Primary Submit Button - Soft Radiant Lavender Pill matching mockup */
 .auth-primary {
-  min-height: 46px;
+  min-height: 48px;
   width: 100%;
   display: flex;
   justify-content: center;
@@ -509,7 +563,7 @@
   font-weight: 600 !important;
   letter-spacing: 0.2px;
   border: 1px solid rgba(255, 255, 255, 0.6);
-  background: linear-gradient(180deg, rgba(235, 238, 250, 0.96) 0%, rgba(206, 212, 238, 0.96) 100%);
+  background: linear-gradient(135deg, #ffffff, #eeeaf6);
   color: #1e1b4b;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.16), inset 0 1px 1px rgba(255, 255, 255, 0.7);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -702,6 +756,9 @@
     gap: 32px;
   }
   .auth-story {
+    --story-ink: #d8d0f0;
+    --story-muted: #c1bad7;
+    --story-accent: #bca5e8;
     max-width: 100%;
     align-items: center;
     text-align: center;
@@ -709,6 +766,7 @@
   .auth-brand-block {
     align-items: center;
   }
+  .auth-brand-subtitle { padding-left: 0; }
   .auth-story-body {
     margin-top: 16px;
   }
@@ -728,35 +786,35 @@
 
 @media (max-width: 640px) {
   .auth-page {
-    padding: 16px 12px;
+    padding: 24px 18px;
     display: block;
     background:
-      linear-gradient(180deg, rgba(8, 10, 18, 0.25) 0%, rgba(8, 10, 18, 0.4) 100%),
+      linear-gradient(180deg, rgba(8, 10, 18, 0.38) 0%, rgba(8, 10, 18, 0.42) 100%),
       url('/shift_image.png') center center / cover no-repeat;
   }
   .auth-shell {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 16px;
+    gap: 24px;
     padding: 0;
     width: 100%;
   }
   .auth-story {
     width: 100%;
-    padding: 16px 8px 0;
+    padding: 4px 0 0;
     align-items: center;
     text-align: center;
   }
   .auth-brand {
     font-size: 22px;
-    color: #ffffff;
+    color: var(--story-ink);
   }
   .auth-brand img {
     filter: drop-shadow(0 0 10px rgba(192, 132, 252, 0.6));
   }
   .auth-brand-subtitle {
-    color: #cbd5e1;
+    color: var(--story-muted);
   }
   .auth-story-body {
     margin-top: 8px;
@@ -767,10 +825,10 @@
   }
   .auth-story h1 {
     margin: 6px 0 0;
-    font-size: 24px;
+    font-size: clamp(26px, 7vw, 34px);
     letter-spacing: -1px;
     line-height: 1.25;
-    color: #ffffff;
+    color: var(--story-ink);
   }
   .auth-story h1 br {
     display: none;
@@ -779,9 +837,9 @@
     content: " ";
   }
   .auth-panel {
-    padding: 24px 18px 28px;
-    width: 100%;
-    border-radius: 20px;
+    padding: 24px;
+    width: min(440px, 100%);
+    border-radius: 24px;
   }
   .auth-panel h2 {
     font-size: 25px;
@@ -821,6 +879,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .auth-page *,
+  .auth-page *::before,
+  .auth-page *::after,
   .account-menu * {
     transition: none !important;
     animation: none !important;

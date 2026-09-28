@@ -241,6 +241,27 @@ test("failed token processing cannot reset a previously signed-in account", asyn
   await expect(page.getByLabel("New password", { exact: true })).toHaveCount(0);
 });
 
+for (const viewport of [{ width: 1440, height: 740 }, { width: 390, height: 844 }, { width: 320, height: 568 }]) {
+  test(`signup scrolls upward and its bottom stays reachable at ${viewport.width}x${viewport.height}`, async ({ page }) => {
+    await mockAuth(page);
+    await page.setViewportSize(viewport);
+    await page.goto("/");
+    await page.getByRole("button", { name: "Create an account" }).click();
+    const panel = page.locator(".auth-panel");
+    // A fitting card can reach the scroll limit before its requested 24px inset.
+    await expect.poll(async () => (await panel.boundingBox()).y).toBeLessThanOrEqual(64);
+    await expect.poll(async () => (await panel.boundingBox()).y).toBeGreaterThanOrEqual(0);
+    const scroller = page.locator(".auth-page");
+    expect(await scroller.evaluate(node => node.clientHeight <= innerHeight && node.scrollHeight > node.clientHeight)).toBe(true);
+    await scroller.evaluate(node => node.scrollTo({ top: node.scrollHeight, behavior: "instant" }));
+    await expect(page.getByRole("button", { name: "Create account", exact: true })).toBeInViewport();
+    await expect(page.getByRole("button", { name: "Sign in", exact: true })).toBeInViewport();
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
+    await expect.poll(() => scroller.evaluate(node => node.scrollTop)).toBe(0);
+    await expect(page.getByRole("heading", { name: "Welcome back." })).toBeInViewport();
+  });
+}
+
 test("desktop and mobile auth screens remain usable and do not overflow", async ({ page }, testInfo) => {
   await mockAuth(page);
   await page.setViewportSize({ width: 1440, height: 1000 });
