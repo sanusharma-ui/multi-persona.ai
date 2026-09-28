@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { authError, authRedirect, supabase } from "../../lib/auth";
+import AuthScene3D from "./AuthScene3D";
 
 function GoogleIcon() {
   return (
@@ -98,6 +99,122 @@ export default function AuthScreen({ auth }) {
       behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
     });
   }, [screen]);
+
+  useEffect(() => {
+    const page = pageRef.current;
+    const panel = panelRef.current;
+    if (!page || !panel) return;
+
+    const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const pointer = window.matchMedia("(hover: hover) and (pointer: fine)");
+
+    let frame = 0;
+    let targetTiltX = 0;
+    let targetTiltY = 0;
+    let currentTiltX = 0;
+    let currentTiltY = 0;
+    let targetBgX = 0;
+    let targetBgY = 0;
+    let currentBgX = 0;
+    let currentBgY = 0;
+
+    const allowed = () => !motion.matches && pointer.matches && !document.hidden;
+
+    const paint = () => {
+      // Background parallax offset
+      page.style.setProperty("--bg-parallax-x", `${currentBgX * 10}px`);
+      page.style.setProperty("--bg-parallax-y", `${currentBgY * 7}px`);
+
+      // 3D card tilt
+      panel.style.setProperty("--card-x", `${currentTiltX * -6.5}deg`);
+      panel.style.setProperty("--card-y", `${currentTiltY * 7.5}deg`);
+    };
+
+    const tick = () => {
+      frame = 0;
+      if (!allowed()) return;
+
+      const ease = 0.08;
+      currentTiltX += (targetTiltX - currentTiltX) * ease;
+      currentTiltY += (targetTiltY - currentTiltY) * ease;
+      currentBgX += (targetBgX - currentBgX) * ease;
+      currentBgY += (targetBgY - currentBgY) * ease;
+
+      paint();
+
+      const diff =
+        Math.abs(targetTiltX - currentTiltX) +
+        Math.abs(targetTiltY - currentTiltY) +
+        Math.abs(targetBgX - currentBgX) +
+        Math.abs(targetBgY - currentBgY);
+
+      if (diff > 0.001) {
+        frame = requestAnimationFrame(tick);
+      }
+    };
+
+    const start = () => {
+      if (!frame && allowed()) frame = requestAnimationFrame(tick);
+    };
+
+    const handlePointerMove = (event) => {
+      if (!allowed()) return;
+      const pageRect = page.getBoundingClientRect();
+      const normX = ((event.clientX - pageRect.left) / pageRect.width) * 2 - 1;
+      const normY = ((event.clientY - pageRect.top) / pageRect.height) * 2 - 1;
+
+      targetBgX = -normX;
+      targetBgY = -normY;
+
+      // Card glare coordinates relative to card
+      const panelRect = panel.getBoundingClientRect();
+      const glareX = ((event.clientX - panelRect.left) / panelRect.width) * 100;
+      const glareY = ((event.clientY - panelRect.top) / panelRect.height) * 100;
+      panel.style.setProperty("--glare-x", `${glareX}%`);
+      panel.style.setProperty("--glare-y", `${glareY}%`);
+
+      // Tilt is based on cursor position relative to card center
+      const cardCenterX = panelRect.left + panelRect.width / 2;
+      const cardCenterY = panelRect.top + panelRect.height / 2;
+      const cardNormX = Math.max(-1, Math.min(1, (event.clientX - cardCenterX) / 360));
+      const cardNormY = Math.max(-1, Math.min(1, (event.clientY - cardCenterY) / 360));
+
+      const isInputFocused =
+        panel.contains(document.activeElement) && document.activeElement.tagName === "INPUT";
+      targetTiltX = isInputFocused ? 0 : cardNormY;
+      targetTiltY = isInputFocused ? 0 : cardNormX;
+
+      start();
+    };
+
+    const handlePointerLeave = () => {
+      targetTiltX = 0;
+      targetTiltY = 0;
+      targetBgX = 0;
+      targetBgY = 0;
+      start();
+    };
+
+    page.addEventListener("pointermove", handlePointerMove, { passive: true });
+    page.addEventListener("pointerleave", handlePointerLeave);
+    panel.addEventListener("focusin", () => {
+      targetTiltX = 0;
+      targetTiltY = 0;
+      start();
+    });
+
+    return () => {
+      cancelAnimationFrame(frame);
+      page.removeEventListener("pointermove", handlePointerMove);
+      page.removeEventListener("pointerleave", handlePointerLeave);
+      panel.style.removeProperty("--card-x");
+      panel.style.removeProperty("--card-y");
+      panel.style.removeProperty("--glare-x");
+      panel.style.removeProperty("--glare-y");
+      page.style.removeProperty("--bg-parallax-x");
+      page.style.removeProperty("--bg-parallax-y");
+    };
+  }, []);
 
   function navigate(next) {
     setView(next);
@@ -201,8 +318,18 @@ export default function AuthScreen({ auth }) {
   }
 
   return (
-    <main className="auth-page" ref={pageRef}>
-      <div className="auth-atmosphere" aria-hidden="true"><i /><i /><i /></div>
+    <main className="auth-page auth-login-motion" ref={pageRef}>
+      {/* Dynamic Background Artwork with Smooth Parallax */}
+      <div className="auth-bg-layer" aria-hidden="true" />
+      <div className="auth-vignette-overlay" aria-hidden="true" />
+
+      {/* 3D Three.js Ambient Multiverse (Crystals, Particles, Orbit Rings) */}
+      <AuthScene3D />
+
+      {/* Subtle Ambient Cosmic Motes */}
+      <div className="auth-atmosphere" aria-hidden="true">
+        <i /><i /><i /><i /><i /><i /><i />
+      </div>
 
       <div className="auth-shell">
         <aside className="auth-story" aria-label="Welcome to Shifts">
@@ -224,16 +351,37 @@ export default function AuthScreen({ auth }) {
               One place to <br />
               <em>be yourself.</em>
             </h1>
-            <p className="auth-tagline">A conversation that feels like you.</p>
-            <div className="auth-cast" aria-hidden="true" style={{ display: "none" }}>
-              <div className="auth-character character-seven"><span>✦</span><strong>Seven</strong><small>A little cosmic wonder.</small></div>
-              <div className="auth-character character-neo"><span>&lt;/&gt;</span><strong>Neo</strong><small>Build something together.</small></div>
-              <div className="auth-character character-nyra"><span>✳</span><strong>Nyra</strong><small>Follow that wild idea.</small></div>
+            <p className="auth-tagline">Connect with personas crafted for every dimension of thought.</p>
+
+            {/* Aesthetic Persona Showcase Chips */}
+            <div className="auth-persona-chips" aria-label="Featured AI Personas">
+              <div className="auth-persona-chip persona-chip-seven" title="Seven: Celestial Wonder & Empathy">
+                <span className="chip-orb">✦</span>
+                <div className="chip-info">
+                  <strong>Seven</strong>
+                  <span>Cosmic Wonder</span>
+                </div>
+              </div>
+              <div className="auth-persona-chip persona-chip-neo" title="Neo: Code Architect & Creator">
+                <span className="chip-orb">&lt;/&gt;</span>
+                <div className="chip-info">
+                  <strong>Neo</strong>
+                  <span>Architect</span>
+                </div>
+              </div>
+              <div className="auth-persona-chip persona-chip-nyra" title="Nyra: Unfiltered Ideas & Depths">
+                <span className="chip-orb">✳</span>
+                <div className="chip-info">
+                  <strong>Nyra</strong>
+                  <span>Wildcard</span>
+                </div>
+              </div>
             </div>
           </div>
         </aside>
 
         <section className="auth-panel" aria-label="Your account" ref={panelRef}>
+          <div className="auth-panel-sheen" aria-hidden="true" />
           <div className="auth-panel-intro" aria-hidden="true">
             <span className="auth-orbit"><span /></span>
             <span>YOUR WORLD AWAITS</span>

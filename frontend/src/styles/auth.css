@@ -5,23 +5,53 @@
 
 .auth-page {
   --auth-ink: #f8fafc;
-  --auth-muted: #94a3b8;
-  --auth-accent: #8b5cf6;
-  --auth-brand: #6366f1;
+  --auth-muted: #cbd5e1;
+  --auth-accent: #a78bfa;
+  --auth-brand: #818cf8;
 
   height: 100vh;
   height: 100dvh;
+  max-height: 100vh;
+  max-height: 100dvh;
   position: relative;
-  overflow-x: hidden;
-  overflow-y: auto;
-  background: linear-gradient(90deg, rgba(9, 14, 27, 0.35), rgba(9, 14, 27, 0.12) 45%, rgba(9, 14, 27, 0.48)), #090a10 url('/shift_image.png') center center / cover no-repeat;
+  overflow: hidden;
+  background-color: #060814;
   isolation: isolate;
   color: var(--auth-ink);
-  padding: clamp(20px, 4vh, 44px) clamp(20px, 4vw, 48px);
+  padding: clamp(14px, 2.5vh, 28px) clamp(20px, 4vw, 48px);
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
   box-sizing: border-box;
+  perspective: 1200px;
+}
+
+/* Background image layer pinned to viewport with generous bleed to eliminate any bottom gaps */
+.auth-bg-layer {
+  position: fixed;
+  inset: -40px;
+  background: url('/shift_image.png') center center / cover no-repeat;
+  filter: contrast(105%) saturate(110%) brightness(0.92);
+  transform: translate3d(var(--bg-parallax-x, 0px), var(--bg-parallax-y, 0px), 0) scale(1.05);
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  will-change: transform;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Cinematic Atmospheric Vignette & Contrast Control pinned to viewport */
+.auth-vignette-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    /* Central focus aperture / edge vignette */
+    radial-gradient(ellipse 90% 80% at 50% 45%, rgba(6, 8, 20, 0.08) 0%, rgba(6, 8, 20, 0.42) 55%, rgba(5, 6, 16, 0.88) 100%),
+    /* Horizontal soft scrim to ensure Left Headline and Right Card have crisp readability */
+    linear-gradient(90deg, rgba(6, 8, 18, 0.48) 0%, rgba(6, 8, 18, 0.12) 35%, rgba(6, 8, 18, 0.18) 60%, rgba(6, 8, 18, 0.68) 100%),
+    /* Bottom reflection water depth tint */
+    linear-gradient(180deg, transparent 70%, rgba(5, 6, 15, 0.6) 100%);
 }
 
 /* --------------------------------------------------------------------------
@@ -125,9 +155,9 @@
    Left Showcase Section (Ethereal Editorial Typography)
    -------------------------------------------------------------------------- */
 .auth-story {
-  --story-ink: #202b46;
-  --story-muted: #35415a;
-  --story-accent: #563d78;
+  --story-ink: #f8fafc;
+  --story-muted: #cbd5e1;
+  --story-accent: #c4b5fd;
   flex: 1;
   max-width: 520px;
   display: flex;
@@ -160,8 +190,7 @@
   width: 32px;
   height: 32px;
   object-fit: contain;
-  /* Natural black/metallic logo matching reference mockup */
-  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.15));
+  filter: drop-shadow(0 0 12px rgba(167, 139, 250, 0.45));
 }
 
 .auth-brand-dot {
@@ -177,68 +206,184 @@
 }
 
 .auth-story-body {
-  margin-top: 40px;
+  margin-top: clamp(14px, 2.5vh, 26px);
 }
 
 .auth-eyebrow {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  font-size: 9.5px;
+  gap: 8px;
+  font-size: 9px;
   font-weight: 700;
   letter-spacing: 1.8px;
-  color: var(--story-muted);
+  color: #c4b5fd;
 }
 
 .auth-eyebrow-line {
-  width: 18px;
+  width: 16px;
   height: 2px;
-  background: var(--story-accent);
+  background: linear-gradient(90deg, #a78bfa, #38bdf8);
   border-radius: 1px;
 }
 
 .auth-story h1 {
-  margin: 18px 0 0;
-  font-size: clamp(40px, 4.6vw, 66px);
+  margin: 10px 0 0;
+  font-size: clamp(28px, 3.2vw, 48px);
   font-weight: 700;
   line-height: 1.12;
-  letter-spacing: -1.8px;
-  color: var(--story-ink);
-  text-shadow: 0 1px 12px rgba(225, 230, 245, 0.22);
+  letter-spacing: -1.4px;
+  color: #ffffff;
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.7), 0 0 35px rgba(139, 92, 246, 0.25);
 }
 
 .auth-story h1 em {
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
   font-style: italic;
   font-weight: 400;
-  color: var(--story-accent);
+  background: linear-gradient(135deg, #fef08a 0%, #f472b6 45%, #c084fc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+  filter: drop-shadow(0 0 14px rgba(244, 114, 182, 0.35));
 }
 
 .auth-tagline {
-  margin-top: 28px;
-  color: var(--story-muted);
-  font-size: 14px;
+  margin-top: clamp(8px, 1.4vh, 14px);
+  color: rgba(226, 232, 240, 0.85);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+/* --------------------------------------------------------------------------
+   Persona Showcase Chips
+   -------------------------------------------------------------------------- */
+.auth-persona-chips {
+  display: flex;
+  gap: 8px;
+  margin-top: clamp(12px, 1.8vh, 20px);
+  flex-wrap: wrap;
+}
+
+.auth-persona-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  transition: all 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
+  cursor: default;
+  user-select: none;
+}
+
+.auth-persona-chip:hover {
+  transform: translateY(-2px) scale(1.02);
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.34);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+}
+
+.chip-orb {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.persona-chip-seven .chip-orb {
+  background: radial-gradient(circle, #fef08a 0%, #eab308 100%);
+  color: #422006;
+  box-shadow: 0 0 12px rgba(234, 179, 8, 0.65);
+}
+
+.persona-chip-neo .chip-orb {
+  background: radial-gradient(circle, #7dd3fc 0%, #0284c7 100%);
+  color: #082f49;
+  box-shadow: 0 0 12px rgba(14, 165, 233, 0.65);
+}
+
+.persona-chip-nyra .chip-orb {
+  background: radial-gradient(circle, #d8b4fe 0%, #9333ea 100%);
+  color: #3b0764;
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.65);
+}
+
+.chip-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.chip-info strong {
+  font-size: 11.5px;
   font-weight: 600;
-  letter-spacing: 0.3px;
+  color: #ffffff;
+  letter-spacing: 0.2px;
+}
+
+.chip-info span {
+  font-size: 9.5px;
+  color: rgba(255, 255, 255, 0.68);
 }
 
 /* --------------------------------------------------------------------------
    Right Floating Glassmorphic Login Card
    -------------------------------------------------------------------------- */
 .auth-panel {
-  width: min(448px, 100%);
+  width: min(428px, 100%);
   flex-shrink: 0;
-  border-radius: 28px;
+  border-radius: 26px;
   position: relative;
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.17), rgba(255, 255, 255, 0.025) 55%, rgba(255, 255, 255, 0.08));
-  backdrop-filter: blur(10px) saturate(140%);
-  -webkit-backdrop-filter: blur(10px) saturate(140%);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.03) 40%, rgba(255, 255, 255, 0.07) 100%), rgba(12, 15, 30, 0.6);
+  backdrop-filter: blur(24px) saturate(190%);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.22);
   box-shadow:
-    0 16px 45px rgba(0, 0, 0, 0.25),
-    inset 0 1px 1px rgba(255, 255, 255, 0.35);
-  padding: 30px 34px;
+    0 24px 60px rgba(0, 0, 0, 0.48),
+    0 4px 16px rgba(0, 0, 0, 0.2),
+    inset 0 1px 1px rgba(255, 255, 255, 0.45);
+  padding: clamp(18px, 2.4vh, 26px) clamp(22px, 2.5vw, 30px);
   box-sizing: border-box;
+  transform-style: preserve-3d;
+  overflow: hidden;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.auth-panel:hover {
+  border-color: rgba(255, 255, 255, 0.32);
+  box-shadow:
+    0 28px 70px rgba(0, 0, 0, 0.54),
+    0 0 30px rgba(167, 139, 250, 0.16),
+    inset 0 1px 1px rgba(255, 255, 255, 0.55);
+}
+
+/* Interactive Specular Sheen Following Pointer */
+.auth-panel-sheen {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: radial-gradient(
+    520px circle at var(--glare-x, 50%) var(--glare-y, 50%),
+    rgba(255, 255, 255, 0.16) 0%,
+    rgba(167, 139, 250, 0.08) 35%,
+    transparent 70%
+  );
+  opacity: 0.9;
+  z-index: 1;
+}
+
+.auth-panel > *:not(.auth-panel-sheen) {
+  position: relative;
+  z-index: 2;
 }
 
 .auth-form-wrap {
@@ -249,10 +394,10 @@
 .auth-panel-intro {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 24px;
+  gap: 10px;
+  margin-bottom: clamp(10px, 1.6vh, 16px);
   color: #e2e8f0;
-  font-size: 9px;
+  font-size: 8.5px;
   letter-spacing: 2px;
   font-weight: 600;
 }
@@ -262,50 +407,43 @@
   position: relative;
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border: 1px solid rgba(255, 255, 255, 0.45);
   border-radius: 50%;
 }
-.auth-orbit > span { width: 8px; height: 8px; border-radius: 50%; background: #fff; box-shadow: 0 0 16px #ddd6fe; }
+.auth-orbit > span { width: 7px; height: 7px; border-radius: 50%; background: #fff; box-shadow: 0 0 14px #ddd6fe; }
 .auth-orbit::after {
   content: '';
   position: absolute;
-  inset: -5px;
+  inset: -4px;
   border: 1px solid transparent;
   border-top-color: #e9e2ff;
   border-bottom-color: rgba(255, 255, 255, 0.25);
   border-radius: 50%;
   animation: auth-orbit-turn 12s linear infinite;
 }
-.auth-atmosphere { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
-.auth-atmosphere i { position: absolute; width: 4px; height: 4px; border-radius: 50%; background: #fff; box-shadow: 0 0 16px 3px rgba(255, 255, 255, 0.4); animation: auth-drift 9s ease-in-out infinite alternate; }
-.auth-atmosphere i:nth-child(1) { left: 15%; top: 22%; }
-.auth-atmosphere i:nth-child(2) { left: 54%; top: 68%; animation-delay: -3s; }
-.auth-atmosphere i:nth-child(3) { left: 86%; top: 12%; animation-delay: -6s; }
 .auth-brand-block { animation: auth-arrive 700ms ease-out both; }
 .auth-story-body { animation: auth-arrive 850ms 120ms ease-out both; }
-.auth-panel { animation: auth-arrive 850ms 220ms ease-out both; }
 .auth-input-wrapper:focus-within .auth-input-icon { color: #fff; }
 
 @keyframes auth-arrive { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes auth-orbit-turn { to { transform: rotate(360deg); } }
-@keyframes auth-drift { from { opacity: 0.2; transform: translateY(10px); } to { opacity: 0.8; transform: translateY(-20px); } }
 
 .auth-kicker {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   color: #c4b5fd;
-  font-size: 9px;
+  font-size: 8.5px;
   letter-spacing: 1.6px;
   font-weight: 700;
   text-transform: uppercase;
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.16);
-  padding: 4px 10px;
+  padding: 3px 8px;
   border-radius: 6px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .auth-kicker-dot {
@@ -317,27 +455,27 @@
 }
 
 .auth-panel h2 {
-  margin: 0 0 6px;
+  margin: 0 0 4px;
   white-space: pre-line;
-  font-size: clamp(26px, 2.7vw, 31px);
+  font-size: clamp(20px, 2vw, 24px);
   font-weight: 700;
   line-height: 1.2;
-  letter-spacing: -0.8px;
+  letter-spacing: -0.6px;
   color: #ffffff;
 }
 
 .auth-description {
-  margin: 0 0 24px;
+  margin: 0 0 clamp(10px, 1.6vh, 16px);
   color: #cbd5e1;
-  font-size: 13px;
-  line-height: 1.55;
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 .auth-recovery-email {
   display: block;
   color: #c084fc;
   overflow-wrap: anywhere;
-  margin-top: 5px;
+  margin-top: 4px;
   font-weight: 500;
 }
 
@@ -363,24 +501,24 @@
 
 /* Google OAuth Button - Clean White Glassmorphic Pill */
 .auth-google {
-  min-height: 48px;
+  min-height: 42px;
   width: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 10px;
   border-radius: 10px;
-  font-size: 13px !important;
+  font-size: 12.5px !important;
   font-weight: 600 !important;
-  background: rgba(255, 255, 255, 0.09);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.35);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
   color: #ffffff;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .auth-google:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.16);
   transform: translateY(-1px);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
 }
@@ -393,10 +531,10 @@
 .auth-divider {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin: 20px 0;
+  gap: 10px;
+  margin: clamp(10px, 1.4vh, 14px) 0;
   color: rgba(255, 255, 255, 0.6);
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 500;
 }
 
@@ -412,7 +550,7 @@
 .auth-form fieldset {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: clamp(8px, 1.2vh, 11px);
   border: 0;
   min-width: 0;
   padding: 0;
@@ -422,12 +560,12 @@
 .auth-field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .auth-field label {
   color: #f1f5f9;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 500;
   letter-spacing: 0.1px;
 }
@@ -442,7 +580,7 @@
 .auth-input-icon {
   z-index: 1;
   position: absolute;
-  left: 14px;
+  left: 13px;
   display: flex;
   align-items: center;
   color: rgba(255, 255, 255, 0.55);
@@ -452,11 +590,11 @@
 .auth-form input {
   width: 100%;
   min-width: 0;
-  height: 48px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  height: 42px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 9px;
-  padding: 0 14px 0 40px;
-  background: rgba(10, 16, 30, 0.18);
+  padding: 0 14px 0 38px;
+  background: rgba(10, 16, 30, 0.22);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   color: #ffffff;
@@ -467,7 +605,7 @@
 }
 
 .auth-password input {
-  padding-right: 42px;
+  padding-right: 40px;
 }
 
 .auth-form input::placeholder {
@@ -549,7 +687,7 @@
   color: #cbd5e1;
 }
 
-/* Primary Submit Button - Soft Radiant Lavender Pill matching mockup */
+/* Primary Submit Button - Luminous Lavender Cosmic Pill */
 .auth-primary {
   min-height: 48px;
   width: 100%;
@@ -557,26 +695,43 @@
   justify-content: center;
   align-items: center;
   gap: 8px;
-  margin-top: 4px;
-  border-radius: 10px;
+  margin-top: 6px;
+  border-radius: 12px;
   font-size: 13.5px !important;
   font-weight: 600 !important;
   letter-spacing: 0.2px;
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  background: linear-gradient(135deg, #ffffff, #eeeaf6);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  background: linear-gradient(135deg, #ede9fe 0%, #ffffff 42%, #ddd6fe 100%);
   color: #1e1b4b;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.16), inset 0 1px 1px rgba(255, 255, 255, 0.7);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 18px rgba(167, 139, 250, 0.35), inset 0 1px 2px rgba(255, 255, 255, 0.9);
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-primary::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+  transition: left 0.6s ease;
+}
+
+.auth-primary:hover:not(:disabled)::before {
+  left: 100%;
 }
 
 .auth-primary:hover:not(:disabled) {
-  background: linear-gradient(180deg, rgba(245, 247, 255, 0.98) 0%, rgba(216, 222, 245, 0.98) 100%);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22);
-  transform: translateY(-1px);
+  background: linear-gradient(135deg, #f5f3ff 0%, #ffffff 45%, #ede9fe 100%);
+  box-shadow: 0 8px 28px rgba(167, 139, 250, 0.55), inset 0 1px 2px rgba(255, 255, 255, 0.95);
+  transform: translateY(-2px);
 }
 
 .auth-primary:active:not(:disabled) {
-  transform: translateY(0);
+  transform: translateY(0) scale(0.99);
 }
 
 .auth-primary > span:last-child {
@@ -749,11 +904,21 @@
 /* --------------------------------------------------------------------------
    Responsive Media Queries
    -------------------------------------------------------------------------- */
-@media (max-width: 960px) {
+@media (max-width: 960px), (max-height: 600px) {
+  .auth-page {
+    height: auto;
+    min-height: 100vh;
+    min-height: 100dvh;
+    max-height: none;
+    overflow-y: auto;
+    align-items: flex-start;
+    padding: 24px 18px;
+  }
   .auth-shell {
     flex-direction: column;
     align-items: center;
-    gap: 32px;
+    gap: 24px;
+    margin: auto 0;
   }
   .auth-story {
     --story-ink: #d8d0f0;
@@ -768,19 +933,23 @@
   }
   .auth-brand-subtitle { padding-left: 0; }
   .auth-story-body {
-    margin-top: 16px;
+    margin-top: 14px;
   }
   .auth-eyebrow {
     justify-content: center;
   }
   .auth-story h1 {
-    font-size: 34px;
+    font-size: 32px;
   }
   .auth-tagline {
+    margin-top: 10px;
+  }
+  .auth-persona-chips {
+    justify-content: center;
     margin-top: 14px;
   }
   .auth-panel {
-    width: min(440px, 100%);
+    width: min(420px, 100%);
   }
 }
 
@@ -883,6 +1052,120 @@
   .auth-page *::after,
   .account-menu * {
     transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   3D Motion, Atmospheric Motes, and Card Tilt
+   -------------------------------------------------------------------------- */
+.auth-atmosphere {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.auth-atmosphere i {
+  position: absolute;
+  width: 3.5px;
+  height: 3.5px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 0 14px 3px rgba(196, 181, 253, 0.45);
+  animation: auth-mote 16s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+.auth-atmosphere i:nth-child(1) { left: 14%; top: 22%; animation-delay: 0s; }
+.auth-atmosphere i:nth-child(2) { left: 52%; top: 68%; animation-delay: -5s; }
+.auth-atmosphere i:nth-child(3) { left: 84%; top: 15%; animation-delay: -9s; }
+.auth-atmosphere i:nth-child(4) { left: 34%; top: 40%; animation-delay: -7s; }
+.auth-atmosphere i:nth-child(5) { left: 70%; top: 48%; animation-delay: -12s; }
+.auth-atmosphere i:nth-child(6) { left: 90%; top: 75%; animation-delay: -3s; }
+.auth-atmosphere i:nth-child(7) { left: 10%; top: 78%; animation-delay: -14s; }
+
+.auth-panel {
+  transform: perspective(1000px) rotateX(var(--card-x, 0deg)) rotateY(var(--card-y, 0deg));
+  transform-origin: center center;
+  transition: transform 0.12s ease-out, border-color 0.25s ease, box-shadow 0.25s ease;
+  animation: auth-card-arrive 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .auth-login-motion :is(.auth-primary, .auth-google) {
+    transition: transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 260ms ease, background 260ms ease;
+  }
+  .auth-login-motion :is(.auth-primary, .auth-google):hover:not(:disabled) {
+    transform: translateY(-2px);
+  }
+  .auth-login-motion :is(.auth-primary, .auth-google):active:not(:disabled) {
+    transform: translateY(0) scale(0.99);
+  }
+  .auth-login-motion .auth-input-wrapper {
+    transition: transform 220ms ease;
+  }
+  .auth-login-motion .auth-input-wrapper:focus-within {
+    transform: translateY(-1px);
+  }
+  .auth-login-motion .auth-form input:hover:not(:disabled):not(:focus) {
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+}
+
+.auth-login-motion .auth-input-icon {
+  transition: color 220ms ease;
+}
+
+.auth-motion-paused *,
+.auth-motion-paused *::after {
+  animation-play-state: paused !important;
+}
+
+@keyframes auth-card-arrive {
+  from {
+    opacity: 0;
+    transform: perspective(1000px) translateY(24px) rotateX(var(--card-x, 0deg)) rotateY(var(--card-y, 0deg));
+  }
+  to {
+    opacity: 1;
+    transform: perspective(1000px) translateY(0) rotateX(var(--card-x, 0deg)) rotateY(var(--card-y, 0deg));
+  }
+}
+
+@keyframes auth-mote {
+  from {
+    opacity: 0.15;
+    transform: translate3d(-4px, 10px, 0);
+  }
+  to {
+    opacity: 0.65;
+    transform: translate3d(6px, -16px, 0);
+  }
+}
+
+@media (max-width: 640px), (pointer: coarse) {
+  .auth-atmosphere i:nth-child(n + 4) {
+    display: none;
+  }
+  .auth-bg-layer {
+    transform: none !important;
+  }
+  .auth-panel {
+    transform: none !important;
+    animation: auth-arrive 500ms ease-out both;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-bg-layer {
+    transform: none !important;
+  }
+  .auth-panel {
+    transform: none !important;
+  }
+  .auth-atmosphere i {
     animation: none !important;
   }
 }
