@@ -14,7 +14,8 @@
   max-height: 100vh;
   max-height: 100dvh;
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   background-color: #060814;
   isolation: isolate;
   color: var(--auth-ink);
@@ -342,9 +343,9 @@
   flex-shrink: 0;
   border-radius: 26px;
   position: relative;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.03) 40%, rgba(255, 255, 255, 0.07) 100%), rgba(12, 15, 30, 0.6);
-  backdrop-filter: blur(24px) saturate(190%);
-  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.025) 45%, rgba(180, 190, 255, 0.06)), rgba(12, 15, 30, 0.28);
+  backdrop-filter: blur(18px) saturate(145%);
+  -webkit-backdrop-filter: blur(18px) saturate(145%);
   border: 1px solid rgba(255, 255, 255, 0.22);
   box-shadow:
     0 24px 60px rgba(0, 0, 0, 0.48),
@@ -906,10 +907,11 @@
    -------------------------------------------------------------------------- */
 @media (max-width: 960px), (max-height: 600px) {
   .auth-page {
-    height: auto;
-    min-height: 100vh;
-    min-height: 100dvh;
-    max-height: none;
+    height: 100dvh;
+    min-height: 0;
+    max-height: 100dvh;
+    width: 100%;
+    perspective: none;
     overflow-y: auto;
     align-items: flex-start;
     padding: 24px 18px;
@@ -918,12 +920,15 @@
     flex-direction: column;
     align-items: center;
     gap: 24px;
-    margin: auto 0;
+    margin: 0 auto;
+    min-width: 0;
   }
   .auth-story {
     --story-ink: #d8d0f0;
     --story-muted: #c1bad7;
     --story-accent: #bca5e8;
+    flex: none;
+    min-width: 0;
     max-width: 100%;
     align-items: center;
     text-align: center;
@@ -955,7 +960,7 @@
 
 @media (max-width: 640px) {
   .auth-page {
-    padding: 24px 18px;
+    padding: max(20px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
     display: block;
     background:
       linear-gradient(180deg, rgba(8, 10, 18, 0.38) 0%, rgba(8, 10, 18, 0.42) 100%),
@@ -965,12 +970,13 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 24px;
+    gap: 20px;
     padding: 0;
     width: 100%;
   }
   .auth-story {
     width: 100%;
+    max-width: 440px;
     padding: 4px 0 0;
     align-items: center;
     text-align: center;
@@ -986,34 +992,77 @@
     color: var(--story-muted);
   }
   .auth-story-body {
-    margin-top: 8px;
+    margin-top: 12px;
+    width: 100%;
+    min-width: 0;
   }
   .auth-eyebrow,
   .auth-tagline {
     display: none;
   }
   .auth-story h1 {
-    margin: 6px 0 0;
-    font-size: clamp(26px, 7vw, 34px);
-    letter-spacing: -1px;
-    line-height: 1.25;
-    color: var(--story-ink);
+    margin: 0 auto;
+    font-size: clamp(25px, 6.6vw, 32px);
+    letter-spacing: -0.7px;
+    line-height: 1.15;
+    color: #f8fafc;
+    text-align: center;
+    text-wrap: balance;
   }
-  .auth-story h1 br {
-    display: none;
+  .auth-persona-chips {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: min(340px, 100%);
+    margin: 16px auto 0;
+    gap: 6px;
   }
-  .auth-story h1 br::after {
-    content: " ";
+  .auth-persona-chip {
+    min-width: 0;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    padding: 9px 4px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.045);
+  }
+  .auth-persona-chip .chip-info {
+    text-align: center;
+    gap: 2px;
+  }
+  .auth-persona-chip .chip-info span {
+    font-size: 9px;
+    color: #cbd5e1;
   }
   .auth-panel {
-    padding: 24px;
+    padding: 20px clamp(16px, 5vw, 24px);
     width: min(440px, 100%);
     border-radius: 24px;
   }
   .auth-panel h2 {
-    font-size: 25px;
+    font-size: clamp(22px, 6vw, 26px);
+    text-wrap: balance;
+  }
+  .auth-panel-intro {
+    letter-spacing: 1.5px;
+    margin-bottom: 14px;
+  }
+  .auth-description {
+    font-size: 12px;
+    line-height: 1.6;
+    margin-bottom: 16px;
+  }
+  .auth-form fieldset {
+    gap: 12px;
+  }
+  .auth-field label {
+    font-size: 12px;
+  }
+  .auth-google,
+  .auth-primary {
+    min-height: 46px;
   }
   .auth-form input {
+    height: 46px;
     font-size: 16px; /* Prevents auto-zoom in mobile Safari */
   }
   .auth-footer {

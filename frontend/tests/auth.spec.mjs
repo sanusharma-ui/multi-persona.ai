@@ -244,12 +244,15 @@ test("failed token processing cannot reset a previously signed-in account", asyn
 for (const viewport of [{ width: 1440, height: 740 }, { width: 390, height: 844 }, { width: 320, height: 568 }]) {
   test(`signup scrolls upward and its bottom stays reachable at ${viewport.width}x${viewport.height}`, async ({ page }) => {
     await mockAuth(page);
+    await page.emulateMedia({ reducedMotion: "reduce" });
     await page.setViewportSize(viewport);
     await page.goto("/");
     await page.getByRole("button", { name: "Create an account" }).click();
     const panel = page.locator(".auth-panel");
-    // A fitting card can reach the scroll limit before its requested 24px inset.
-    await expect.poll(async () => (await panel.boundingBox()).y).toBeLessThanOrEqual(64);
+    // A fitting card reaches the scroll limit with its bottom at the page padding.
+    const bottomPadding = await page.locator(".auth-page").evaluate(node => parseFloat(getComputedStyle(node).paddingBottom));
+    const fittingCardTop = viewport.height - (await panel.boundingBox()).height - bottomPadding;
+    await expect.poll(async () => (await panel.boundingBox()).y).toBeLessThanOrEqual(Math.max(64, fittingCardTop + 1));
     await expect.poll(async () => (await panel.boundingBox()).y).toBeGreaterThanOrEqual(0);
     const scroller = page.locator(".auth-page");
     expect(await scroller.evaluate(node => node.clientHeight <= innerHeight && node.scrollHeight > node.clientHeight)).toBe(true);
@@ -264,6 +267,7 @@ for (const viewport of [{ width: 1440, height: 740 }, { width: 390, height: 844 
 
 test("desktop and mobile auth screens remain usable and do not overflow", async ({ page }, testInfo) => {
   await mockAuth(page);
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Welcome back." })).toBeVisible();
