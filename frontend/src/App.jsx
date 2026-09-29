@@ -13,7 +13,7 @@ import AuthScreen from "./components/auth/AuthScreen";
 
 export default function App() {
   const auth = useAuth();
-  if (auth.loading) return <div className="auth-loading" role="status"><img src="/shifts.png" alt="Shifts" /><p>Getting your space ready…</p></div>;
+  if (auth.loading) return <div className="auth-loading" role="status"><div className="auth-loading-orbit" aria-hidden="true"><span /></div><p>Getting your space ready…</p></div>;
   if (!auth.session || auth.recovery) return <AuthScreen auth={auth} />;
   return <ChatApp key={auth.session.user.id} user={auth.session.user} />;
 }

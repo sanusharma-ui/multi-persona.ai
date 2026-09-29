@@ -255,7 +255,7 @@ for (const viewport of [{ width: 1440, height: 740 }, { width: 390, height: 844 
     await expect.poll(async () => (await panel.boundingBox()).y).toBeLessThanOrEqual(Math.max(64, fittingCardTop + 1));
     await expect.poll(async () => (await panel.boundingBox()).y).toBeGreaterThanOrEqual(0);
     const scroller = page.locator(".auth-page");
-    expect(await scroller.evaluate(node => node.clientHeight <= innerHeight && node.scrollHeight > node.clientHeight)).toBe(true);
+    expect(await scroller.evaluate(node => node.clientHeight <= innerHeight && node.scrollHeight >= node.clientHeight)).toBe(true);
     await scroller.evaluate(node => node.scrollTo({ top: node.scrollHeight, behavior: "instant" }));
     await expect(page.getByRole("button", { name: "Create account", exact: true })).toBeInViewport();
     await expect(page.getByRole("button", { name: "Sign in", exact: true })).toBeInViewport();

@@ -333,13 +333,24 @@ export default function AuthScreen({ auth }) {
 
       <div className="auth-shell">
         <aside className="auth-story" aria-label="Welcome to Shifts">
+          {/* Mobile/Tablet Panoramic Character Portal Backdrop */}
+          <div className="auth-story-backdrop" aria-hidden="true">
+            <div className="auth-story-art" />
+            <div className="auth-story-scrim" />
+          </div>
+
           <div className="auth-brand-block">
             <a className="auth-brand" href={import.meta.env.BASE_URL}>
-              <img src="/shifts.png" alt="" />
               <span>Shifts<span className="auth-brand-dot">.</span></span>
             </a>
-            <span className="auth-brand-subtitle">AI MULTIVERSE</span>
+            <span className="auth-brand-subtitle">
+              <span className="auth-brand-pulse" aria-hidden="true" />
+              AI MULTIVERSE
+            </span>
           </div>
+
+          {/* Unobstructed Mobile Character Window Spacer */}
+          <div className="auth-story-window" aria-hidden="true" />
 
           <div className="auth-story-body">
             <div className="auth-eyebrow">
@@ -356,6 +367,7 @@ export default function AuthScreen({ auth }) {
             {/* Aesthetic Persona Showcase Chips */}
             <div className="auth-persona-chips" aria-label="Featured AI Personas">
               <div className="auth-persona-chip persona-chip-seven" title="Seven: Celestial Wonder & Empathy">
+                <span className="chip-glow-ring" />
                 <span className="chip-orb">✦</span>
                 <div className="chip-info">
                   <strong>Seven</strong>
@@ -363,6 +375,7 @@ export default function AuthScreen({ auth }) {
                 </div>
               </div>
               <div className="auth-persona-chip persona-chip-neo" title="Neo: Code Architect & Creator">
+                <span className="chip-glow-ring" />
                 <span className="chip-orb">&lt;/&gt;</span>
                 <div className="chip-info">
                   <strong>Neo</strong>
@@ -370,6 +383,7 @@ export default function AuthScreen({ auth }) {
                 </div>
               </div>
               <div className="auth-persona-chip persona-chip-nyra" title="Nyra: Unfiltered Ideas & Depths">
+                <span className="chip-glow-ring" />
                 <span className="chip-orb">✳</span>
                 <div className="chip-info">
                   <strong>Nyra</strong>
@@ -381,11 +395,13 @@ export default function AuthScreen({ auth }) {
         </aside>
 
         <section className="auth-panel" aria-label="Your account" ref={panelRef}>
+          <div className="auth-panel-beam" aria-hidden="true" />
           <div className="auth-panel-sheen" aria-hidden="true" />
           <div className="auth-panel-intro" aria-hidden="true">
             <span className="auth-orbit"><span /></span>
-            <span>YOUR WORLD AWAITS</span>
+            <span className="auth-intro-badge">YOUR WORLD AWAITS</span>
             <span className="auth-intro-line" />
+            <span className="auth-intro-spark">✦</span>
           </div>
           <div className="auth-form-wrap" key={screen}>
             {(screen === "forgot" || screen === "reset") && (
