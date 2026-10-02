@@ -1,6 +1,6 @@
 import AccountMenu from "../auth/AccountMenu";
 
-export default function ChatHeader({ currentAvatar, currentPersonaName, setHistoryOpen, setIsGalleryOpen, clearChat, isDarkMode, setIsDarkMode, user, onBeforeSignOut }) {
+export default function ChatHeader({ isAssistant, switchMode, currentAvatar, currentPersonaName, setHistoryOpen, setIsGalleryOpen, clearChat, isDarkMode, setIsDarkMode, user, onBeforeSignOut }) {
   return (
       <header className="header">
         <div className="header-content">
@@ -14,7 +14,8 @@ export default function ChatHeader({ currentAvatar, currentPersonaName, setHisto
 
           <div className="header-right">
             <button className="top-action" onClick={() => setHistoryOpen(true)} aria-haspopup="dialog">History</button>
-            <button
+            <button className="top-action mode-switch" onClick={switchMode} aria-label={isAssistant ? "Switch to Personas mode" : "Switch to Chatbot mode"}>{isAssistant ? "Personas" : "Chatbot"}</button>
+            {!isAssistant && <button
               className="shift-trigger"
               onClick={() => setIsGalleryOpen(true)}
               aria-haspopup="dialog"
@@ -22,7 +23,7 @@ export default function ChatHeader({ currentAvatar, currentPersonaName, setHisto
             >
               <span>Choose Shift</span>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m6 9 6 6 6-6" /></svg>
-            </button>
+            </button>}
 
             <button
               className="top-action"

@@ -58,6 +58,120 @@ async function login(page, email = alice.email, password = "Password123!") {
   await expect(page.getByRole("button", { name: "Your account" })).toBeVisible();
 }
 
+test("chatbot confirmation, isolated context, history restore, code and mobile layout", async ({ page }) => {
+  test.setTimeout(90000);
+  await mockAuth(page);
+  const assistantCalls = [];
+  await page.route("**/test-api/assistant/chat", (route) => {
+    assistantCalls.push(route.request().postDataJSON());
+    return route.fulfill({ json: { reply: "Here is your code:\n\n```python\nprint('hello')\n```\n\n```\nplain block\n```" } });
+  });
+  await page.goto("/");
+  await login(page);
+  await page.getByRole("textbox").fill("Persona private memory");
+  await page.getByRole("button", { name: "Send message", exact: true }).click();
+  await expect(page.getByText("Hello from your Shift.", { exact: true })).toBeVisible();
+  await page.getByRole("textbox").fill("Unsent draft");
+  page.once("dialog", (dialog) => dialog.dismiss());
+  await page.getByRole("button", { name: "Switch to Chatbot mode" }).click();
+  await expect(page.getByRole("textbox")).toHaveValue("Unsent draft");
+  page.once("dialog", (dialog) => { expect(dialog.message()).toContain("stay saved in History"); return dialog.accept(); });
+  await page.getByRole("button", { name: "Switch to Chatbot mode" }).click();
+  await expect(page.getByRole("heading", { name: "What can I help you with?" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Council/ })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Choose a Shift" })).toHaveCount(0);
+  await page.getByLabel("Message Assistant").fill("Explain this code " + "x".repeat(2100));
+  await page.getByRole("button", { name: "Send message", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Copy", exact: true })).toHaveCount(2);
+  expect(assistantCalls[0].history).toEqual([]);
+  await page.getByLabel("Message Assistant").fill("Can you improve it?");
+  await page.getByRole("button", { name: "Send message", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Copy", exact: true })).toHaveCount(4);
+  expect(assistantCalls[1].history).toHaveLength(2);
+  expect(JSON.stringify(assistantCalls)).not.toContain("Persona private memory");
+  await page.getByRole("button", { name: "Regenerate", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Copy", exact: true })).toHaveCount(4);
+  expect(assistantCalls[2].history).toEqual(assistantCalls[1].history);
+  await page.reload();
+  await expect(page.getByLabel("Message Assistant")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Copy", exact: true })).toHaveCount(4);
+  page.once("dialog", (dialog) => dialog.dismiss());
+  await page.getByRole("button", { name: "Switch to Personas mode" }).click();
+  await expect(page.getByLabel("Message Assistant")).toBeVisible();
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.getByRole("button", { name: "Switch to Personas mode" }).click();
+  await expect(page.getByRole("heading", { name: "Every story starts somewhere." })).toBeVisible();
+  await page.getByRole("button", { name: "History", exact: true }).click();
+  await page.getByRole("button", { name: /Persona private memory.*messages/ }).click();
+  await expect(page.getByText("Persona private memory", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "History", exact: true }).click();
+  page.once("dialog", (dialog) => dialog.dismiss());
+  await page.getByRole("button", { name: /Explain this code.*messages/ }).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.getByRole("button", { name: /Explain this code.*messages/ }).click();
+  await expect(page.getByLabel("Message Assistant")).toBeVisible();
+  await page.setViewportSize({ width: 375, height: 812 });
+  await expect(page.getByRole("button", { name: "Switch to Personas mode" })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.locator(".chat-messages").evaluate((element) => { element.scrollTop = element.scrollHeight; });
+  await page.screenshot({ path: "test-results/assistant-mobile.png", fullPage: true });
+});
+
+test("switch stops in-flight replies and storage failure prevents mode change", async ({ page }) => {
+  await mockAuth(page);
+  let finish;
+  const pending = new Promise((resolve) => { finish = resolve; });
+  await page.route("**/test-api/assistant/chat", async (route) => {
+    await pending;
+    await route.fulfill({ json: { reply: "Late assistant reply" } }).catch(() => {});
+  });
+  await page.goto("/");
+  await login(page);
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.getByRole("button", { name: "Switch to Chatbot mode" }).click();
+  await page.getByLabel("Message Assistant").fill("Slow request");
+  await page.getByRole("button", { name: "Send message", exact: true }).click();
+  await expect(page.getByRole("status", { name: "Assistant is thinking" })).toBeVisible();
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.getByRole("button", { name: "Switch to Personas mode" }).click();
+  finish();
+  await expect(page.getByRole("heading", { name: "Every story starts somewhere." })).toBeVisible();
+  await expect(page.getByText("Late assistant reply", { exact: true })).toHaveCount(0);
+  await page.evaluate(() => { Storage.prototype.setItem = () => { throw new DOMException("Full", "QuotaExceededError"); }; });
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.getByRole("button", { name: "Switch to Chatbot mode" }).click();
+  await expect(page.getByLabel("Message your Shift")).toBeVisible();
+  await expect(page.getByRole("alert")).toContainText("History could not be saved");
+});
+
+test("legacy persona history migrates without loss and tab conflicts block switching", async ({ page }) => {
+  test.setTimeout(60000);
+  await mockAuth(page);
+  await page.addInitScript((userId) => {
+    localStorage.setItem(`shifts-conversations-v2:${userId}`, JSON.stringify({ active: "old-chat", chats: [{
+      id: "old-chat", context: "old-context", title: "Existing conversation", updated: 1,
+      messages: [{ id: "u1", role: "user", content: "Old question" }, { id: "a1", role: "assistant", persona: "neo", content: "Old answer" }],
+    }] }));
+  }, alice.id);
+  await page.goto("/");
+  await login(page);
+  await expect(page.getByText("Old answer", { exact: true })).toBeVisible();
+  await expect(page.locator(".current-persona-name")).toHaveText("Neo");
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.getByRole("button", { name: "Switch to Chatbot mode" }).click();
+  const stored = await page.evaluate((userId) => JSON.parse(localStorage.getItem(`shifts-conversations-v2:${userId}`)), alice.id);
+  const old = stored.chats.find((chat) => chat.id === "old-chat");
+  expect(old.context).toBe("old-context");
+  expect(old.messages[1].content).toBe("Old answer");
+  expect(old.mode).toBe("personas");
+  await page.evaluate((userId) => window.dispatchEvent(new StorageEvent("storage", { key: `shifts-conversations-v2:${userId}` })), alice.id);
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.getByRole("button", { name: "Switch to Personas mode" }).click();
+  await expect(page.getByLabel("Message Assistant")).toBeVisible();
+  await expect(page.getByRole("alert")).toContainText("another tab");
+});
+
 test("email login, authenticated request, account isolation, logout and session restore", async ({ page }) => {
   const { calls } = await mockAuth(page);
   await page.goto("/");

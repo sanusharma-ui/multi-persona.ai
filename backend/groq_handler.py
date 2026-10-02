@@ -593,6 +593,7 @@ def extract_first_image_from_messages(messages: List[Dict[str, Any]]) -> Tuple[O
 def safe_gemini_call(
     messages: List[Dict[str, Any]],
     model: str = GEMINI_TEXT_MODEL,
+    max_output_tokens: int = 3500,
 ) -> str:
     if gemini_client is None:
         raise RuntimeError("Gemini client is not available.")
@@ -605,7 +606,7 @@ def safe_gemini_call(
         config=types.GenerateContentConfig(
             temperature=0.7,
             top_p=0.9,
-            max_output_tokens=3500,
+            max_output_tokens=max_output_tokens,
         ),
     )
 
@@ -625,6 +626,7 @@ def safe_gemini_call(
 def safe_gemini_image_call(
     messages: List[Dict[str, Any]],
     model: str = GEMINI_IMAGE_MODEL,
+    max_output_tokens: int = 3500,
 ) -> str:
     if gemini_client is None:
         raise RuntimeError("Gemini client is not available.")
@@ -647,7 +649,7 @@ def safe_gemini_image_call(
         config=types.GenerateContentConfig(
             temperature=0.6,
             top_p=0.9,
-            max_output_tokens=3500,
+            max_output_tokens=max_output_tokens,
         ),
     )
 
@@ -674,12 +676,13 @@ def safe_groq_call(
     client: Groq,
     messages: List[Dict[str, Any]],
     model: str,
+    max_output_tokens: int = 3500,
 ) -> str:
     completion = client.chat.completions.create(
         model=model,
         messages=messages,
         temperature=0.7,
-        max_tokens=3500,
+        max_tokens=max_output_tokens,
         top_p=0.9,
     )
 
@@ -706,12 +709,13 @@ def safe_groq_image_call(
     client: Groq,
     messages: List[Dict[str, Any]],
     model: str = GROQ_IMAGE_FALLBACK_MODEL,
+    max_output_tokens: int = 3500,
 ) -> str:
     completion = client.chat.completions.create(
         model=model,
         messages=messages,
         temperature=0.6,
-        max_tokens=3500,
+        max_tokens=max_output_tokens,
         top_p=0.9,
     )
 
@@ -726,13 +730,15 @@ def safe_groq_image_call(
 # --------------------
 # LLM router
 # --------------------
-def call_llm_with_fallback(messages: List[Dict[str, Any]]) -> str:
+def call_llm_with_fallback(messages: List[Dict[str, Any]], max_output_tokens: int = 3500) -> str:
+    # Preserve the existing persona provider contract unless explicitly overridden.
+    options = {"max_output_tokens": max_output_tokens} if max_output_tokens != 3500 else {}
     is_image_request = has_image_message(messages)
 
     if is_image_request:
         try:
             logger.info("Image request detected. Trying Gemini image model: %s", GEMINI_IMAGE_MODEL)
-            return safe_gemini_image_call(messages, GEMINI_IMAGE_MODEL)
+            return safe_gemini_image_call(messages, GEMINI_IMAGE_MODEL, **options)
 
         except Exception as gemini_image_error:
             error_text = str(gemini_image_error).lower()
@@ -751,7 +757,7 @@ def call_llm_with_fallback(messages: List[Dict[str, Any]]) -> str:
 
         try:
             logger.info("Trying Groq image fallback model: %s", GROQ_IMAGE_FALLBACK_MODEL)
-            return safe_groq_image_call(groq_client, messages, GROQ_IMAGE_FALLBACK_MODEL)
+            return safe_groq_image_call(groq_client, messages, GROQ_IMAGE_FALLBACK_MODEL, **options)
 
         except Exception as groq_image_error:
             logger.error("Groq image fallback failed: %s", groq_image_error)
@@ -761,7 +767,7 @@ def call_llm_with_fallback(messages: List[Dict[str, Any]]) -> str:
     for model in MODEL_PRIORITY:
         try:
             logger.info("Text request. Trying Groq model: %s", model)
-            return safe_groq_call(groq_client, messages, model)
+            return safe_groq_call(groq_client, messages, model, **options)
 
         except Exception as groq_error:
             logger.error("Groq text model failed: %s | Error: %s", model, groq_error)
@@ -773,7 +779,7 @@ def call_llm_with_fallback(messages: List[Dict[str, Any]]) -> str:
 
     try:
         logger.warning("All Groq text models failed. Falling back to Gemini text model: %s", GEMINI_TEXT_MODEL)
-        return safe_gemini_call(messages, GEMINI_TEXT_MODEL)
+        return safe_gemini_call(messages, GEMINI_TEXT_MODEL, **options)
 
     except Exception as gemini_text_error:
         logger.error("Gemini text fallback failed: %s", gemini_text_error)

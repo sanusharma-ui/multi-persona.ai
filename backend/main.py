@@ -24,6 +24,7 @@ from backend.groq_handler import (
     save_persona_memory
 )
 from backend.auth import authenticate
+from backend.assistant import router as assistant_router
 from backend.character_service import characters
 
 # Setup logging
@@ -35,6 +36,7 @@ app = FastAPI(
     description="Aisha: multi-persona AI system. Uses Groq under the hood.",
     version="2.2"
 )
+app.include_router(assistant_router)
 
 @app.middleware("http")
 async def require_account(request: Request, call_next):

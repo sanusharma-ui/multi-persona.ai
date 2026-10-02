@@ -6,12 +6,15 @@ import { oneDark } from "react-syntax-highlighter/dist/cjs/styles/prism";
 
 function CodeBlock({ language, code }) {
   const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState(false);
 
   const handleCopy = useCallback(() => {
+    if (!navigator.clipboard) { setCopyError(true); return; }
     navigator.clipboard.writeText(code).then(() => {
+      setCopyError(false);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    });
+    }).catch(() => setCopyError(true));
   }, [code]);
 
   return (
@@ -38,6 +41,7 @@ function CodeBlock({ language, code }) {
           )}
         </button>
       </div>
+      {copyError && <p role="status">Copy unavailable. Select the code to copy it manually.</p>}
       <SyntaxHighlighter
         language={language}
         style={oneDark}
@@ -62,16 +66,13 @@ export default function MarkdownMessage({ message }) {
     <ReactMarkdown
       remarkPlugins={[remarkGfm]}
       components={{
-        code({ inline, className, children }) {
-          const match = /language-(\w+)/.exec(className || "");
-          const code = String(children).replace(/\n$/, "");
-
-          if (!inline && match) {
-            return <CodeBlock language={match[1]} code={code} />;
-          }
-
-          return <code className="inline-code">{children}</code>;
+        pre({ children }) {
+          const child = React.Children.toArray(children)[0];
+          if (!React.isValidElement(child)) return <pre>{children}</pre>;
+          const match = /language-([^\s]+)/.exec(child.props.className || "");
+          return <CodeBlock language={match?.[1] || "text"} code={String(child.props.children).replace(/\n$/, "")} />;
         },
+        code: ({ children, className }) => <code className={className || "inline-code"}>{children}</code>,
       }}
     >
       {message}

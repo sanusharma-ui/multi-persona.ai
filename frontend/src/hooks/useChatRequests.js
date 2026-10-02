@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { newId } from "./useConversations";
 import { revealResponse } from "../lib/revealResponse";
 import { getAccessToken, supabase } from "../lib/auth";
+import { assistantContext } from "../lib/assistantContext";
 
 export default function useChatRequests({ history, backendUrl, userId, language }) {
   const [loading, setLoading] = useState(false);
@@ -24,6 +25,12 @@ export default function useChatRequests({ history, backendUrl, userId, language 
     const controller = new AbortController();
     activeRequest.current = controller;
     const context = history.active.context;
+    const isAssistant = history.active.mode === "assistant";
+    if (members.some((member) => (member === "assistant") !== isAssistant)) {
+      activeRequest.current = null;
+      return;
+    }
+    const transcript = isAssistant ? assistantContext(history.messages, retryId) : undefined;
     const timestamp = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     const council = members.length > 1 || history.messages.find((m) => m.id === retryId)?.council;
     const replies = members.map((persona) => ({
@@ -53,11 +60,12 @@ export default function useChatRequests({ history, backendUrl, userId, language 
             body.append("file", blob, "image");
             body.append("message", text);
             body.append("language", language);
-            path = "/chat/image?mode=" + encodeURIComponent(reply.persona);
+            if (isAssistant) body.append("history", JSON.stringify(transcript));
+            path = isAssistant ? "/assistant/image" : "/chat/image?mode=" + encodeURIComponent(reply.persona);
           } else {
             headers["Content-Type"] = "application/json";
-            body = JSON.stringify({ message: text, language });
-            path = "/chat?mode=" + encodeURIComponent(reply.persona);
+            body = JSON.stringify({ message: text, language, ...(isAssistant ? { history: transcript } : {}) });
+            path = isAssistant ? "/assistant/chat" : "/chat?mode=" + encodeURIComponent(reply.persona);
           }
           const response = await fetch(backendUrl + path, { method: "POST", headers, body, signal: memberController.signal });
           const data = await response.json().catch(() => ({}));
@@ -71,7 +79,7 @@ export default function useChatRequests({ history, backendUrl, userId, language 
           if (!response.ok) throw new Error(typeof data.detail === "string" ? data.detail : "Request failed (" + response.status + "). Please retry.");
           if (!data.reply) throw new Error("No response received. Please retry.");
           if (activeRequest.current !== controller) return;
-          await revealResponse(String(data.reply), memberController.signal, (content) => {
+          if (!isAssistant) await revealResponse(String(data.reply), memberController.signal, (content) => {
             if (activeRequest.current !== controller) return;
             history.setMessages((prev) => prev.map((m) => m.id === reply.id
               ? { ...m, pending: false, isTyping: true, failed: false, content } : m), { persist: false });

@@ -31,6 +31,7 @@ def handler(monkeypatch, tmp_path):
     module.emotion_engine.get_injected_prompt.return_value = "Neutral delivery."
     module.emotion_engine.get_cache_signature.return_value = "neutral"
     module.is_user_rate_limited = Mock(return_value=False)
+    module.real_router = module.call_llm_with_fallback
     module.call_llm_with_fallback = Mock(return_value="Grounded test reply.")
     module.fetch_knowledge_context = Mock(return_value={"found": False, "kb_sig": "none"})
     module.get_cached_response = Mock(return_value=None)
@@ -77,3 +78,29 @@ def test_changed_lore_invalidates_response_cache(handler, monkeypatch):
     second_key = handler.get_cached_response.call_args.args[0]
     assert first_key != second_key
     assert "Updated Observatory" in handler.call_llm_with_fallback.call_args.args[0][0]["content"]
+
+
+def test_assistant_budget_survives_text_and_image_fallback(handler, monkeypatch):
+    monkeypatch.setattr(handler, "MODEL_PRIORITY", ["test-model"])
+    handler.safe_groq_call = Mock(side_effect=RuntimeError("unavailable"))
+    handler.safe_gemini_call = Mock(return_value="text fallback")
+    messages = [{"role": "user", "content": "hello"}]
+    assert handler.real_router(messages, max_output_tokens=8192) == "text fallback"
+    assert handler.safe_groq_call.call_args.kwargs == {"max_output_tokens": 8192}
+    assert handler.safe_gemini_call.call_args.kwargs == {"max_output_tokens": 8192}
+    handler.real_router(messages)
+    assert handler.safe_groq_call.call_args.kwargs == {}
+    assert handler.safe_gemini_call.call_args.kwargs == {}
+    handler.safe_gemini_image_call = Mock(side_effect=RuntimeError("unavailable"))
+    handler.safe_groq_image_call = Mock(return_value="image fallback")
+    images = [{"role": "user", "content": [{"type": "image_url", "image_url": {"url": "data:image/jpeg;base64,test"}}]}]
+    assert handler.real_router(images, max_output_tokens=8192) == "image fallback"
+    assert handler.safe_groq_image_call.call_args.kwargs == {"max_output_tokens": 8192}
+
+
+def test_provider_defaults_and_assistant_token_override(handler):
+    handler.groq_client.chat.completions.create.return_value.choices = [Mock(message=Mock(content="Hello"))]
+    handler.safe_groq_call(handler.groq_client, [], "test-model")
+    assert handler.groq_client.chat.completions.create.call_args.kwargs["max_tokens"] == 3500
+    handler.safe_groq_call(handler.groq_client, [], "test-model", max_output_tokens=8192)
+    assert handler.groq_client.chat.completions.create.call_args.kwargs["max_tokens"] == 8192

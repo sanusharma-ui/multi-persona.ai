@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
+import { readPreference } from "../lib/preferences";
 
 export const newId = () => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-const fresh = () => ({ id: newId(), context: newId(), title: "New conversation", messages: [], updated: Date.now() });
+const fresh = (mode = "personas", persona = readPreference("selectedPersona") || "default") => ({ id: newId(), context: newId(), mode, persona, title: "New conversation", messages: [], updated: Date.now() });
 
 export default function useConversations(userId) {
   const storageKey = `shifts-conversations-v2:${userId}`;
@@ -10,7 +11,9 @@ export default function useConversations(userId) {
       const saved = JSON.parse(localStorage.getItem(storageKey));
       if (Array.isArray(saved?.chats) && saved.chats.length && saved.chats.every((c) => c && typeof c.id === "string" && typeof c.context === "string" && typeof c.title === "string" && Array.isArray(c.messages) && c.messages.every((m) => m && typeof m.content === "string"))) {
         return { ...saved, active: saved.chats.some((c) => c.id === saved.active) ? saved.active : saved.chats[0].id,
-          chats: saved.chats.map((c) => ({ ...c, messages: c.messages.map((m) => m.pending || m.isTyping
+          chats: saved.chats.map((c) => ({ ...c, mode: c.mode === "assistant" ? "assistant" : "personas",
+            persona: c.persona || [...c.messages].reverse().find((m) => m.persona)?.persona || readPreference("selectedPersona") || "default",
+            messages: c.messages.map((m) => m.pending || m.isTyping
             ? { ...m, pending: false, isTyping: false, failed: true, stopped: true,
                 content: m.isTyping && m.content ? m.content : "Response interrupted. Retry when ready." } : m) })) };
       }
@@ -21,6 +24,17 @@ export default function useConversations(userId) {
   const [storageError, setStorageError] = useState("");
   const current = useRef(store);
   const conflict = useRef(false);
+  const flush = () => {
+    if (conflict.current) return false;
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(current.current));
+      setStorageError("");
+      return true;
+    } catch {
+      setStorageError("History could not be saved. Free browser storage or copy your chat before switching modes.");
+      return false;
+    }
+  };
   const commit = (update, { persist = true } = {}) => {
     const next = update(current.current);
     current.current = next;
@@ -57,14 +71,16 @@ export default function useConversations(userId) {
     const first = messages.find((m) => m.role === "user");
     return { ...c, messages, updated: Date.now(), title: c.title === "New conversation" && first ? first.content.slice(0, 60) : c.title };
   }) }), options);
-  const create = () => commit((s) => { const chat = fresh(); return { active: chat.id, chats: [chat, ...s.chats] }; });
+  const create = (mode = active.mode, persona = active.persona) => commit((s) => { const chat = fresh(mode, persona); return { active: chat.id, chats: [chat, ...s.chats] }; });
+  const setPersona = (persona) => commit((s) => ({ ...s, chats: s.chats.map((c) => c.id === s.active ? { ...c, persona } : c) }));
   const select = (id) => commit((s) => ({ ...s, active: id }));
   const rename = (id, title) => commit((s) => ({ ...s, chats: s.chats.map((c) => c.id === id ? { ...c, title: title.trim().slice(0, 100) || c.title } : c) }));
   const remove = (id) => commit((s) => {
     const chats = s.chats.filter((c) => c.id !== id);
-    if (!chats.length) chats.push(fresh());
-    return { chats, active: s.active === id ? chats[0].id : s.active };
+    let next = chats.find((c) => c.mode === active.mode);
+    if (!next) { next = fresh(active.mode, active.persona); chats.unshift(next); }
+    return { chats, active: s.active === id ? next.id : s.active };
   });
   const clear = () => commit((s) => ({ ...s, chats: s.chats.map((c) => c.id === s.active ? { ...c, context: newId(), messages: [], title: "New conversation", updated: Date.now() } : c) }));
-  return { chats: store.chats, active, messages: active.messages, setMessages, create, select, rename, remove, clear, storageError };
+  return { chats: store.chats, active, messages: active.messages, setMessages, create, select, rename, remove, clear, setPersona, flush, storageError };
 }

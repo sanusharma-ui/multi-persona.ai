@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 
-export default function ChatComposer({ composerError, storageError, isCouncilMode, setIsCouncilMode, loading, isStreaming, regenerateLast, canRegenerate, stopResponse, imagePreview, onRemoveImage, handleImageUpload, input, setInput, sendMessage, currentPersonaName }) {
+export default function ChatComposer({ isAssistant, composerError, storageError, isCouncilMode, setIsCouncilMode, loading, isStreaming, regenerateLast, canRegenerate, stopResponse, imagePreview, onRemoveImage, handleImageUpload, input, setInput, sendMessage, currentPersonaName }) {
   const textareaRef = useRef(null);
   useEffect(() => {
     const field = textareaRef.current;
@@ -11,8 +11,9 @@ export default function ChatComposer({ composerError, storageError, isCouncilMod
   return (
       <div className="input-shell">
         {(composerError || storageError) && <p className="chat-notice" role="alert">{composerError || storageError}</p>}
+        {isAssistant && <p className="assistant-context-note">Memory stays in this conversation. Recent complete turns are used as context; older images need reattaching.</p>}
         <div className="quick-actions">
-          <button
+          {!isAssistant && <button
             className={`quick-btn council-toggle ${isCouncilMode ? "active" : ""}`}
             onClick={() => setIsCouncilMode((value) => !value)}
             disabled={loading || isStreaming}
@@ -20,7 +21,7 @@ export default function ChatComposer({ composerError, storageError, isCouncilMod
           >
             <span className="council-spark">✦</span>
             Council {isCouncilMode ? "on" : "off"}
-          </button>
+          </button>}
           <button
             className="quick-btn"
             onClick={regenerateLast}
@@ -75,7 +76,7 @@ export default function ChatComposer({ composerError, storageError, isCouncilMod
 
             <textarea
               ref={textareaRef}
-              aria-label="Message your Shift"
+              aria-label={isAssistant ? "Message Assistant" : "Message your Shift"}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {

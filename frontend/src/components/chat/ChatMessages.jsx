@@ -2,7 +2,7 @@ import { Fragment, useEffect, useRef } from "react";
 import MarkdownMessage from "./MarkdownMessage";
 import { PERSONA_BLURBS, SUGGESTION_CHIPS, welcomeMessages, personaAvatars, fallbackPersonaList } from "../../data/shifts";
 
-export default function ChatMessages({ messages, conversationId, selectedPersona, currentAvatar, currentPersonaName, personaList, coldStart, loading, onExplore, sendMessage, retryMessage }) {
+export default function ChatMessages({ isAssistant, messages, conversationId, selectedPersona, currentAvatar, currentPersonaName, personaList, coldStart, loading, onExplore, sendMessage, retryMessage }) {
   const scrollRef = useRef(null);
   const followLatest = useRef(true);
   const previousConversation = useRef(conversationId);
@@ -29,14 +29,14 @@ export default function ChatMessages({ messages, conversationId, selectedPersona
         {coldStart && <div className="cold-start" role="status"><div className="spinner" />Getting your response ready. The first reply may take a little longer.</div>}
         {!messages.length && <div className="empty-state">
           <div className="empty-avatar">{currentAvatar}</div>
-          <span className="empty-eyebrow">A CONVERSATION INTO THEIR WORLD</span>
-          <h2 className="empty-title">Every story starts somewhere.</h2>
-          <p className="empty-subtitle">{welcomeMessages[selectedPersona]?.en || welcomeMessages.default.en}</p>
+          <span className="empty-eyebrow">{isAssistant ? "A LITTLE HELP, A LOT OF POSSIBILITIES" : "A CONVERSATION INTO THEIR WORLD"}</span>
+          <h2 className="empty-title">{isAssistant ? "What can I help you with?" : "Every story starts somewhere."}</h2>
+          <p className="empty-subtitle">{isAssistant ? "Write, learn, plan or work through code. A fresh space, with its own conversation memory." : welcomeMessages[selectedPersona]?.en || welcomeMessages.default.en}</p>
           <div className="suggestion-chips">
-            {(SUGGESTION_CHIPS[selectedPersona] || SUGGESTION_CHIPS.default).map((chip) =>
+            {(isAssistant ? ["Help me debug some code", "Explain a tricky topic simply", "Help me write a clear email", "Turn my idea into a practical plan"] : SUGGESTION_CHIPS[selectedPersona] || SUGGESTION_CHIPS.default).map((chip) =>
               <button key={chip} className="suggestion-chip" onClick={() => sendMessage(chip)}>{chip}<span aria-hidden="true">↗</span></button>)}
           </div>
-          <button className="meet-shifts-link" onClick={onExplore}>Meet all Shifts <span>→</span></button>
+          {!isAssistant && <button className="meet-shifts-link" onClick={onExplore}>Meet all Shifts <span>→</span></button>}
         </div>}
         {messages.map((message, index) => {
           const avatar = personaAvatars[message.persona] || currentAvatar;
@@ -49,7 +49,7 @@ export default function ChatMessages({ messages, conversationId, selectedPersona
                   <div className="assistant-header">
                     <div className="assistant-avatar" aria-hidden="true">{avatar}</div>
                     <span className="assistant-name">{name}</span>
-                    <span className="reply-kind">{message.isTyping ? "Writing" : message.council ? "Council" : "Shift"}</span>
+                    <span className="reply-kind">{message.isTyping ? "Writing" : message.council ? "Council" : isAssistant ? "Assistant" : "Shift"}</span>
                     {!message.pending && !message.isTyping && (
                       <span className="message-time">{message.stopped ? "Stopped · " : ""}{message.timestamp}</span>
                     )}

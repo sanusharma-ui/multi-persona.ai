@@ -4,6 +4,7 @@ import useChatRequests from "./useChatRequests";
 import { readPreference, writePreference } from "../lib/preferences";
 import { fallbackPersonaList, personaAvatars } from "../data/shifts";
 import { backendUrl } from "../lib/config";
+import { ASSISTANT_INPUT_LIMIT } from "../lib/assistantContext";
 
 export default function useChatController(userId) {
   const [hasAgreed, setHasAgreed] = useState(
@@ -20,13 +21,14 @@ export default function useChatController(userId) {
   const [isDarkMode, setIsDarkMode] = useState(
     () => readPreference("darkMode") === "true",
   );
-  const [selectedPersona, setSelectedPersona] = useState(
-    readPreference("selectedPersona") || "default",
-  );
+  const isAssistant = history.active.mode === "assistant";
+  const selectedPersona = isAssistant ? "assistant" : history.active.persona;
+  const setSelectedPersona = history.setPersona;
   const [personaList, setPersonaList] = useState({});
 
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
-  const [isCouncilMode, setIsCouncilMode] = useState(false);
+  const [councilEnabled, setIsCouncilMode] = useState(false);
+  const isCouncilMode = !isAssistant && councilEnabled;
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(
     () => readPreference("shifts-onboarding-complete") !== "true",
   );
@@ -38,7 +40,7 @@ export default function useChatController(userId) {
   const requests = useChatRequests({ history, backendUrl, userId, language: selectedLanguage });
   const { loading } = requests;
   const isStreaming = messages.some((message) => message.isTyping);
-  const currentPersonaName = personaList[selectedPersona] || fallbackPersonaList[selectedPersona] || fallbackPersonaList.default;
+  const currentPersonaName = isAssistant ? "Assistant" : personaList[selectedPersona] || fallbackPersonaList[selectedPersona] || fallbackPersonaList.default;
   const coldStart = loading && !isStreaming && messages.some((m) => m.pending) && messages.filter((m) => m.role === "user").length === 1;
 
   const PERSONAS = useMemo(() => {
@@ -68,11 +70,11 @@ export default function useChatController(userId) {
   }, [isDarkMode]);
 
   useEffect(() => {
-    writePreference("selectedPersona", selectedPersona);
+    if (selectedPersona !== "assistant") writePreference("selectedPersona", selectedPersona);
   }, [selectedPersona]);
 
   const currentAvatar =
-    personaAvatars[selectedPersona] || personaAvatars.default;
+    isAssistant ? "✦" : personaAvatars[selectedPersona] || personaAvatars.default;
 
   const handleImageUpload = (event) => {
     const file = event.target.files?.[0];
@@ -115,6 +117,31 @@ export default function useChatController(userId) {
     }
   };
 
+  const confirmModeChange = (target, resume = false) => window.confirm(
+    `Switch to ${target === "assistant" ? "Chatbot" : "Personas"} mode?\n\n` +
+    (resume ? "The selected saved conversation will open in this window. " : "A fresh chat will open in this window. ") +
+    "Your current conversation will leave the screen but stay saved in History in this browser. " +
+    "The two modes do not share memory. Any response in progress will stop, and your unsent draft or attachment will be discarded.\n\nContinue?"
+  );
+  const switchMode = () => {
+    const mode = isAssistant ? "personas" : "assistant";
+    if (!confirmModeChange(mode)) return;
+    stopResponse();
+    if (!history.flush()) return;
+    changeConversation(() => history.create(mode, readPreference("selectedPersona") || "default"));
+    setIsGalleryOpen(false);
+  };
+  const selectConversation = (id) => {
+    const target = history.chats.find((conversation) => conversation.id === id);
+    if (!target || id === history.active.id) return;
+    if (target.mode !== history.active.mode) {
+      if (!confirmModeChange(target.mode, true)) return;
+      stopResponse();
+      if (!history.flush()) return;
+    }
+    changeConversation(() => history.select(id));
+  };
+
   const chooseShift = (key) => {
     stopResponse();
     setSelectedPersona(key);
@@ -129,8 +156,9 @@ export default function useChatController(userId) {
   const sendMessage = (override) => {
     const text = typeof override === "string" ? override.trim() : input.trim();
     if ((!text && !imagePreview) || loading) return;
-    if (text.length > 2000) {
-      setComposerError("Keep your message within 2,000 characters.");
+    const limit = isAssistant ? ASSISTANT_INPUT_LIMIT : 2000;
+    if (text.length > limit) {
+      setComposerError(`Keep your message within ${limit.toLocaleString("en-US")} characters.`);
       return;
     }
     const preferred = ["neo", "rishi", "nyra"].filter((key) => PERSONAS.some((p) => p.key === key));
@@ -148,6 +176,13 @@ export default function useChatController(userId) {
   const regenerateLast = () => {
     const lastReply = [...messages].reverse().find((m) => m.role === "assistant" && m.request);
     if (lastReply) requests.send({ ...lastReply.request, retryId: lastReply.id });
+  };
+
+  const retryMessage = (message) => {
+    // Preserve later conversation turns when retrying an older failed question.
+    const index = messages.findIndex((entry) => entry.id === message.id);
+    const hasLaterQuestion = messages.slice(index + 1).some((entry) => entry.role === "user");
+    requests.send({ ...message.request, retryId: isAssistant && hasLaterQuestion ? null : message.id });
   };
 
   const handleAgree = () => {
@@ -168,7 +203,8 @@ export default function useChatController(userId) {
     personaList, PERSONAS, isGalleryOpen, setIsGalleryOpen, isCouncilMode, setIsCouncilMode,
     loading, isStreaming, coldStart, handleImageUpload, stopResponse,
     changeConversation, clearChat, chooseShift, sendMessage, regenerateLast,
-    retryMessage: (message) => requests.send({ ...message.request, retryId: message.id }),
+    isAssistant, switchMode, selectConversation,
+    retryMessage,
   };
 
 }

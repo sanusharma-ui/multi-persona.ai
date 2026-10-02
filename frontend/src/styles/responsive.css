@@ -24,6 +24,13 @@
 }
 
 /* RESPONSIVE */
+.mode-switch { white-space: nowrap; }
+.assistant-context-note { color: var(--muted); font-size: 0.75rem; margin: 0 0 8px; }
+@media (max-width: 600px) {
+  .header { height: auto; min-height: 64px; }
+  .header-content { flex-wrap: wrap; gap: 8px; padding-top: 8px; padding-bottom: 8px; }
+  .header-right { flex-wrap: wrap; gap: 4px; }
+}
 @media (max-width: 768px) {
   .header-content { padding: 0 12px; }
   .current-persona-name { display: none; }
@@ -45,7 +52,7 @@
 }
 
 @media (max-width: 480px) {
-  .header { height: 52px; }
+  .header { height: auto; }
   .header-left { gap: 8px; }
   .header-avatar { width: 28px; height: 28px; font-size: 13px; }
   .header-title { font-size: 0.9rem; }

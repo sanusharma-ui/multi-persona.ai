@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-export default function ConversationHistory({ history, onClose, onAction }) {
+export default function ConversationHistory({ history, onClose, onAction, onSelect }) {
   const [search, setSearch] = useState("");
   const panel = useRef(null);
   useEffect(() => {
@@ -33,8 +33,8 @@ export default function ConversationHistory({ history, onClose, onAction }) {
           {!chats.length && <p>No matching conversations.</p>}
           {chats.map((chat) => (
             <div key={chat.id} className={`history-item ${chat.id === history.active.id ? "active" : ""}`}>
-              <button className="history-select" aria-current={chat.id === history.active.id ? "true" : undefined} onClick={() => onAction(() => history.select(chat.id))}>
-                <strong>{chat.title}</strong><small>{chat.messages.filter((m) => m.role === "user").length} messages · {new Date(chat.updated).toLocaleDateString()}</small>
+              <button className="history-select" aria-current={chat.id === history.active.id ? "true" : undefined} onClick={() => onSelect(chat.id)}>
+                <strong>{chat.title}</strong><small>{chat.mode === "assistant" ? "Chatbot" : "Personas"} ? {chat.messages.filter((m) => m.role === "user").length} messages · {new Date(chat.updated).toLocaleDateString()}</small>
               </button>
               <div className="history-item-actions">
                 <button onClick={() => { const title = window.prompt("Conversation name", chat.title); if (title?.trim()) history.rename(chat.id, title); }}>Rename</button>
