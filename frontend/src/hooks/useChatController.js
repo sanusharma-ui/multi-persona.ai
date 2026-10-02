@@ -27,6 +27,7 @@ export default function useChatController(userId) {
   const [personaList, setPersonaList] = useState({});
 
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
+  const [pendingSwitch, setPendingSwitch] = useState(null);
   const [councilEnabled, setIsCouncilMode] = useState(false);
   const isCouncilMode = !isAssistant && councilEnabled;
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(
@@ -117,34 +118,37 @@ export default function useChatController(userId) {
     }
   };
 
-  const confirmModeChange = (target, resume = false) => window.confirm(
-    `Switch to ${target === "assistant" ? "Chatbot" : "Personas"} mode?\n\n` +
-    (resume ? "The selected saved conversation will open in this window. " : "A fresh chat will open in this window. ") +
-    "Your current conversation will leave the screen but stay saved in History in this browser. " +
-    "The two modes do not share memory. Any response in progress will stop, and your unsent draft or attachment will be discarded.\n\nContinue?"
-  );
   const switchMode = () => {
     const mode = isAssistant ? "personas" : "assistant";
-    if (!confirmModeChange(mode)) return;
-    stopResponse();
-    if (!history.flush()) return;
-    changeConversation(() => history.create(mode, readPreference("selectedPersona") || "default"));
-    setIsGalleryOpen(false);
+    setPendingSwitch({ mode, persona: readPreference("selectedPersona") || "default",
+      title: `Switch to ${isAssistant ? "Personas" : "Chatbot"}?` });
   };
   const selectConversation = (id) => {
     const target = history.chats.find((conversation) => conversation.id === id);
     if (!target || id === history.active.id) return;
-    if (target.mode !== history.active.mode) {
-      if (!confirmModeChange(target.mode, true)) return;
-      stopResponse();
-      if (!history.flush()) return;
+    if (target.mode !== history.active.mode || (!isAssistant && target.persona !== selectedPersona)) {
+      setPendingSwitch({ id, title: "Open this saved chat?" });
+      return;
     }
     changeConversation(() => history.select(id));
   };
 
   const chooseShift = (key) => {
+    if (!isAssistant && key === selectedPersona) return;
+    setPendingSwitch({ mode: "personas", persona: key,
+      title: `Switch to ${personaList[key] || fallbackPersonaList[key] || "this Shift"}?` });
+  };
+
+  const cancelSwitch = () => setPendingSwitch(null);
+  const confirmSwitch = () => {
+    if (!pendingSwitch) return;
+    setPendingSwitch(null);
     stopResponse();
-    setSelectedPersona(key);
+    if (!history.flush()) return;
+    changeConversation(() => pendingSwitch.id
+      ? history.select(pendingSwitch.id)
+      : history.create(pendingSwitch.mode, pendingSwitch.persona));
+    setIsGalleryOpen(false);
   };
 
   const completeOnboarding = (shiftKey) => {
@@ -204,6 +208,7 @@ export default function useChatController(userId) {
     loading, isStreaming, coldStart, handleImageUpload, stopResponse,
     changeConversation, clearChat, chooseShift, sendMessage, regenerateLast,
     isAssistant, switchMode, selectConversation,
+    pendingSwitch, cancelSwitch, confirmSwitch,
     retryMessage,
   };
 

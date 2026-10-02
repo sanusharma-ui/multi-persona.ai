@@ -1,6 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import "./base.css";
 @import "./history.css";
+@import "./confirmation.css";
 @import "./layout.css";
 @import "./chat.css";
 @import "./composer.css";

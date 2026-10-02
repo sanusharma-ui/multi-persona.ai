@@ -1,11 +1,12 @@
 # General chatbot mode
 
-The header's **Chatbot / Personas** button asks for confirmation in both directions.
+The header's **Chatbot / Personas** button and direct persona-gallery selections use
+the same compact, in-app confirmation dialog. Selecting the current persona is a no-op.
 Accepting opens a fresh conversation in the same app window. The previous chat
 remains in History. Cancel preserves the chat, draft, attachment and active request.
 Accepting stops an active response and discards the unsent draft/attachment, as the
 confirmation explains. A storage failure or another-tab conflict blocks switching.
-Opening History in another mode also requires confirmation, then resumes that saved
+Opening History in another mode or persona also requires confirmation, then resumes that saved
 conversation rather than creating a new one. History labels distinguish the modes.
 
 ## History and memory

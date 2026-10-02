@@ -7,6 +7,7 @@ import ConversationHistory from "./components/history/ConversationHistory";
 import ChatHeader from "./components/chat/ChatHeader";
 import ChatMessages from "./components/chat/ChatMessages";
 import ChatComposer from "./components/chat/ChatComposer";
+import SwitchConfirmation from "./components/chat/SwitchConfirmation";
 import FeedbackLink from "./components/layout/FeedbackLink";
 import useAuth from "./hooks/useAuth";
 import AuthScreen from "./components/auth/AuthScreen";
@@ -47,6 +48,9 @@ function ChatApp({ user }) {
         imagePreview={chat.imagePreview} onRemoveImage={chat.onRemoveImage} handleImageUpload={chat.handleImageUpload}
         input={chat.input} setInput={chat.setInput} sendMessage={chat.sendMessage} currentPersonaName={chat.currentPersonaName} />
       <FeedbackLink />
+      {chat.pendingSwitch && <SwitchConfirmation change={chat.pendingSwitch}
+        hasDraft={Boolean(chat.input.trim() || chat.imagePreview)} loading={chat.loading || chat.isStreaming}
+        onCancel={chat.cancelSwitch} onConfirm={chat.confirmSwitch} />}
     </div>
   );
 }
