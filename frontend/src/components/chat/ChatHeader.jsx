@@ -1,52 +1,128 @@
 import AccountMenu from "../auth/AccountMenu";
 
-export default function ChatHeader({ isAssistant, switchMode, currentAvatar, currentPersonaName, setHistoryOpen, setIsGalleryOpen, clearChat, isDarkMode, setIsDarkMode, user, onBeforeSignOut }) {
+export default function ChatHeader({
+  isAssistant,
+  switchMode,
+  currentAvatar,
+  currentPersonaName,
+  setHistoryOpen,
+  setIsGalleryOpen,
+  clearChat,
+  isDarkMode,
+  setIsDarkMode,
+  user,
+  onBeforeSignOut,
+}) {
+  const shortPersonaName = currentPersonaName ? currentPersonaName.split(" ")[0] : "Shift";
+
   return (
-      <header className="header">
-        <div className="header-content">
-          <div className="header-left">
-            <div className="header-avatar">{currentAvatar}</div>
-            <div className="brand-wrap">
-              <h1 className="header-title">Shifts</h1>
-              <div className="current-persona-name">{currentPersonaName}</div>
-            </div>
+    <header className="header">
+      <div className="header-content">
+        {/* Left: Brand + Active Persona HUD Switcher */}
+        <div className="header-left">
+          <div className="brand-wrap">
+            <span className="brand-dot" aria-hidden="true" />
+            <h1 className="header-title">Shifts</h1>
           </div>
 
-          <div className="header-right">
-            <button className="top-action" onClick={() => setHistoryOpen(true)} aria-haspopup="dialog">History</button>
-            <button className="top-action mode-switch" onClick={switchMode} aria-label={isAssistant ? "Switch to Personas mode" : "Switch to Chatbot mode"}>{isAssistant ? "Personas" : "Chatbot"}</button>
-            {!isAssistant && <button
-              className="shift-trigger"
+          <div className="header-divider" aria-hidden="true" />
+
+          {!isAssistant ? (
+            <button
+              className="shift-trigger persona-hud-trigger"
               onClick={() => setIsGalleryOpen(true)}
               aria-haspopup="dialog"
-              aria-label="Choose a Shift"
+              aria-label={`Current Shift: ${currentPersonaName}. Click to choose a different Shift.`}
+              title="Change Shift"
             >
-              <span>Choose Shift</span>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m6 9 6 6 6-6" /></svg>
-            </button>}
-
-            <button
-              className="top-action"
-              onClick={clearChat}
-              title="Clear chat"
-              aria-label="Clear chat"
-            >
-              Clear
+              <span className="hud-avatar" aria-hidden="true">{currentAvatar}</span>
+              <span className="hud-name">{shortPersonaName}</span>
+              <span className="hud-status-dot" title="Active" />
+              <svg className="hud-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
+                <path d="m6 9 6 6 6-6" />
+              </svg>
             </button>
-
-            <button
-              className="theme-toggle"
-              onClick={() => setIsDarkMode((prev) => !prev)}
-              title="Toggle theme"
-              aria-label="Toggle dark mode"
-            >
-              {isDarkMode ? "☀️" : "🌙"}
-            </button>
-            <AccountMenu user={user} onBeforeSignOut={onBeforeSignOut} />
-          </div>
+          ) : (
+            <div className="persona-hud-static" title="Assistant Mode">
+              <span className="hud-avatar" aria-hidden="true">🤖</span>
+              <span className="hud-name">Assistant</span>
+              <span className="hud-status-dot" title="Active" />
+            </div>
+          )}
         </div>
-      </header>
 
+        {/* Right: Mode Switch + History + Clear + Theme + Account */}
+        <div className="header-right">
+          {/* Mode Switcher Pill */}
+          <button
+            className="top-action mode-switch header-mode-btn"
+            onClick={switchMode}
+            aria-label={isAssistant ? "Switch to Personas mode" : "Switch to Chatbot mode"}
+            title={isAssistant ? "Switch to Personas mode" : "Switch to Chatbot mode"}
+          >
+            <span className="mode-btn-icon">{isAssistant ? "✦" : "🤖"}</span>
+            <span className="mode-btn-label">{isAssistant ? "Personas" : "Chatbot"}</span>
+          </button>
 
+          {/* History Button */}
+          <button
+            className="top-action header-icon-btn history-trigger"
+            onClick={() => setHistoryOpen(true)}
+            aria-haspopup="dialog"
+            title="Conversation History"
+            aria-label="Conversation History"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+            <span className="header-btn-text">History</span>
+          </button>
+
+          {/* Clear Chat Button */}
+          <button
+            className="top-action header-icon-btn clear-trigger"
+            onClick={clearChat}
+            title="Clear current chat"
+            aria-label="Clear chat"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M3 6h18" />
+              <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+              <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+            </svg>
+          </button>
+
+          {/* Dark / Light Mode Toggle */}
+          <button
+            className="theme-toggle header-icon-btn"
+            onClick={() => setIsDarkMode((prev) => !prev)}
+            title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            aria-label="Toggle dark mode"
+          >
+            {isDarkMode ? (
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="5" />
+                <line x1="12" y1="1" x2="12" y2="3" />
+                <line x1="12" y1="21" x2="12" y2="23" />
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                <line x1="1" y1="12" x2="3" y2="12" />
+                <line x1="21" y1="12" x2="23" y2="12" />
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+              </svg>
+            ) : (
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+              </svg>
+            )}
+          </button>
+
+          {/* Account Menu */}
+          <AccountMenu user={user} onBeforeSignOut={onBeforeSignOut} />
+        </div>
+      </div>
+    </header>
   );
 }
