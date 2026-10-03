@@ -548,12 +548,40 @@
 .bubble.user .user-text {
   white-space: pre-wrap;
 }
-.bubble.user .message-time {
+.user-bubble-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
   margin-top: 5px;
+}
+.bubble.user .message-time {
   font-size: 0.62rem;
   opacity: 0.65;
   text-align: right;
   font-weight: 500;
+}
+.user-copy-btn {
+  width: 19px;
+  height: 19px;
+  border-radius: 6px;
+  border: none;
+  background: rgba(255, 255, 255, 0.14);
+  color: currentColor;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  opacity: 0.55;
+  transition: all var(--transition);
+}
+.user-copy-btn:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.28);
+  transform: scale(1.05);
+}
+.user-copy-btn.copied {
+  opacity: 1;
+  color: #10b981;
 }
 
 /* =========================================================
@@ -790,28 +818,149 @@
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* COUNCIL MODE */
-.council-divider {
-  align-self: center;
-  margin: 12px 0 2px;
-  color: var(--muted);
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  display: inline-flex;
+/* =========================================================
+   MESSAGE ACTIONS TOOLBAR (STEP 3 ENHANCED)
+   ========================================================= */
+.message-actions-bar {
+  display: flex;
   align-items: center;
   gap: 6px;
+  margin-top: 10px;
+  opacity: 0.85;
+  transition: opacity var(--transition);
 }
-.council-divider span {
+
+.message-row:hover .message-actions-bar {
+  opacity: 1;
+}
+
+.action-pill {
+  height: 27px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--surface) 75%, transparent);
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: all var(--transition);
+}
+
+.action-pill:hover:not(:disabled) {
+  border-color: var(--brand);
   color: var(--brand);
+  background: var(--brand-light);
+  transform: translateY(-1px);
 }
-.council-reply {
+
+.action-pill.active {
+  color: #10b981;
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+  font-weight: 600;
+}
+
+.action-pill.playing {
+  color: var(--brand);
+  border-color: var(--brand);
+  background: var(--brand-light);
+  animation: listenPulse 1.4s infinite alternate;
+}
+
+@keyframes listenPulse {
+  0% { box-shadow: 0 0 4px var(--brand-light); }
+  100% { box-shadow: 0 0 14px var(--brand-glow); }
+}
+
+.action-pill.liked {
+  color: #f43f5e;
+  border-color: rgba(244, 63, 94, 0.35);
+  background: rgba(244, 63, 94, 0.1);
+}
+
+.action-pill.icon-only {
+  width: 27px;
+  padding: 0;
+  justify-content: center;
+}
+
+/* =========================================================
+   COSMIC COUNCIL MODE (STEP 3 ENHANCED)
+   ========================================================= */
+.council-divider-wrap {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 12px;
+  margin: 18px 0 8px;
+}
+
+.council-divider-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--brand) 38%, var(--line)), transparent);
+}
+
+.council-divider {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 14px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--brand) 35%, var(--line));
+  background: color-mix(in srgb, var(--surface) 80%, var(--brand-light));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 2px 14px var(--brand-light);
+}
+
+.council-sparkle {
+  color: var(--brand);
+  font-size: 13px;
+  animation: sparkRotate 4s linear infinite;
+}
+
+.council-title {
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text);
+}
+
+.council-badge {
+  font-size: 0.62rem;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--brand-light);
+  color: var(--brand);
+  border: 1px solid var(--brand-glow);
+  letter-spacing: 0.03em;
+}
+
+.message-row.council-reply {
+  border-left: 2.5px solid var(--brand);
+  padding-left: 14px;
+  margin-left: 2px;
+  border-radius: 0 14px 14px 0;
+  background: color-mix(in srgb, var(--brand-light) 20%, transparent);
+  padding-top: 8px;
+  padding-bottom: 8px;
   animation: councilIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: inset 1px 0 0 var(--brand-glow);
 }
+
 @keyframes councilIn {
   from { opacity: 0; transform: translateX(-8px); }
   to { opacity: 1; transform: translateX(0); }
 }
+
 .retry-response {
   margin-top: 10px;
 }
