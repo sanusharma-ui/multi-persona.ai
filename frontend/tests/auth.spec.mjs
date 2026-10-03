@@ -58,9 +58,9 @@ async function login(page, email = alice.email, password = "Password123!") {
   await expect(page.getByRole("button", { name: "Your account" })).toBeVisible();
 }
 
-test("persona gallery uses an in-app confirmation and preserves history on switch", async ({ page }) => {
+test("persona changes share one conversation and preserve the draft without confirmation", async ({ page }) => {
   test.setTimeout(90000);
-  await mockAuth(page);
+  const { calls } = await mockAuth(page);
   await page.goto("/");
   await login(page);
   await page.getByRole("textbox").fill("Keep my Aisha conversation");
@@ -76,38 +76,37 @@ test("persona gallery uses an in-app confirmation and preserves history on switc
   await expect(page.locator(".switch-confirmation")).toHaveCount(0);
   await expect(page.getByRole("textbox")).toHaveValue("Keep this draft");
   await choose("Neo");
-  const modal = page.getByRole("dialog", { name: "Switch to Neo?" });
-  await expect(modal).toBeVisible();
-  await expect(modal.getByRole("button", { name: "Cancel" })).toBeFocused();
-  await page.keyboard.press("Shift+Tab");
-  await expect(modal.getByRole("button", { name: "Switch", exact: true })).toBeFocused();
-  await page.keyboard.press("Tab");
-  await expect(modal.getByRole("button", { name: "Cancel" })).toBeFocused();
-  await page.screenshot({ path: "test-results/switch-confirmation-desktop.png" });
-  await modal.getByRole("button", { name: "Cancel" }).click();
+  await expect(page.locator(".switch-confirmation")).toHaveCount(0);
   await expect(page.getByRole("textbox")).toHaveValue("Keep this draft");
-  await expect(page.locator(".current-persona-name")).toHaveText("Aisha");
-  await choose("Neo");
-  await page.keyboard.press("Escape");
-  await expect(modal).toHaveCount(0);
-  await expect(page.getByRole("textbox")).toHaveValue("Keep this draft");
-  await choose("Neo");
-  await page.setViewportSize({ width: 375, height: 812 });
-  await page.screenshot({ path: "test-results/switch-confirmation-mobile.png" });
-  await modal.getByRole("button", { name: "Switch", exact: true }).click();
-  await expect(page.getByRole("textbox")).toHaveValue("");
-  await expect(page.getByRole("heading", { name: "Every story starts somewhere." })).toBeVisible();
+  await expect(page.locator(".current-persona-name")).toHaveText("Neo");
+  await expect(page.getByText("Keep my Aisha conversation", { exact: true })).toBeVisible();
   const after = await page.evaluate((id) => JSON.parse(localStorage.getItem(`shifts-conversations-v2:${id}`)), alice.id);
-  expect(after.chats.find((chat) => chat.id === before.active)).toMatchObject({ messages: before.chats[0].messages, persona: "default" });
-  expect(after.chats.find((chat) => chat.id === after.active)).toMatchObject({ persona: "neo", messages: [] });
-  expect(after.chats[0].context).not.toBe(before.chats[0].context);
+  expect(after.active).toBe(before.active);
+  expect(after.chats).toHaveLength(1);
+  expect(after.chats[0]).toMatchObject({ context: before.chats[0].context, messages: before.chats[0].messages, persona: "neo" });
+  await page.getByRole("button", { name: "Send message", exact: true }).click();
+  await expect(page.getByText("Hello from your Shift.", { exact: true })).toHaveCount(2);
+  expect(calls.filter((call) => call.path.endsWith("/chat")).map((call) => call.headers["x-conversation-id"]))
+    .toEqual([before.chats[0].context, before.chats[0].context]);
+  await expect(page.locator(".assistant-name")).toHaveText(["Aisha", "Neo"]);
+  await choose("Aisha");
+  await expect(page.locator(".switch-confirmation")).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByText("Hello from your Shift.", { exact: true })).toHaveCount(2);
+  // Explicit new chats stay available, but opening an older persona chat needs no modal.
+  await page.getByRole("button", { name: "History", exact: true }).click();
+  await page.getByRole("button", { name: "+ New conversation", exact: true }).click();
+  await choose("Neo");
   await page.getByRole("button", { name: "History", exact: true }).click();
   await page.getByRole("button", { name: /Keep my Aisha conversation.*messages/ }).click();
-  await expect(page.getByRole("dialog", { name: "Open this saved chat?" })).toBeVisible();
-  await page.keyboard.press("Escape");
-  await expect(page.getByRole("dialog", { name: "Your conversations" })).toBeVisible();
-  await page.getByRole("button", { name: /Keep my Aisha conversation.*messages/ }).click();
-  await page.getByRole("button", { name: "Open chat", exact: true }).click();
+  await expect(page.locator(".switch-confirmation")).toHaveCount(0);
+  await expect(page.getByText("Keep my Aisha conversation", { exact: true })).toBeVisible();
+  await expect(page.locator(".current-persona-name")).toHaveText("Aisha");
+  // The last opened chat wins over the more recently created empty chat, even after reload.
+  await page.getByRole("button", { name: "Switch to Chatbot mode" }).click();
+  await page.getByRole("button", { name: "Switch", exact: true }).click();
+  await page.reload();
+  await page.getByRole("button", { name: "Switch to Personas mode" }).click();
   await expect(page.getByText("Keep my Aisha conversation", { exact: true })).toBeVisible();
 });
 
@@ -130,7 +129,8 @@ test("chatbot confirmation, isolated context, history restore, code and mobile l
   await expect(page.getByRole("textbox")).toHaveValue("Unsent draft");
   await page.getByRole("button", { name: "Switch to Chatbot mode" }).click();
   await page.locator(".switch-confirmation").getByRole("button", { name: "Switch", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "What can I help you with?" })).toBeVisible();
+  await expect(page.getByLabel("Message Assistant")).toBeVisible();
+  await expect(page.getByText("Persona private memory", { exact: true })).toHaveCount(0);
   await expect(page.getByRole("button", { name: /Council/ })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Choose a Shift" })).toHaveCount(0);
   await page.getByLabel("Message Assistant").fill("Explain this code " + "x".repeat(2100));
@@ -149,14 +149,14 @@ test("chatbot confirmation, isolated context, history restore, code and mobile l
   await expect(page.getByLabel("Message Assistant")).toBeVisible();
   await expect(page.getByRole("button", { name: "Copy", exact: true })).toHaveCount(4);
   await page.getByRole("button", { name: "Switch to Personas mode" }).click();
-  await page.locator(".switch-confirmation").getByRole("button", { name: "Cancel", exact: true }).click();
-  await expect(page.getByLabel("Message Assistant")).toBeVisible();
-  await page.getByRole("button", { name: "Switch to Personas mode" }).click();
-  await page.locator(".switch-confirmation").getByRole("button", { name: "Switch", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Every story starts somewhere." })).toBeVisible();
-  await page.getByRole("button", { name: "History", exact: true }).click();
-  await page.getByRole("button", { name: /Persona private memory.*messages/ }).click();
+  await expect(page.locator(".switch-confirmation")).toHaveCount(0);
   await expect(page.getByText("Persona private memory", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Switch to Chatbot mode" }).click();
+  await page.locator(".switch-confirmation").getByRole("button", { name: "Switch", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Copy", exact: true })).toHaveCount(4);
+  const resumed = await page.evaluate((id) => JSON.parse(localStorage.getItem(`shifts-conversations-v2:${id}`)), alice.id);
+  expect(resumed.chats).toHaveLength(2);
+  await page.getByRole("button", { name: "Switch to Personas mode" }).click();
   await page.getByRole("button", { name: "History", exact: true }).click();
   await page.getByRole("button", { name: /Explain this code.*messages/ }).click();
   await page.locator(".switch-confirmation").getByRole("button", { name: "Cancel", exact: true }).click();
@@ -187,9 +187,8 @@ test("switch stops in-flight replies and storage failure prevents mode change", 
   await page.getByRole("button", { name: "Send message", exact: true }).click();
   await expect(page.getByRole("status", { name: "Assistant is thinking" })).toBeVisible();
   await page.getByRole("button", { name: "Switch to Personas mode" }).click();
-  await page.locator(".switch-confirmation").getByRole("button", { name: "Switch", exact: true }).click();
   finish();
-  await expect(page.getByRole("heading", { name: "Every story starts somewhere." })).toBeVisible();
+  await expect(page.getByLabel("Message your Shift")).toBeVisible();
   await expect(page.getByText("Late assistant reply", { exact: true })).toHaveCount(0);
   await page.evaluate(() => { Storage.prototype.setItem = () => { throw new DOMException("Full", "QuotaExceededError"); }; });
   await page.getByRole("button", { name: "Switch to Chatbot mode" }).click();
@@ -220,7 +219,6 @@ test("legacy persona history migrates without loss and tab conflicts block switc
   expect(old.mode).toBe("personas");
   await page.evaluate((userId) => window.dispatchEvent(new StorageEvent("storage", { key: `shifts-conversations-v2:${userId}` })), alice.id);
   await page.getByRole("button", { name: "Switch to Personas mode" }).click();
-  await page.locator(".switch-confirmation").getByRole("button", { name: "Switch", exact: true }).click();
   await expect(page.getByLabel("Message Assistant")).toBeVisible();
   await expect(page.getByRole("alert")).toContainText("another tab");
 });

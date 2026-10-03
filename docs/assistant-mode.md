@@ -1,19 +1,27 @@
 # General chatbot mode
 
-The header's **Chatbot / Personas** button and direct persona-gallery selections use
-the same compact, in-app confirmation dialog. Selecting the current persona is a no-op.
-Accepting opens a fresh conversation in the same app window. The previous chat
-remains in History. Cancel preserves the chat, draft, attachment and active request.
-Accepting stops an active response and discards the unsent draft/attachment, as the
-confirmation explains. A storage failure or another-tab conflict blocks switching.
-Opening History in another mode or persona also requires confirmation, then resumes that saved
-conversation rather than creating a new one. History labels distinguish the modes.
+Confirmation appears only when entering **Chatbot** from **Personas**, including
+opening a saved chatbot conversation. Cancel preserves the chat, draft, attachment
+and active request. Accepting stops an active response and discards the unsent
+draft/attachment, as the confirmation explains.
+
+Changing a Shift within Personas keeps the same conversation, context, draft and
+attachment, without confirmation or a new history entry. Any active reply stops;
+existing replies retain their original character labels. Returning from Chatbot to
+Personas needs no confirmation. Mode changes resume the last opened conversation
+in that mode, creating one only if none exists. Explicit **New conversation** still
+starts a separate chat. Mode changes and saved-chat navigation clear the composer.
+A storage failure or another-tab conflict blocks navigation. History labels
+distinguish the modes; opening a different saved persona chat needs no confirmation.
 
 ## History and memory
 
 - Existing account-scoped `shifts-conversations-v2:<user-id>` browser storage is
   preserved. Older entries without a mode are treated as persona conversations.
   Each conversation stores its mode, selected persona and independent context ID.
+- The last opened chat per mode is persisted across reloads. Existing separate
+  persona chats remain available in History; they are never automatically merged
+  or deleted. Changing characters updates only the active persona conversation.
 - The full visible transcript stays in browser history, subject to browser quota.
   This is **not cloud sync**. Another device/browser will not have these chats;
   clearing site data removes them. Storage failures are displayed, never silently
@@ -63,7 +71,8 @@ node node_modules/eslint/bin/eslint.js src/App.jsx src/hooks src/components/chat
 ```
 
 Backend and browser tests use mocked providers/authentication, not real API calls.
-The browser suite covers switching/cancel in both directions, saved-chat resume,
+The browser suite covers confirmation/cancel on entering Chatbot, direct return
+to Personas, shared persona history, per-mode resume across reloads, saved-chat resume,
 reload, account isolation, code blocks, mobile overflow, in-flight cancellation and
 storage-failure protection. Live provider responses require a separate smoke check.
 Full-project lint currently reports a pre-existing unused `delta` in

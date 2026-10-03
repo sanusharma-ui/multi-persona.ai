@@ -33,7 +33,9 @@ export default function SwitchConfirmation({ change, hasDraft, loading, onCancel
       }}>
       <h2 id="switch-title">{change.title}</h2>
       <p id="switch-description">
-        {change.id ? "Your current chat stays in History." : "A fresh chat will open. This conversation stays in History."}
+        {change.id
+          ? "You are entering Chatbot mode. This saved chat will open; your persona conversation stays in History."
+          : "You are entering Chatbot mode with separate history. Your last chatbot conversation will resume, or a new one will open if this is your first visit. Your persona conversation stays in History."}
         {hasDraft && " Unsent text and attachments will be discarded."}
         {loading && " The current reply will stop."}
       </p>

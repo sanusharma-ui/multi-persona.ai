@@ -103,6 +103,7 @@ export default function useChatController(userId) {
 
   const changeConversation = (action) => {
     stopResponse();
+    if (!history.flush()) return false;
     uploadVersion.current += 1;
 
     setImagePreview(null);
@@ -110,6 +111,7 @@ export default function useChatController(userId) {
     setComposerError("");
     action();
     setHistoryOpen(false);
+    return true;
   };
 
   const clearChat = () => {
@@ -119,14 +121,16 @@ export default function useChatController(userId) {
   };
 
   const switchMode = () => {
-    const mode = isAssistant ? "personas" : "assistant";
-    setPendingSwitch({ mode, persona: readPreference("selectedPersona") || "default",
-      title: `Switch to ${isAssistant ? "Personas" : "Chatbot"}?` });
+    if (isAssistant) {
+      changeConversation(() => history.resumeMode("personas", readPreference("selectedPersona") || "default"));
+      return;
+    }
+    setPendingSwitch({ mode: "assistant", title: "Switch to Chatbot?" });
   };
   const selectConversation = (id) => {
     const target = history.chats.find((conversation) => conversation.id === id);
     if (!target || id === history.active.id) return;
-    if (target.mode !== history.active.mode || (!isAssistant && target.persona !== selectedPersona)) {
+    if (!isAssistant && target.mode === "assistant") {
       setPendingSwitch({ id, title: "Open this saved chat?" });
       return;
     }
@@ -135,19 +139,23 @@ export default function useChatController(userId) {
 
   const chooseShift = (key) => {
     if (!isAssistant && key === selectedPersona) return;
-    setPendingSwitch({ mode: "personas", persona: key,
-      title: `Switch to ${personaList[key] || fallbackPersonaList[key] || "this Shift"}?` });
+    if (isAssistant) {
+      if (!changeConversation(() => history.resumeMode("personas", key))) return;
+    } else {
+      stopResponse();
+      if (!history.flush()) return;
+    }
+    history.setPersona(key);
+    setIsGalleryOpen(false);
   };
 
   const cancelSwitch = () => setPendingSwitch(null);
   const confirmSwitch = () => {
     if (!pendingSwitch) return;
-    setPendingSwitch(null);
-    stopResponse();
-    if (!history.flush()) return;
     changeConversation(() => pendingSwitch.id
       ? history.select(pendingSwitch.id)
-      : history.create(pendingSwitch.mode, pendingSwitch.persona));
+      : history.resumeMode(pendingSwitch.mode));
+    setPendingSwitch(null);
     setIsGalleryOpen(false);
   };
 

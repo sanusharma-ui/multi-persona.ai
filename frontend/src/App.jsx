@@ -40,6 +40,7 @@ function ChatApp({ user }) {
         selectedPersona={chat.selectedPersona} currentAvatar={chat.currentAvatar}
         currentPersonaName={chat.currentPersonaName} personaList={chat.personaList}
         coldStart={chat.coldStart} loading={chat.loading} onExplore={() => chat.setIsGalleryOpen(true)}
+        chooseShift={chat.chooseShift}
         sendMessage={chat.sendMessage} retryMessage={chat.retryMessage} />
       <ChatComposer isAssistant={chat.isAssistant} composerError={chat.composerError} storageError={chat.history.storageError}
         isCouncilMode={chat.isCouncilMode} setIsCouncilMode={chat.setIsCouncilMode}

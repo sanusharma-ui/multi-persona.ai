@@ -71,16 +71,36 @@ export default function useConversations(userId) {
     const first = messages.find((m) => m.role === "user");
     return { ...c, messages, updated: Date.now(), title: c.title === "New conversation" && first ? first.content.slice(0, 60) : c.title };
   }) }), options);
-  const create = (mode = active.mode, persona = active.persona) => commit((s) => { const chat = fresh(mode, persona); return { active: chat.id, chats: [chat, ...s.chats] }; });
+  const activate = (s, chat) => ({ ...s, active: chat.id,
+    lastActive: { ...s.lastActive, [active.mode]: s.active, [chat.mode]: chat.id } });
+  const create = (mode = active.mode, persona = active.persona) => commit((s) => {
+    const chat = fresh(mode, persona);
+    return { ...activate(s, chat), chats: [chat, ...s.chats] };
+  });
+  const resumeMode = (mode, persona) => commit((s) => {
+    const candidates = s.chats.filter((c) => c.mode === mode);
+    const chat = candidates.find((c) => c.id === s.lastActive?.[mode])
+      || candidates.sort((a, b) => b.updated - a.updated)[0];
+    if (chat) return activate(s, chat);
+    const next = fresh(mode, persona);
+    return { ...activate(s, next), chats: [next, ...s.chats] };
+  });
   const setPersona = (persona) => commit((s) => ({ ...s, chats: s.chats.map((c) => c.id === s.active ? { ...c, persona } : c) }));
-  const select = (id) => commit((s) => ({ ...s, active: id }));
+  const select = (id) => commit((s) => {
+    const chat = s.chats.find((c) => c.id === id);
+    return chat ? activate(s, chat) : s;
+  });
   const rename = (id, title) => commit((s) => ({ ...s, chats: s.chats.map((c) => c.id === id ? { ...c, title: title.trim().slice(0, 100) || c.title } : c) }));
   const remove = (id) => commit((s) => {
     const chats = s.chats.filter((c) => c.id !== id);
     let next = chats.find((c) => c.mode === active.mode);
     if (!next) { next = fresh(active.mode, active.persona); chats.unshift(next); }
-    return { chats, active: s.active === id ? next.id : s.active };
+    const lastActive = { ...s.lastActive };
+    for (const mode of Object.keys(lastActive)) {
+      if (lastActive[mode] === id) delete lastActive[mode];
+    }
+    return { ...s, chats, lastActive, active: s.active === id ? next.id : s.active };
   });
   const clear = () => commit((s) => ({ ...s, chats: s.chats.map((c) => c.id === s.active ? { ...c, context: newId(), messages: [], title: "New conversation", updated: Date.now() } : c) }));
-  return { chats: store.chats, active, messages: active.messages, setMessages, create, select, rename, remove, clear, setPersona, flush, storageError };
+  return { chats: store.chats, active, messages: active.messages, setMessages, create, resumeMode, select, rename, remove, clear, setPersona, flush, storageError };
 }
