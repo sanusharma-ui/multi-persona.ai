@@ -154,6 +154,10 @@
 }
 
 /* MODE SWITCH PILL */
+.header-options { position: relative; }
+.header-tools { display: flex; align-items: center; gap: 6px; }
+.header-icon-btn.header-options-trigger, .header-option-label { display: none; }
+
 .header-mode-btn {
   display: inline-flex;
   align-items: center;
@@ -210,7 +214,7 @@
   flex-shrink: 0;
 }
 
-.history-trigger {
+.top-action.header-icon-btn.history-trigger {
   width: auto;
   padding: 0 10px;
   gap: 6px;

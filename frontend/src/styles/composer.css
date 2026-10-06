@@ -34,15 +34,6 @@
   border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
-.assistant-context-note {
-  width: min(780px, 100%);
-  color: var(--muted);
-  font-size: 0.72rem;
-  text-align: center;
-  margin: 0;
-  opacity: 0.85;
-}
-
 /* =========================================================
    QUICK ACTIONS TOOLBAR
    ========================================================= */
@@ -283,6 +274,7 @@
 /* INPUT FIELD */
 .input-field {
   width: 100%;
+  min-width: 0;
   border: none;
   outline: none;
   resize: none;
@@ -294,7 +286,7 @@
   font-size: 0.93rem;
   line-height: 1.52;
   font-family: inherit;
-  transition: height 0.15s ease;
+  overflow-y: auto;
 }
 
 .input-field::placeholder {

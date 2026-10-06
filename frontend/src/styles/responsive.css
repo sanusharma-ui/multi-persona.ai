@@ -27,12 +27,11 @@
 
 /* RESPONSIVE REFINEMENTS (STEP 2) */
 .mode-switch { white-space: nowrap; }
-.assistant-context-note { color: var(--muted); font-size: 0.73rem; margin: 0 0 6px; }
 
 /* Desktop to Tablet (max-width: 768px) */
 @media (max-width: 768px) {
   .header-content { padding: 0 12px; gap: 8px; }
-  .chat-messages { padding: 14px 10px 125px; gap: 16px; }
+  .chat-messages { padding: 14px 10px 24px; gap: 16px; }
   .bubble.user { max-width: 88%; font-size: 0.88rem; }
   .quick-actions {
     overflow-x: auto;
@@ -53,6 +52,51 @@
 
 /* Mobile Screens (max-width: 680px) */
 @media (max-width: 680px) {
+  .header { height: 54px; }
+  .header-left { flex: 1; gap: 6px; }
+  .header-divider, .brand-dot { display: none; }
+  .persona-hud-trigger, .persona-hud-static { min-width: 0; max-width: 150px; }
+  .header-right { gap: 4px; }
+  .header-right .header-mode-btn,
+  .header-right .header-options-trigger,
+  .header-right .account-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+  }
+  .header-mode-btn .mode-btn-label { display: none; }
+  .header-tools {
+    display: none;
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 190px;
+    max-width: calc(100vw - 24px);
+    max-height: calc(100dvh - 70px);
+    overflow-y: auto;
+    padding: 6px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--bg);
+    box-shadow: var(--shadow-lg);
+  }
+  .header-tools.is-open { display: flex; flex-direction: column; gap: 2px; }
+  .header-tools .header-icon-btn,
+  .header-tools .top-action.header-icon-btn {
+    justify-content: flex-start;
+    gap: 10px;
+    width: 100%;
+    height: 44px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 9px;
+    background: transparent;
+  }
+  .header-tools .header-btn-text, .header-tools .header-option-label { display: inline; }
+  .input-field { font-size: 16px; }
   .header-btn-text {
     display: none;
   }
@@ -70,7 +114,6 @@
 
 /* Compact Mobile (max-width: 480px) */
 @media (max-width: 480px) {
-  .header { height: 50px; }
   .header-content { padding: 0 10px; }
   .header-left { gap: 6px; }
   .header-divider { height: 14px; margin: 0 1px; }
@@ -111,7 +154,7 @@
     border-radius: 10px;
   }
   .input-field {
-    font-size: 0.88rem;
+    font-size: 16px;
     padding: 6px 4px;
     min-height: 32px;
   }

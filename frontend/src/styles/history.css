@@ -24,8 +24,5 @@
 .history-item-actions button { font-size: 12px; }
 .chat-notice { padding: 8px 12px; margin-bottom: 8px; color: var(--text); background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; font-size: 13px; }
 @media (max-width: 480px) {
-  .app .header { height: auto; min-height: 64px; }
-  .app .header-content { flex-wrap: wrap; gap: 8px; padding: 10px 12px; }
-  .app .header-right { flex-wrap: wrap; justify-content: flex-end; }
   .history-panel { padding: 18px; }
 }

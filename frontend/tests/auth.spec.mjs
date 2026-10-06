@@ -58,6 +58,105 @@ async function login(page, email = alice.email, password = "Password123!") {
   await expect(page.getByRole("button", { name: "Your account" })).toBeVisible();
 }
 
+test("mobile composer returns to one line after sending and clearing long prompts", async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 740 });
+  await mockAuth(page);
+  await page.goto("/");
+  await login(page);
+  await page.getByRole("button", { name: "Switch to Chatbot mode" }).click();
+  await page.getByRole("button", { name: "Switch", exact: true }).click();
+  const field = page.getByRole("textbox", { name: "Message Assistant" });
+  const height = () => field.evaluate((el) => el.getBoundingClientRect().height);
+  const initialHeight = await height();
+  const prompt = "A long prompt that wraps across multiple lines. ".repeat(30);
+  await field.fill(prompt);
+  await expect.poll(height).toBeGreaterThan(initialHeight + 40);
+  await page.getByRole("button", { name: "Send message", exact: true }).click();
+  await expect(field).toHaveValue("");
+  await expect.poll(height).toBeLessThanOrEqual(initialHeight + 1);
+  await expect(field).toBeEnabled();
+  await field.fill(prompt);
+  await expect.poll(height).toBeGreaterThan(initialHeight + 40);
+  await page.getByRole("button", { name: "Clear input text" }).click();
+  await expect.poll(height).toBeLessThanOrEqual(initialHeight + 1);
+  await field.fill(prompt);
+  await expect.poll(height).toBeGreaterThan(initialHeight + 40);
+  await field.fill("Short");
+  await expect.poll(height).toBeLessThanOrEqual(initialHeight + 1);
+  await field.fill("A prompt that changes line count when the viewport changes. ".repeat(4));
+  const mobileHeight = await height();
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await expect.poll(height).toBeLessThan(mobileHeight);
+  await page.setViewportSize({ width: 360, height: 740 });
+  await expect.poll(height).toBeGreaterThanOrEqual(mobileHeight - 1);
+  await field.press("Enter");
+  await expect(field).toHaveValue("");
+  await expect.poll(height).toBeLessThanOrEqual(initialHeight + 1);
+});
+
+test("mobile header and account stay inside the viewport with working actions", async ({ page }) => {
+  await mockAuth(page);
+  await page.goto("/");
+  await login(page);
+  for (const width of [320, 360, 390, 480, 640, 768, 1280]) {
+    await page.setViewportSize({ width, height: 740 });
+    const header = await page.locator(".header").boundingBox();
+    expect(header.height).toBeLessThanOrEqual(56);
+    if (width > 680) await expect(page.getByRole("button", { name: "Chat options" })).toBeHidden();
+    for (const control of await page.locator(".header button:visible").all()) {
+      const box = await control.boundingBox();
+      expect(box.y).toBeGreaterThanOrEqual(header.y);
+      expect(box.y + box.height).toBeLessThanOrEqual(header.y + header.height);
+    }
+    await page.getByRole("button", { name: "Your account" }).click();
+    const panel = await page.locator(".account-panel").boundingBox();
+    expect(panel.x).toBeGreaterThanOrEqual(0);
+    expect(panel.x + panel.width).toBeLessThanOrEqual(width);
+    expect(panel.y + panel.height).toBeLessThanOrEqual(740);
+    await page.keyboard.press("Escape");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  }
+  await page.setViewportSize({ width: 360, height: 740 });
+  const more = page.getByRole("button", { name: "Chat options" });
+  await more.click();
+  await page.screenshot({ path: "test-results/mobile-options-light-360.png" });
+  await page.getByRole("button", { name: "Toggle dark mode" }).click();
+  await expect(more).toHaveAttribute("aria-expanded", "false");
+  await more.click();
+  await page.getByRole("button", { name: "Conversation History" }).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await more.click();
+  await page.keyboard.press("Escape");
+  await expect(more).toBeFocused();
+  await more.click();
+  await page.getByRole("textbox").click();
+  await expect(more).toHaveAttribute("aria-expanded", "false");
+  await page.getByRole("button", { name: "Switch to Chatbot mode" }).click();
+  await page.getByRole("button", { name: "Switch", exact: true }).click();
+  await expect(page.getByText("Memory stays in this conversation.", { exact: false })).toHaveCount(0);
+  for (const size of [{ width: 320, height: 568 }, { width: 390, height: 350 }, { width: 844, height: 390 }, { width: 1280, height: 800 }]) {
+    await page.setViewportSize(size);
+    await page.getByRole("button", { name: "Your account" }).click();
+    const panel = await page.locator(".account-panel").boundingBox();
+    expect(panel.x).toBeGreaterThanOrEqual(0);
+    expect(panel.x + panel.width).toBeLessThanOrEqual(size.width);
+    expect(panel.y + panel.height).toBeLessThanOrEqual(size.height);
+    await page.keyboard.press("Escape");
+    const controls = await page.locator(".header-left, .header-right").evaluateAll((els) => els.map((el) => el.getBoundingClientRect().toJSON()));
+    expect(controls[0].right).toBeLessThanOrEqual(controls[1].left);
+  }
+  await page.locator(".chat-messages").evaluate((el) => el.scrollTo({ top: 0, behavior: "instant" }));
+  await page.screenshot({ path: "test-results/assistant-desktop.png" });
+  await page.setViewportSize({ width: 360, height: 740 });
+  await page.locator(".chat-messages").evaluate((el) => el.scrollTo({ top: 0, behavior: "instant" }));
+  await page.screenshot({ path: "test-results/mobile-assistant-360.png" });
+  await page.getByRole("button", { name: "Your account" }).click();
+  await page.screenshot({ path: "test-results/mobile-account-360.png" });
+  await page.getByRole("button", { name: "Sign out", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Sign in", exact: true })).toBeVisible();
+});
+
 test("persona changes share one conversation and preserve the draft without confirmation", async ({ page }) => {
   test.setTimeout(90000);
   const { calls } = await mockAuth(page);

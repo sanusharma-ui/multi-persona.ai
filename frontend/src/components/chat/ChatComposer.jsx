@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useCallback } from "react";
 
 export default function ChatComposer({
   isAssistant,
@@ -21,16 +21,10 @@ export default function ChatComposer({
 }) {
   const textareaRef = useRef(null);
   const [isListening, setIsListening] = useState(false);
-  const [speechSupported, setSpeechSupported] = useState(false);
+  const [speechSupported] = useState(() => Boolean(window.SpeechRecognition || window.webkitSpeechRecognition));
   const recognitionRef = useRef(null);
 
   const shortName = currentPersonaName ? currentPersonaName.split(" ")[0] : "Shift";
-
-  // Check speech recognition support safely
-  useEffect(() => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    setSpeechSupported(Boolean(SpeechRecognition));
-  }, []);
 
   // Toggle voice input via native Web Speech API (zero backend dependencies)
   const toggleListening = useCallback(() => {
@@ -82,11 +76,24 @@ export default function ChatComposer({
   }, []);
 
   // Auto-resize textarea
-  useEffect(() => {
+  useLayoutEffect(() => {
     const field = textareaRef.current;
     if (!field) return;
-    field.style.height = "0px";
-    field.style.height = Math.min(field.scrollHeight, 140) + "px";
+    const resize = () => {
+      // Measure at the natural height, without an animated previous height.
+      field.style.height = "auto";
+      if (input) field.style.height = Math.min(field.scrollHeight, 140) + "px";
+      else field.scrollTop = 0;
+    };
+    resize();
+    let width = field.clientWidth;
+    const observer = new ResizeObserver(() => {
+      if (field.clientWidth === width) return;
+      width = field.clientWidth;
+      resize();
+    });
+    observer.observe(field);
+    return () => observer.disconnect();
   }, [input]);
 
   const canSend = !loading && !isStreaming && (input.trim().length > 0 || Boolean(imagePreview));
@@ -96,12 +103,6 @@ export default function ChatComposer({
       {(composerError || storageError) && (
         <p className="chat-notice" role="alert">
           {composerError || storageError}
-        </p>
-      )}
-
-      {isAssistant && (
-        <p className="assistant-context-note">
-          Memory stays in this conversation. Recent complete turns are used as context.
         </p>
       )}
 
