@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { authError, authRedirect, supabase } from "../../lib/auth";
-import AuthScene3D from "./AuthScene3D";
 
 function GoogleIcon() {
   return (
@@ -61,8 +60,8 @@ function UserIcon() {
 }
 
 const copy = {
-  login: ["Welcome back.", "Your next conversation starts here.", "Sign in"],
-  signup: ["Find your people.\nMeet your Shifts.", "Create an account and make yourself at home.", "Create account"],
+  login: ["Welcome back.", "Your world. Your conversations.", "Enter Shifts"],
+  signup: ["Your universe awaits.", "Create an account. Find the minds that speak to you.", "Create account"],
   forgot: ["A fresh start.", "Enter your email and we'll send you a link to reset your password.", "Send reset link"],
   reset: ["Make it yours again.", "Choose a new password for your Shifts account.", "Save new password"],
 };
@@ -70,6 +69,9 @@ const copy = {
 export default function AuthScreen({ auth }) {
   const pageRef = useRef(null);
   const panelRef = useRef(null);
+  const enterRef = useRef(null);
+  const [entered, setEntered] = useState(Boolean(auth.recovery || auth.error));
+  const portalOpen = entered || auth.recovery || Boolean(auth.error);
   const [view, setView] = useState(auth.recovery ? "reset" : "login");
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
@@ -98,39 +100,20 @@ export default function AuthScreen({ auth }) {
       top: Math.max(0, top),
       behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
     });
-  }, [screen]);
+  }, [screen, portalOpen]);
 
   useEffect(() => {
-    const page = pageRef.current;
-    if (!page) return;
-    const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const pointer = window.matchMedia("(hover: hover) and (pointer: fine)");
+    if (portalOpen) panelRef.current?.focus({ preventScroll: true });
+  }, [portalOpen]);
 
-    const reset = () => {
-      page.style.removeProperty("--bg-parallax-x");
-      page.style.removeProperty("--bg-parallax-y");
-    };
-    const move = (event) => {
-      if (motion.matches || !pointer.matches) return;
-      const rect = page.getBoundingClientRect();
-      page.style.setProperty("--bg-parallax-x", `${(0.5 - (event.clientX - rect.left) / rect.width) * 20}px`);
-      page.style.setProperty("--bg-parallax-y", `${(0.5 - (event.clientY - rect.top) / rect.height) * 14}px`);
-    };
-
-    page.addEventListener("pointermove", move, { passive: true });
-    page.addEventListener("pointerleave", reset);
-    motion.addEventListener("change", reset);
-    pointer.addEventListener("change", reset);
-    return () => {
-      page.removeEventListener("pointermove", move);
-      page.removeEventListener("pointerleave", reset);
-      motion.removeEventListener("change", reset);
-      pointer.removeEventListener("change", reset);
-      reset();
-    };
-  }, []);
+  function returnToLanding() {
+    navigate("login");
+    setEntered(false);
+    requestAnimationFrame(() => enterRef.current?.focus({ preventScroll: true }));
+  }
 
   function navigate(next) {
+    setEntered(true);
     setView(next);
     setError("");
     setNotice("");
@@ -232,83 +215,21 @@ export default function AuthScreen({ auth }) {
   }
 
   return (
-    <main className="auth-page" data-screen={screen} ref={pageRef}>
-      {/* Dynamic Background Artwork with Smooth Parallax */}
+    <main className="auth-page" data-screen={screen} data-stage={portalOpen ? "portal" : "landing"} ref={pageRef}>
       <div className="auth-bg-layer" aria-hidden="true" />
       <div className="auth-vignette-overlay" aria-hidden="true" />
-
-      {/* 3D Three.js Ambient Multiverse (Crystals, Particles, Orbit Rings) */}
-      <AuthScene3D />
-
-      {/* Subtle Ambient Cosmic Motes */}
-      <div className="auth-atmosphere" aria-hidden="true">
-        <i /><i /><i /><i /><i /><i /><i />
-      </div>
-
       <div className="auth-shell">
-        <aside className="auth-story" aria-label="Welcome to Shifts">
-          <div className="auth-brand-block">
-            <a className="auth-brand" href={import.meta.env.BASE_URL}>
-              <span>Shifts<span className="auth-brand-dot">.</span></span>
-            </a>
-            <span className="auth-brand-subtitle">
-              <span className="auth-brand-pulse" aria-hidden="true" />
-              AI MULTIVERSE
-            </span>
-          </div>
+        {!portalOpen && <div className="auth-entry">
+          <button className="auth-enter-button" type="button" ref={enterRef} onClick={() => setEntered(true)}>
+            Entre shift
+          </button>
+        </div>}
 
-          <div className="auth-story-body">
-            <div className="auth-eyebrow">
-              <span className="auth-eyebrow-line" />
-              <span>A UNIVERSE OF CONVERSATIONS</span>
-            </div>
-            <h1>
-              Different minds. <br />
-              One place to <br />
-              <em>be yourself.</em>
-            </h1>
-            <p className="auth-tagline">Connect with personas crafted for every dimension of thought.</p>
-
-            {/* Aesthetic Persona Showcase Chips */}
-            <div className="auth-persona-chips" aria-label="Featured AI Personas">
-              <div className="auth-persona-chip persona-chip-seven" title="Seven: Celestial Wonder & Empathy">
-                <span className="chip-glow-ring" />
-                <span className="chip-orb">✦</span>
-                <div className="chip-info">
-                  <strong>Seven</strong>
-                  <span>Cosmic Wonder</span>
-                </div>
-              </div>
-              <div className="auth-persona-chip persona-chip-neo" title="Neo: Code Architect & Creator">
-                <span className="chip-glow-ring" />
-                <span className="chip-orb">&lt;/&gt;</span>
-                <div className="chip-info">
-                  <strong>Neo</strong>
-                  <span>Architect</span>
-                </div>
-              </div>
-              <div className="auth-persona-chip persona-chip-nyra" title="Nyra: Unfiltered Ideas & Depths">
-                <span className="chip-glow-ring" />
-                <span className="chip-orb">✳</span>
-                <div className="chip-info">
-                  <strong>Nyra</strong>
-                  <span>Wildcard</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </aside>
-
-        <section className="auth-panel" aria-label="Your account" ref={panelRef}>
-          <div className="auth-panel-intro" aria-hidden="true">
-            <span className="auth-portal-mark">
-              <svg width="26" height="26" viewBox="0 0 32 32" fill="none">
-                <path d="M16 3 19.5 12.5 29 16 19.5 19.5 16 29 12.5 19.5 3 16 12.5 12.5Z" stroke="currentColor" strokeWidth="1.3" />
-                <circle cx="16" cy="16" r="3" fill="currentColor" />
-              </svg>
-            </span>
-            <span className="auth-intro-caption">A LITTLE SPACE FOR YOU</span>
-          </div>
+        {portalOpen && <div className="auth-portal-stage">
+        <section className="auth-panel" aria-label="Your account" ref={panelRef} tabIndex={-1}>
+          {!auth.recovery && <button className="auth-close" type="button" aria-label="Close login" disabled={Boolean(busy)} onClick={returnToLanding}>
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="m6 6 12 12M18 6 6 18" /></svg>
+          </button>}
           <div className="auth-form-wrap" key={screen}>
             {(screen === "forgot" || screen === "reset") && (
               <span className="auth-kicker">
@@ -495,6 +416,7 @@ export default function AuthScreen({ auth }) {
             )}
           </div>
         </section>
+        </div>}
       </div>
     </main>
   );

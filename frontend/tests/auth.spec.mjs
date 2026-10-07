@@ -52,9 +52,12 @@ async function mockAuth(page) {
 }
 
 async function login(page, email = alice.email, password = "Password123!") {
+  if (await page.getByRole("button", { name: "Entre shift", exact: true }).isVisible()) {
+    await page.getByRole("button", { name: "Entre shift", exact: true }).click();
+  }
   await page.getByLabel("Email address").fill(email);
   await page.getByLabel("Password", { exact: true }).fill(password);
-  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await page.getByRole("button", { name: "Enter Shifts", exact: true }).click();
   await expect(page.getByRole("button", { name: "Your account" })).toBeVisible();
 }
 
@@ -62,6 +65,7 @@ test("mobile composer returns to one line after sending and clearing long prompt
   await page.setViewportSize({ width: 360, height: 740 });
   await mockAuth(page);
   await page.goto("/");
+  await page.getByRole("button", { name: "Entre shift", exact: true }).click();
   await login(page);
   await page.getByRole("button", { name: "Switch to Chatbot mode" }).click();
   await page.getByRole("button", { name: "Switch", exact: true }).click();
@@ -97,6 +101,7 @@ test("mobile composer returns to one line after sending and clearing long prompt
 test("mobile header and account stay inside the viewport with working actions", async ({ page }) => {
   await mockAuth(page);
   await page.goto("/");
+  await page.getByRole("button", { name: "Entre shift", exact: true }).click();
   await login(page);
   for (const width of [320, 360, 390, 480, 640, 768, 1280]) {
     await page.setViewportSize({ width, height: 740 });
@@ -154,13 +159,14 @@ test("mobile header and account stay inside the viewport with working actions", 
   await page.getByRole("button", { name: "Your account" }).click();
   await page.screenshot({ path: "test-results/mobile-account-360.png" });
   await page.getByRole("button", { name: "Sign out", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Sign in", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Entre shift", exact: true })).toBeVisible();
 });
 
 test("persona changes share one conversation and preserve the draft without confirmation", async ({ page }) => {
   test.setTimeout(90000);
   const { calls } = await mockAuth(page);
   await page.goto("/");
+  await page.getByRole("button", { name: "Entre shift", exact: true }).click();
   await login(page);
   await page.getByRole("textbox").fill("Keep my Aisha conversation");
   await page.getByRole("button", { name: "Send message", exact: true }).click();
@@ -218,6 +224,7 @@ test("chatbot confirmation, isolated context, history restore, code and mobile l
     return route.fulfill({ json: { reply: "Here is your code:\n\n```python\nprint('hello')\n```\n\n```\nplain block\n```" } });
   });
   await page.goto("/");
+  await page.getByRole("button", { name: "Entre shift", exact: true }).click();
   await login(page);
   await page.getByRole("textbox").fill("Persona private memory");
   await page.getByRole("button", { name: "Send message", exact: true }).click();
@@ -279,6 +286,7 @@ test("switch stops in-flight replies and storage failure prevents mode change", 
     await route.fulfill({ json: { reply: "Late assistant reply" } }).catch(() => {});
   });
   await page.goto("/");
+  await page.getByRole("button", { name: "Entre shift", exact: true }).click();
   await login(page);
   await page.getByRole("button", { name: "Switch to Chatbot mode" }).click();
   await page.locator(".switch-confirmation").getByRole("button", { name: "Switch", exact: true }).click();
@@ -306,6 +314,7 @@ test("legacy persona history migrates without loss and tab conflicts block switc
     }] }));
   }, alice.id);
   await page.goto("/");
+  await page.getByRole("button", { name: "Entre shift", exact: true }).click();
   await login(page);
   await expect(page.getByText("Old answer", { exact: true })).toBeVisible();
   await expect(page.locator(".current-persona-name")).toHaveText("Neo");
@@ -325,6 +334,7 @@ test("legacy persona history migrates without loss and tab conflicts block switc
 test("email login, authenticated request, account isolation, logout and session restore", async ({ page }) => {
   const { calls } = await mockAuth(page);
   await page.goto("/");
+  await page.getByRole("button", { name: "Entre shift", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Welcome back." })).toBeVisible();
   await login(page);
   await page.getByRole("textbox").fill("Alice private message");
@@ -338,7 +348,7 @@ test("email login, authenticated request, account isolation, logout and session 
   await page.getByRole("button", { name: "Your account" }).click();
   await expect(page.getByText(alice.email, { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Sign out", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Welcome back." })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Entre shift", exact: true })).toBeVisible();
   await expect(page.getByText("Alice private message", { exact: true })).toHaveCount(0);
   await login(page, bob.email);
   await expect(page.getByText("Alice private message", { exact: true })).toHaveCount(0);
@@ -354,6 +364,7 @@ test("wrong password is visible and login can be retried", async ({ page }) => {
   const { state } = await mockAuth(page);
   state.failLogin = true;
   await page.goto("/");
+  await page.getByRole("button", { name: "Entre shift", exact: true }).click();
   await page.getByLabel("Email address").fill(alice.email);
   await page.getByLabel("Password", { exact: true }).fill("wrong-password");
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
@@ -365,6 +376,7 @@ test("wrong password is visible and login can be retried", async ({ page }) => {
 test("signup checks confirmation and offers email verification resend", async ({ page }) => {
   const { calls } = await mockAuth(page);
   await page.goto("/");
+  await page.getByRole("button", { name: "Entre shift", exact: true }).click();
   await page.getByRole("button", { name: "Create an account" }).click();
   await page.getByLabel("Your name").fill("Alice");
   await page.getByLabel("Email address").fill(alice.email);
@@ -385,6 +397,7 @@ test("signup checks confirmation and offers email verification resend", async ({
 test("Google button initiates provider redirect and callback opens chat", async ({ page }) => {
   const { calls } = await mockAuth(page);
   await page.goto("/");
+  await page.getByRole("button", { name: "Entre shift", exact: true }).click();
   await page.getByRole("button", { name: "Continue with Google" }).click();
   await expect(page).toHaveURL(/\/auth\/v1\/authorize/);
   const call = calls.find((item) => item.path.endsWith("/authorize"));
@@ -399,6 +412,7 @@ test("Google button initiates provider redirect and callback opens chat", async 
 test("forgot password sends redirect and recovery survives reload and updates password", async ({ page }) => {
   const { calls } = await mockAuth(page);
   await page.goto("/");
+  await page.getByRole("button", { name: "Entre shift", exact: true }).click();
   await page.getByRole("button", { name: "Forgot password?" }).click();
   await page.getByLabel("Email address").fill(alice.email);
   await page.getByRole("button", { name: "Send reset link" }).click();
@@ -454,6 +468,7 @@ test("rate limits are shown without a false email sent message", async ({ page }
   const { state } = await mockAuth(page);
   state.rateLimit = true;
   await page.goto("/");
+  await page.getByRole("button", { name: "Entre shift", exact: true }).click();
   await page.getByRole("button", { name: "Forgot password?" }).click();
   await page.getByLabel("Email address").fill(alice.email);
   await page.getByRole("button", { name: "Send reset link" }).click();
@@ -464,6 +479,7 @@ test("rate limits are shown without a false email sent message", async ({ page }
 test("signout propagates to another open tab", async ({ page, context }) => {
   await mockAuth(page);
   await page.goto("/");
+  await page.getByRole("button", { name: "Entre shift", exact: true }).click();
   await login(page);
   const other = await context.newPage();
   await mockAuth(other);
@@ -471,7 +487,7 @@ test("signout propagates to another open tab", async ({ page, context }) => {
   await expect(other.getByRole("button", { name: "Your account" })).toBeVisible();
   await page.getByRole("button", { name: "Your account" }).click();
   await page.getByRole("button", { name: "Sign out", exact: true }).click();
-  await expect(other.getByRole("heading", { name: "Welcome back." })).toBeVisible();
+  await expect(other.getByRole("button", { name: "Entre shift", exact: true })).toBeVisible();
   await expect(other.getByRole("button", { name: "Your account" })).toHaveCount(0);
 });
 
@@ -479,16 +495,18 @@ test("API rejection signs out instead of continuing with an unverified account",
   await mockAuth(page);
   await page.route("**/test-api/chat?**", (route) => route.fulfill({ status: 401, json: { detail: "Please sign in again." } }));
   await page.goto("/");
+  await page.getByRole("button", { name: "Entre shift", exact: true }).click();
   await login(page);
   await page.getByRole("textbox").fill("Rejected request");
   await page.getByRole("button", { name: /send/i }).click();
-  await expect(page.getByRole("heading", { name: "Welcome back." })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Entre shift", exact: true })).toBeVisible();
   await expect(page.getByText("Rejected request", { exact: true })).toHaveCount(0);
 });
 
 test("expired recovery while signed in still allows requesting another link", async ({ page }) => {
   await mockAuth(page);
   await page.goto("/");
+  await page.getByRole("button", { name: "Entre shift", exact: true }).click();
   await login(page);
   await page.goto("/?auth=reset#error=access_denied&error_code=otp_expired");
   await page.getByRole("button", { name: "Request a new reset link" }).click();
@@ -499,6 +517,7 @@ test("expired recovery while signed in still allows requesting another link", as
 test("failed token processing cannot reset a previously signed-in account", async ({ page }) => {
   await mockAuth(page);
   await page.goto("/");
+  await page.getByRole("button", { name: "Entre shift", exact: true }).click();
   await login(page);
   await page.goto("/?auth=reset#access_token=broken&refresh_token=broken&expires_in=3600&token_type=bearer&type=recovery");
   await expect(page.getByRole("button", { name: "Request a new reset link" })).toBeVisible();
@@ -511,6 +530,7 @@ for (const viewport of [{ width: 1440, height: 740 }, { width: 390, height: 844 
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.setViewportSize(viewport);
     await page.goto("/");
+  await page.getByRole("button", { name: "Entre shift", exact: true }).click();
     await page.getByRole("button", { name: "Create an account" }).click();
     const panel = page.locator(".auth-panel");
     // A fitting card reaches the scroll limit with its bottom at the page padding.
@@ -534,6 +554,7 @@ test("desktop and mobile auth screens remain usable and do not overflow", async 
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/");
+  await page.getByRole("button", { name: "Entre shift", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Welcome back." })).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath("login-desktop.png"), fullPage: true });
   await page.setViewportSize({ width: 360, height: 740 });
