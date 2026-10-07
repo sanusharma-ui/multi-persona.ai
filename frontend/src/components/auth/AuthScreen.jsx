@@ -219,7 +219,7 @@ export default function AuthScreen({ auth }) {
       <div className="auth-bg-layer" aria-hidden="true" />
       <div className="auth-vignette-overlay" aria-hidden="true" />
       <div className="auth-shell">
-        {!portalOpen && <section className="auth-entry" aria-labelledby="auth-entry-title">
+        <section className="auth-entry" aria-labelledby="auth-entry-title" aria-hidden={portalOpen} inert={portalOpen}>
           <p className="auth-entry-eyebrow">WELCOME TO THE OTHER SIDE</p>
           <h1 id="auth-entry-title" className="auth-entry-title">
             <span>Some conversations</span>{" "}
@@ -228,9 +228,9 @@ export default function AuthScreen({ auth }) {
           </h1>
           <p className="auth-entry-copy">Different minds. Different memories. Different worlds waiting on the other side.</p>
           <button className="auth-enter-button" type="button" ref={enterRef} onClick={() => setEntered(true)}>
-            Entre shift
+            Entre Shift
           </button>
-        </section>}
+        </section>
 
         {portalOpen && <div className="auth-portal-stage">
         <section className="auth-panel" aria-label="Your account" ref={panelRef} tabIndex={-1}>
