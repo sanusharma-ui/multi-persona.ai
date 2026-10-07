@@ -102,117 +102,31 @@ export default function AuthScreen({ auth }) {
 
   useEffect(() => {
     const page = pageRef.current;
-    const panel = panelRef.current;
-    if (!page || !panel) return;
-
+    if (!page) return;
     const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
     const pointer = window.matchMedia("(hover: hover) and (pointer: fine)");
 
-    let frame = 0;
-    let targetTiltX = 0;
-    let targetTiltY = 0;
-    let currentTiltX = 0;
-    let currentTiltY = 0;
-    let targetBgX = 0;
-    let targetBgY = 0;
-    let currentBgX = 0;
-    let currentBgY = 0;
-
-    const allowed = () => !motion.matches && pointer.matches && !document.hidden;
-
-    const paint = () => {
-      // Background parallax offset
-      page.style.setProperty("--bg-parallax-x", `${currentBgX * 10}px`);
-      page.style.setProperty("--bg-parallax-y", `${currentBgY * 7}px`);
-
-      // 3D card tilt
-      panel.style.setProperty("--card-x", `${currentTiltX * -6.5}deg`);
-      panel.style.setProperty("--card-y", `${currentTiltY * 7.5}deg`);
-    };
-
-    const tick = () => {
-      frame = 0;
-      if (!allowed()) return;
-
-      const ease = 0.08;
-      currentTiltX += (targetTiltX - currentTiltX) * ease;
-      currentTiltY += (targetTiltY - currentTiltY) * ease;
-      currentBgX += (targetBgX - currentBgX) * ease;
-      currentBgY += (targetBgY - currentBgY) * ease;
-
-      paint();
-
-      const diff =
-        Math.abs(targetTiltX - currentTiltX) +
-        Math.abs(targetTiltY - currentTiltY) +
-        Math.abs(targetBgX - currentBgX) +
-        Math.abs(targetBgY - currentBgY);
-
-      if (diff > 0.001) {
-        frame = requestAnimationFrame(tick);
-      }
-    };
-
-    const start = () => {
-      if (!frame && allowed()) frame = requestAnimationFrame(tick);
-    };
-
-    const handlePointerMove = (event) => {
-      if (!allowed()) return;
-      const pageRect = page.getBoundingClientRect();
-      const normX = ((event.clientX - pageRect.left) / pageRect.width) * 2 - 1;
-      const normY = ((event.clientY - pageRect.top) / pageRect.height) * 2 - 1;
-
-      targetBgX = -normX;
-      targetBgY = -normY;
-
-      // Card glare coordinates relative to card
-      const panelRect = panel.getBoundingClientRect();
-      const glareX = ((event.clientX - panelRect.left) / panelRect.width) * 100;
-      const glareY = ((event.clientY - panelRect.top) / panelRect.height) * 100;
-      panel.style.setProperty("--glare-x", `${glareX}%`);
-      panel.style.setProperty("--glare-y", `${glareY}%`);
-
-      // Tilt is based on cursor position relative to card center
-      const cardCenterX = panelRect.left + panelRect.width / 2;
-      const cardCenterY = panelRect.top + panelRect.height / 2;
-      const cardNormX = Math.max(-1, Math.min(1, (event.clientX - cardCenterX) / 360));
-      const cardNormY = Math.max(-1, Math.min(1, (event.clientY - cardCenterY) / 360));
-
-      const isInputFocused =
-        panel.contains(document.activeElement) && document.activeElement.tagName === "INPUT";
-      targetTiltX = isInputFocused ? 0 : cardNormY;
-      targetTiltY = isInputFocused ? 0 : cardNormX;
-
-      start();
-    };
-
-    const handlePointerLeave = () => {
-      targetTiltX = 0;
-      targetTiltY = 0;
-      targetBgX = 0;
-      targetBgY = 0;
-      start();
-    };
-
-    page.addEventListener("pointermove", handlePointerMove, { passive: true });
-    page.addEventListener("pointerleave", handlePointerLeave);
-    panel.addEventListener("focusin", () => {
-      targetTiltX = 0;
-      targetTiltY = 0;
-      start();
-    });
-
-    return () => {
-      cancelAnimationFrame(frame);
-      page.removeEventListener("pointermove", handlePointerMove);
-      page.removeEventListener("pointerleave", handlePointerLeave);
-      panel.style.removeProperty("--card-x");
-      panel.style.removeProperty("--card-y");
-      panel.style.removeProperty("--glare-x");
-      panel.style.removeProperty("--glare-y");
+    const reset = () => {
       page.style.removeProperty("--bg-parallax-x");
       page.style.removeProperty("--bg-parallax-y");
+    };
+    const move = (event) => {
+      if (motion.matches || !pointer.matches) return;
+      const rect = page.getBoundingClientRect();
+      page.style.setProperty("--bg-parallax-x", `${(0.5 - (event.clientX - rect.left) / rect.width) * 20}px`);
+      page.style.setProperty("--bg-parallax-y", `${(0.5 - (event.clientY - rect.top) / rect.height) * 14}px`);
+    };
+
+    page.addEventListener("pointermove", move, { passive: true });
+    page.addEventListener("pointerleave", reset);
+    motion.addEventListener("change", reset);
+    pointer.addEventListener("change", reset);
+    return () => {
+      page.removeEventListener("pointermove", move);
+      page.removeEventListener("pointerleave", reset);
+      motion.removeEventListener("change", reset);
+      pointer.removeEventListener("change", reset);
+      reset();
     };
   }, []);
 
@@ -318,7 +232,7 @@ export default function AuthScreen({ auth }) {
   }
 
   return (
-    <main className="auth-page auth-login-motion" ref={pageRef}>
+    <main className="auth-page" data-screen={screen} ref={pageRef}>
       {/* Dynamic Background Artwork with Smooth Parallax */}
       <div className="auth-bg-layer" aria-hidden="true" />
       <div className="auth-vignette-overlay" aria-hidden="true" />
@@ -333,12 +247,6 @@ export default function AuthScreen({ auth }) {
 
       <div className="auth-shell">
         <aside className="auth-story" aria-label="Welcome to Shifts">
-          {/* Mobile/Tablet Panoramic Character Portal Backdrop */}
-          <div className="auth-story-backdrop" aria-hidden="true">
-            <div className="auth-story-art" />
-            <div className="auth-story-scrim" />
-          </div>
-
           <div className="auth-brand-block">
             <a className="auth-brand" href={import.meta.env.BASE_URL}>
               <span>Shifts<span className="auth-brand-dot">.</span></span>
@@ -348,9 +256,6 @@ export default function AuthScreen({ auth }) {
               AI MULTIVERSE
             </span>
           </div>
-
-          {/* Unobstructed Mobile Character Window Spacer */}
-          <div className="auth-story-window" aria-hidden="true" />
 
           <div className="auth-story-body">
             <div className="auth-eyebrow">
@@ -395,13 +300,14 @@ export default function AuthScreen({ auth }) {
         </aside>
 
         <section className="auth-panel" aria-label="Your account" ref={panelRef}>
-          <div className="auth-panel-beam" aria-hidden="true" />
-          <div className="auth-panel-sheen" aria-hidden="true" />
           <div className="auth-panel-intro" aria-hidden="true">
-            <span className="auth-orbit"><span /></span>
-            <span className="auth-intro-badge">YOUR WORLD AWAITS</span>
-            <span className="auth-intro-line" />
-            <span className="auth-intro-spark">✦</span>
+            <span className="auth-portal-mark">
+              <svg width="26" height="26" viewBox="0 0 32 32" fill="none">
+                <path d="M16 3 19.5 12.5 29 16 19.5 19.5 16 29 12.5 19.5 3 16 12.5 12.5Z" stroke="currentColor" strokeWidth="1.3" />
+                <circle cx="16" cy="16" r="3" fill="currentColor" />
+              </svg>
+            </span>
+            <span className="auth-intro-caption">A LITTLE SPACE FOR YOU</span>
           </div>
           <div className="auth-form-wrap" key={screen}>
             {(screen === "forgot" || screen === "reset") && (
