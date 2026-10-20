@@ -6,7 +6,7 @@ The project is designed as both a usable chat experience and a developer-friendl
 
 ## Demo Video
 
-**[Watch the Shifts demo video](frontend/public/shift_final_video2.mp4)**
+https://github.com/user-attachments/assets/d475335c-3f92-4304-b1ae-9a7e27009c6f
 
 Explore the Shifts experience in this video walkthrough. If the video does not play in your browser, download the MP4 file to watch it locally.
 
