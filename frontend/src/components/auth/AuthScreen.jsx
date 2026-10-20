@@ -66,6 +66,22 @@ const copy = {
   reset: ["Make it yours again.", "Choose a new password for your Shifts account.", "Save new password"],
 };
 
+function ServiceNotice() {
+  return (
+    <div className="auth-notice" role="status" style={{ maxWidth: 480 }}>
+      <strong>Service temporarily unavailable</strong>
+      <p>
+        Shifts is temporarily offline because our Render hosting usage limit has been reached.
+        Service will resume on November 1, 2026. In the meantime, please explore the{" "}
+        <a href="https://github.com/sanusharma-ui/multi-persona.ai#readme" target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "underline" }}>project README</a>
+        {" "}for details and{" "}
+        <a href="/shift_final_video2.mp4" target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "underline" }}>watch the demo video</a>
+        {" "}to see Shifts in action. Thank you for your patience.
+      </p>
+    </div>
+  );
+}
+
 export default function AuthScreen({ auth }) {
   const pageRef = useRef(null);
   const panelRef = useRef(null);
@@ -227,6 +243,7 @@ export default function AuthScreen({ auth }) {
             <em>become stories.</em>
           </h1>
           <p className="auth-entry-copy">Different minds. Different memories. Different worlds waiting on the other side.</p>
+          <ServiceNotice />
           <button className="auth-enter-button" type="button" ref={enterRef} onClick={() => setEntered(true)}>
             Entre Shift
           </button>
@@ -251,6 +268,7 @@ export default function AuthScreen({ auth }) {
             </p>
 
             {unavailable && <p className="auth-alert" role="alert">Sign-in is temporarily unavailable. Please try again later.</p>}
+            {screen === "login" && <ServiceNotice />}
             {(error || auth.error) && <p className="auth-alert" role="alert">{error || auth.error}</p>}
             {notice && <div className="auth-notice" role="status"><strong>Check your email</strong><p>{notice}</p></div>}
 

@@ -4,6 +4,12 @@ Shifts is a multi-persona AI chat application built with React, FastAPI, and Gro
 
 The project is designed as both a usable chat experience and a developer-friendly foundation for experimenting with persona systems, memory, safety controls, image input, and emotion-aware responses.
 
+## Demo Video
+
+**[Watch the Shifts demo video](frontend/public/shift_final_video2.mp4)**
+
+Explore the Shifts experience in this video walkthrough. If the video does not play in your browser, download the MP4 file to watch it locally.
+
 ## What It Includes
 
 - 17 switchable personas, including a developer buddy, teacher, creative assistant, guide, and fictional characters
