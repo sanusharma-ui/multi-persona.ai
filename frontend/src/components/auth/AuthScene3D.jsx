@@ -51,7 +51,7 @@ export default function AuthScene3D() {
     const scales = new Float32Array(particleCount);
 
     const palette = [
-      new THREE.Color("#c4b5fd"), // Soft violet
+      new THREE.Color("#463c71"), // Soft violet
       new THREE.Color("#818cf8"), // Periwinkle
       new THREE.Color("#38bdf8"), // Cosmic cyan
       new THREE.Color("#fef08a"), // St/ Pure white

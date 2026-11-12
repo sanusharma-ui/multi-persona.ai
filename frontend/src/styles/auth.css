@@ -36,7 +36,10 @@
 .auth-bg-layer {
   position: fixed;
   inset: -40px;
-  background: url('/shift_final_image.png') center center / cover no-repeat;
+  background-image: url('/shift_final_image.png');
+  background-position: center center;
+  background-size: cover;
+  background-repeat: no-repeat;
   filter: saturate(110%) brightness(0.92) contrast(1.04);
   transform: translate3d(var(--bg-parallax-x, 0px), var(--bg-parallax-y, 0px), 0) scale(1.06);
   transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -1310,9 +1313,7 @@
     position: fixed;
     inset: 0;
     height: max(640px, 100svh);
-    background-image: url('/shift_mobile_view.png');
-    background-size: cover;
-    background-position: center top;
+    background: url('/shift_mobile_view.png') center top / cover no-repeat;
   }
   .auth-page[data-stage="landing"] .auth-vignette-overlay {
     height: max(640px, 100svh);
